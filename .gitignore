@@ -1,0 +1,13 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.env
+*cookies*.txt
+study_pipeline/cookies/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+backend/storage/

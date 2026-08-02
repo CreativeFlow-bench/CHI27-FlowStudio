@@ -1,0 +1,49 @@
+#!/usr/bin/env expect -f
+# Sync FlowStudio runtime packages to AutoDL /root/flowstudio_app
+# Usage: REMOTE_PORT=45376 REMOTE_PASS=... ./scripts/sync_runtime_to_gpu.expect
+
+set timeout 600
+set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "45376"}]
+set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westb.seetacloud.com"}]
+set user [expr {[info exists env(REMOTE_USER)] ? $env(REMOTE_USER) : "root"}]
+set pass $env(REMOTE_PASS)
+set root [expr {[info exists env(REPO_ROOT)] ? $env(REPO_ROOT) : [exec pwd]}]
+
+puts "Building tarball from $root ..."
+set tar "/tmp/flowstudio_sync_[pid].tgz"
+set status [catch {
+  exec tar czf $tar \
+    -C $root \
+    --exclude=.venv --exclude=node_modules --exclude=__pycache__ \
+    --exclude=*.pyc --exclude=.env --exclude=storage --exclude=._* \
+    backend/app backend/tests backend/pyproject.toml \
+    frontend/src frontend/dist frontend/public frontend/index.html \
+    frontend/package.json frontend/package-lock.json frontend/tsconfig.json \
+    remote_worker docs scripts intentdatabase README.md
+} err]
+if {$status != 0} {
+  puts "TAR_WARN $err"
+}
+
+spawn scp -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -P $port $tar $user@$host:/tmp/flowstudio_sync.tgz
+expect {
+  -re {[Pp]assword:} { send "$pass\r" }
+  timeout { puts "SCP_AUTH_TIMEOUT"; exit 1 }
+}
+expect eof
+catch wait scp_result
+if {[lindex $scp_result 3] != 0} { puts "SCP_FAIL"; exit 1 }
+
+spawn ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -p $port $user@$host
+expect {
+  -re {[Pp]assword:} { send "$pass\r" }
+  timeout { puts "SSH_AUTH_TIMEOUT"; exit 1 }
+}
+expect { -re {~#} {} timeout { exit 1 } }
+send "bash --norc --noprofile <<'REMOTE'\nset -e\ncd /root/flowstudio_app\ncp -a .env /tmp/flowstudio.env.bak 2>/dev/null || true\ntar xzf /tmp/flowstudio_sync.tgz\nif \[ ! -f .env \] && \[ -f /tmp/flowstudio.env.bak \]; then cp -a /tmp/flowstudio.env.bak .env; fi\n# drop stale vite bundles not referenced by current index.html\nref=\$(grep -oE 'assets/\[^\\\"\]+' frontend/dist/index.html || true)\ncd frontend/dist/assets 2>/dev/null && for f in *; do\n  echo \"\$ref\" | grep -q \"\$f\" || rm -f \"\$f\"\ndone\ncd /root/flowstudio_app\nrm -f /tmp/flowstudio_sync.tgz\necho SYNC_OK lines=\$(wc -l < frontend/src/main.tsx)\nREMOTE\r"
+expect { -re {SYNC_OK} {} timeout { puts "EXTRACT_TIMEOUT"; exit 1 } }
+expect { -re {~#} {} timeout {} }
+send "exit\r"
+expect eof
+file delete -force $tar
+puts DONE
