@@ -35,6 +35,32 @@ class Settings(BaseSettings):
     iul_vlm_model: str = "qwen3-planner"
     iul_vlm_timeout_sec: float = 8
     iul_vlm_fallback_to_rules: bool = True
+    divergence_llm_enabled: bool = True
+    divergence_llm_timeout_sec: float = 15
+    semantic_divergence_enabled: bool = True
+    semantic_divergence_timeout_sec: float = 25
+    semantic_divergence_vlm_timeout_sec: float = 35
+    semantic_divergence_min_candidates: int = 9
+    semantic_divergence_max_candidates: int = 15
+    system_services_auto_bootstrap: bool = False
+    system_services_enabled: bool = True
+    gemini_rerepresentation_enabled: bool = False
+    gemini_api_base: str = "https://128api.cn/v1"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.5-flash"
+    gemini_timeout_sec: float = 60
+    gemini_max_retries: int = 2
+    gemini_max_images: int = 4
+    gemini_max_image_bytes: int = 5_242_880
+    model_api_base: str | None = None
+    model_api_key: str | None = None
+    model_fast_text: str = "gemini-3.6-flash"
+    model_reasoning_text: str = "gpt-5.5"
+    model_image: str = "gpt-image-2"
+    model_api_timeout_sec: float = 60
+    model_api_max_retries: int = 2
+    enable_legacy_local_models: bool = False
+    enable_3d_generation: bool = False
 
 
 @lru_cache
