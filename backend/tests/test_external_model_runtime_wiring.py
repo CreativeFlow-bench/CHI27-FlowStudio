@@ -10,6 +10,7 @@ from app.models import (
     KnowledgeRoute,
     SemanticDivergenceParams,
     SemanticDivergenceRequest,
+    UserEvent,
 )
 from app.models.semantic_divergence import SemanticTarget
 from app.services.divergence.semantic_model_clients import GatewaySemanticGenerator
@@ -20,11 +21,20 @@ from app.services.model_api.runtime import build_external_model_runtime
 from app.services.model_api.config import ModelApiProfile
 from app.services.model_api.text_gateway import StructuredModelResult
 from app.services.model_api.types import ModelStage
+from app.services.intent.multimodal_intent_predictor import (
+    ExternalInteractionIntentPredictor,
+)
 from app.services.rerepresentation.gemini_client import ExternalDecisionClient
 
 
 class _Gateway:
-    def __init__(self, payload: dict[str, Any], model: str) -> None:
+    def __init__(
+        self,
+        payload: dict[str, Any],
+        model: str,
+        *,
+        api_key: str = "secret-key",
+    ) -> None:
         self.payload = payload
         self.model = model
         self.stages: list[ModelStage] = []
@@ -32,7 +42,8 @@ class _Gateway:
             Settings(
                 _env_file=None,
                 model_api_base="https://relay.example/v1",
-                model_api_key="secret-key",
+                model_api_key=api_key,
+                gemini_api_key="",
             )
         )
 
@@ -176,6 +187,49 @@ def test_gateway_semantic_generator_uses_reasoning_stage() -> None:
     assert gateway.stages == [ModelStage.SEMANTIC_DIVERGENCE]
 
 
+def test_external_interaction_predictor_uses_fast_intent_stage() -> None:
+    gateway = _Gateway(
+        {
+            "hypotheses": [
+                {
+                    "intent": "explore_shape",
+                    "confidence": 0.82,
+                    "evidence": ["User asked for a cuter whole-object form."],
+                }
+            ]
+        },
+        "gemini-3.6-flash",
+    )
+    predictor = ExternalInteractionIntentPredictor(gateway)
+    event = UserEvent(
+        type="intent_text_changed",
+        event_id="evt_1",
+        session_id="session_1",
+        payload={"intent_text": "make it cuter"},
+    )
+
+    prediction = predictor.predict(event, {"intent_text": "make it cuter"})
+
+    assert prediction.hypotheses[0].intent.value == "explore_shape"
+    assert gateway.stages == [ModelStage.INTENT]
+
+
+def test_external_interaction_predictor_does_not_call_api_without_a_key() -> None:
+    gateway = _Gateway({}, "gemini-3.6-flash", api_key="")
+    predictor = ExternalInteractionIntentPredictor(gateway)
+    event = UserEvent(
+        type="intent_text_changed",
+        event_id="evt_no_key",
+        session_id="session_1",
+        payload={"intent_text": "make it cuter"},
+    )
+
+    prediction = predictor.predict(event, {"intent_text": "make it cuter"})
+
+    assert prediction.predictor == "rule_based_multisignal"
+    assert gateway.stages == []
+
+
 def test_default_runtime_builds_only_external_adapters(monkeypatch) -> None:
     def forbidden(*args: Any, **kwargs: Any) -> None:
         raise AssertionError("legacy adapter was instantiated")
@@ -202,6 +256,7 @@ def test_default_runtime_builds_only_external_adapters(monkeypatch) -> None:
     assert isinstance(runtime.semantic_primary, GatewaySemanticGenerator)
     assert isinstance(runtime.semantic_fallback, GatewaySemanticGenerator)
     assert isinstance(runtime.image_client, ExternalImageClient)
+    assert isinstance(runtime.interaction_predictor, ExternalInteractionIntentPredictor)
     assert runtime.semantic_primary.model == "gpt-5.5"
     assert runtime.semantic_fallback.model == "gemini-3.6-flash"
 
@@ -226,3 +281,7 @@ def test_application_default_wiring_uses_the_external_runtime() -> None:
         GatewaySemanticGenerator,
     )
     assert isinstance(main.image_generation_client, ExternalImageClient)
+    assert isinstance(
+        main.interaction_service.predictor,
+        ExternalInteractionIntentPredictor,
+    )

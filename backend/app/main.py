@@ -140,6 +140,7 @@ from app.services.divergence.semantic_validator import SemanticCandidateValidato
 from app.services.generation.generation_orchestrator import (
     GenerationOrchestrator,
     RemoteCreativeFlowWorkerAdapter,
+    ThreeDGenerationDisabled,
 )
 from app.services.generation.geometry_worker import GeometryProcessingWorker
 from app.services.intent.interaction_understanding import InteractionUnderstandingService
@@ -220,6 +221,10 @@ experiment_project_store = ExperimentProjectStore()
 external_model_runtime = build_external_model_runtime(
     settings,
     audit=four_stage_store.record_model_call,
+)
+system_services.configure_runtime(
+    enable_legacy_models=external_model_runtime.profile.enable_legacy_local_models,
+    enable_3d=external_model_runtime.profile.enable_3d_generation,
 )
 if external_model_runtime.profile.enable_legacy_local_models:
     intent_model = QwenIntentEncoder(
@@ -480,6 +485,8 @@ async def _four_stage_generate_images(
 async def _four_stage_dispatch(run, spec) -> dict[str, object]:
     """Render Gate-selected prompts; run the Hy3D 3D chain when requested."""
     if getattr(spec, "run_hy3d", False):
+        if not external_model_runtime.profile.enable_3d_generation:
+            raise ThreeDGenerationDisabled()
         return await _four_stage_dispatch_hy3d(run, spec)
     artifacts = await _four_stage_generate_images(
         spec,
@@ -494,6 +501,8 @@ async def _four_stage_dispatch(run, spec) -> dict[str, object]:
 
 async def _four_stage_dispatch_hy3d(run, spec) -> dict[str, object]:
     """Staged CreativeFlow -> candidates -> Hy3D mesh (strategy doc 9.4/9.5)."""
+    if not external_model_runtime.profile.enable_3d_generation:
+        raise ThreeDGenerationDisabled()
     from app.models import GenerationOptions, Intent, Selection, SelectionType
 
     is_part = bool(spec.target.part_id) or spec.target.scope == "part"
@@ -674,9 +683,8 @@ four_stage_generation_service.set_completion_callbacks(
     on_complete=_four_stage_on_complete,
     on_failed=_four_stage_on_failed,
 )
-interaction_service = InteractionUnderstandingService(
-    studio_store,
-    predictor=build_multimodal_intent_predictor(
+interaction_predictor = (
+    build_multimodal_intent_predictor(
         settings.iul_vlm_intent_url,
         timeout_sec=settings.iul_vlm_timeout_sec,
         fallback_to_rules=settings.iul_vlm_fallback_to_rules,
@@ -686,10 +694,24 @@ interaction_service = InteractionUnderstandingService(
             if item.strip()
         ],
         model_name=settings.iul_vlm_model,
-    ),
+    )
+    if external_model_runtime.profile.enable_legacy_local_models
+    else external_model_runtime.interaction_predictor
+)
+interaction_service = InteractionUnderstandingService(
+    studio_store,
+    predictor=interaction_predictor,
+)
+remote_worker_url = (
+    settings.remote_creativeflow_worker_url
+    if (
+        external_model_runtime.profile.enable_legacy_local_models
+        or external_model_runtime.profile.enable_3d_generation
+    )
+    else None
 )
 remote_worker_adapter = RemoteCreativeFlowWorkerAdapter(
-    settings.remote_creativeflow_worker_url,
+    remote_worker_url,
     real_jobs=settings.remote_creativeflow_real_jobs,
     transfer_variant=settings.remote_creativeflow_transfer_variant,
 )
@@ -699,6 +721,7 @@ generation_orchestrator = GenerationOrchestrator(
     remote_worker_adapter,
     auto_hy3d=settings.remote_creativeflow_auto_hy3d,
     hy3d_max_candidates=settings.remote_creativeflow_hy3d_max_candidates,
+    enable_3d_generation=external_model_runtime.profile.enable_3d_generation,
 )
 autopartgen_adapter = AutoPartGenAdapter(
     studio_store,
@@ -1271,6 +1294,7 @@ def create_app() -> FastAPI:
             require_session=require_session,
             files_root=files_root,
             remote_worker_adapter=remote_worker_adapter,
+            enable_3d_generation=external_model_runtime.profile.enable_3d_generation,
         )
     )
     app.include_router(
@@ -1318,6 +1342,16 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
+        if isinstance(exc.detail, dict):
+            code = str(exc.detail.get("code") or "INVALID_REQUEST")
+            message = str(exc.detail.get("message") or "Request failed.")
+            details = exc.detail.get("details")
+            return api_error(
+                code,
+                message,
+                exc.status_code,
+                details=details if isinstance(details, dict) else {},
+            )
         detail = exc.detail if isinstance(exc.detail, str) else "Request failed."
         code = "NOT_FOUND" if exc.status_code == 404 else "INVALID_REQUEST"
         return api_error(code, detail, exc.status_code)

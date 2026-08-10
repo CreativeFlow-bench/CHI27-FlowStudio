@@ -10,6 +10,9 @@ from app.config import Settings
 from app.services.divergence.semantic_model_clients import GatewaySemanticGenerator
 from app.services.encoding.qwen_intent_encoder import ExternalIntentEncoder
 from app.services.generation.qwen_image_client import ExternalImageClient
+from app.services.intent.multimodal_intent_predictor import (
+    ExternalInteractionIntentPredictor,
+)
 from app.services.model_api.config import ModelApiProfile
 from app.services.model_api.image_gateway import ImageModelGateway
 from app.services.model_api.text_gateway import TextModelGateway
@@ -28,6 +31,7 @@ class ExternalModelRuntime:
     semantic_fallback: GatewaySemanticGenerator
     image_gateway: ImageModelGateway
     image_client: ExternalImageClient
+    interaction_predictor: ExternalInteractionIntentPredictor
 
 
 def build_external_model_runtime(
@@ -74,4 +78,5 @@ def build_external_model_runtime(
         ),
         image_gateway=image_gateway,
         image_client=ExternalImageClient(image_gateway),
+        interaction_predictor=ExternalInteractionIntentPredictor(gateway),
     )
