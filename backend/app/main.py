@@ -4,10 +4,12 @@ import base64
 import asyncio
 import json
 import logging
+import os
 import re
 import shutil
 import ssl
 import sys
+import time
 from html import escape
 from pathlib import Path
 from urllib.parse import quote, unquote, urlparse
@@ -30,15 +32,26 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api import (
+    create_actions_router,
+    create_assets_router,
+    create_candidates_router,
+    create_four_stage_router,
+    create_realtime_observation_router,
+    create_sessions_router,
     create_directions_router,
     create_generation_router,
     create_perception_router,
+    create_system_router,
+    create_projects_router,
+    create_interaction_router,
 )
 from app.api.perception_flow import interpret_and_publish
 from app.api.solution_space import build_solution_space_view
 from app.config import Settings, get_settings
+from app.services import system_services
 from app.models import (
     ApiError,
     ApiErrorBody,
@@ -49,6 +62,7 @@ from app.models import (
     ArtifactRecord,
     AssetCreateRequest,
     AssetPartsResponse,
+    AssetVersionRecord,
     BrushMaskArtifactCreateRequest,
     Candidate,
     CandidateDecision,
@@ -113,29 +127,549 @@ from app.models import (
     WorkerJobRecord,
     now_utc,
 )
-from app.services.creativeflow_adapter import CreativeFlowAdapter
-from app.services.autopartgen_adapter import AutoPartGenAdapter
-from app.services.generation_orchestrator import (
+from app.services.generation.creativeflow_adapter import CreativeFlowAdapter
+from app.services.generation.autopartgen_adapter import AutoPartGenAdapter
+from app.services.divergence import contextual_divergence
+from app.services.divergence.semantic_divergence_service import SemanticDivergenceService
+from app.services.divergence.semantic_knowledge_router import SemanticKnowledgeRouter
+from app.services.divergence.semantic_model_clients import (
+    GeminiSemanticGenerator,
+    LocalVlmSemanticGenerator,
+)
+from app.services.divergence.semantic_validator import SemanticCandidateValidator
+from app.services.generation.generation_orchestrator import (
     GenerationOrchestrator,
     RemoteCreativeFlowWorkerAdapter,
 )
-from app.services.geometry_worker import GeometryProcessingWorker
-from app.services.interaction_understanding import InteractionUnderstandingService
-from app.services.job_store import InMemoryJobStore
-from app.services.multimodal_intent_predictor import build_multimodal_intent_predictor
-from app.services.part_lifecycle import (
+from app.services.generation.geometry_worker import GeometryProcessingWorker
+from app.services.intent.interaction_understanding import InteractionUnderstandingService
+from app.services.storage.job_store import InMemoryJobStore
+from app.services.intent.multimodal_intent_predictor import build_multimodal_intent_predictor
+from app.services.encoding import EventNormalizer, FourStageEncodingService
+from app.services.encoding.four_stage_encoding import RuleIntentEncoder
+from app.services.encoding.qwen_intent_encoder import QwenIntentEncoder
+from app.services.model_api.runtime import build_external_model_runtime
+from app.services.retrieval import FourStageRetrievalService
+from app.services.generation.four_stage_generation import FourStageGenerationService
+from app.services.generation.four_stage_spec_builder import GenerationSpecBuilder
+from app.services.generation.four_stage_quality import GenerationQualityGate
+from app.services.generation.image_batch import generate_accepted_image_batch
+from app.services.generation.qwen_image_client import QwenImageClient, QwenImageUnavailable
+from app.services.rerepresentation import (
+    EvidenceAssembler,
+    FourStageDecisionService,
+    GeminiClient,
+    RuleDecisionService,
+)
+from app.services.pipeline.four_stage_orchestrator import (
+    FourStageOrchestrator,
+)
+from app.services.intent.realtime_observation import RealtimeObservationService
+from app.services.interaction import InteractionOrchestrator
+from app.services.storage.four_stage_store import FourStageStore
+from app.services.generation.part_lifecycle import (
     attach_viewport_2d_evidence,
     find_part,
     read_lifecycle,
 )
-from app.services.render_preview_worker import RenderPreviewWorker
-from app.services.studio_store import InMemoryStudioStore
-from app.services.websocket_manager import WebSocketManager
+from app.services.generation.render_preview_worker import RenderPreviewWorker
+from app.services.storage.studio_store import InMemoryStudioStore
+from app.services.storage.experiment_project_store import ExperimentProjectStore
+from app.services.storage.websocket_manager import WebSocketManager
+from app.services.divergence import create_direction_suggestion_builder
+from app.services.storage.benchmark import (
+    _benchmark_tree_material,
+    _download_oss_object,
+    _resolve_benchmark_texture_key,
+    discover_benchmark_assets,
+)
+from app.services.divergence.cross_domain import (
+    _build_cross_domain_response,
+    _prompt_chip_evidence_rows,
+    configure_cross_domain,
+)
+from app.services.divergence.prompt_chip import (
+    _build_prompt_chip_package,
+    configure_prompt_chip,
+)
+from app.services.intent.perception_helpers import (
+    _compact_evidence_summary,
+    _live_signals_payload,
+    _perception_payload,
+    _publish_perception,
+    _update_session_live_signals,
+    configure_perception,
+)
+from app.services.storage.cases import (
+    _case_direction_memory,
+    _direction_memory_rows,
+    _read_existing_case_index_rows,
+    configure_cases,
+    render_case_report,
+    write_case_index,
+)
+
+from app.services.intent.interaction_features import unique_ref_count as _request_image_ref_count
 
 legacy_job_store = InMemoryJobStore()
 studio_store = InMemoryStudioStore()
 websocket_manager = WebSocketManager()
 settings = get_settings()
+four_stage_store = FourStageStore()
+experiment_project_store = ExperimentProjectStore()
+external_model_runtime = build_external_model_runtime(
+    settings,
+    audit=four_stage_store.record_model_call,
+)
+if external_model_runtime.profile.enable_legacy_local_models:
+    intent_model = QwenIntentEncoder(
+        settings.iul_vlm_intent_url,
+        model_name=settings.iul_vlm_model,
+        timeout_sec=settings.iul_vlm_timeout_sec,
+    )
+    decision_model = GeminiClient(
+        settings.gemini_api_base,
+        settings.gemini_api_key,
+        model=settings.gemini_model,
+        timeout_sec=settings.gemini_timeout_sec,
+        max_retries=settings.gemini_max_retries,
+        max_images=settings.gemini_max_images,
+        audit=four_stage_store.record_model_call,
+    )
+    semantic_primary_model = GeminiSemanticGenerator(
+        settings.gemini_api_base,
+        settings.gemini_api_key,
+        model=settings.gemini_model,
+        timeout_sec=settings.semantic_divergence_timeout_sec,
+    )
+    semantic_fallback_model = LocalVlmSemanticGenerator(
+        settings.iul_vlm_intent_url or "",
+        model=settings.iul_vlm_model,
+        timeout_sec=settings.semantic_divergence_vlm_timeout_sec,
+    )
+else:
+    intent_model = external_model_runtime.intent_encoder
+    decision_model = external_model_runtime.decision_client
+    semantic_primary_model = external_model_runtime.semantic_primary
+    semantic_fallback_model = external_model_runtime.semantic_fallback
+
+four_stage_encoding_service = FourStageEncodingService(
+    normalizer=EventNormalizer(),
+    qwen_encoder=intent_model,
+    rule_encoder=RuleIntentEncoder(),
+    asset_lookup=lambda asset_id: (
+        {
+            "object_type": asset.object_type,
+            "label": asset.label,
+            "mesh_url": asset.mesh_url,
+            "obj_url": asset.obj_url,
+            "thumbnail_url": asset.thumbnail_url,
+            "metadata": asset.metadata,
+        }
+        if (asset := studio_store.get_asset(asset_id)) is not None
+        else {}
+    ),
+)
+four_stage_retrieval_service = FourStageRetrievalService(store=four_stage_store)
+four_stage_decision_service = FourStageDecisionService(
+    assembler=EvidenceAssembler(
+        max_images=settings.gemini_max_images,
+        max_image_bytes=settings.gemini_max_image_bytes,
+    ),
+    gemini_client=decision_model,
+    rule_decision=RuleDecisionService(),
+    enabled=(
+        settings.gemini_rerepresentation_enabled
+        if external_model_runtime.profile.enable_legacy_local_models
+        else bool(external_model_runtime.profile.api_key)
+    ),
+    feedback_lookup=four_stage_store.retrieval_outcome_score,
+)
+semantic_divergence_service = SemanticDivergenceService(
+    store=four_stage_store,
+    knowledge_router=SemanticKnowledgeRouter(),
+    gemini=semantic_primary_model,
+    local_vlm=semantic_fallback_model,
+    validator=SemanticCandidateValidator(),
+)
+
+
+def _qwen_image_base() -> str:
+    raw = os.environ.get("CF_QWEN_IMAGE_URL", "") or "http://127.0.0.1:18082"
+    return raw.rsplit("/generate", 1)[0].rstrip("/") or "http://127.0.0.1:18082"
+
+
+qwen_image_client = QwenImageClient(_qwen_image_base())
+
+
+def _resolve_four_stage_image_ref(ref: str | None, files_root: Path) -> str | None:
+    """Resolve a SourceContext image/mask reference to a local worker path."""
+    if not ref:
+        return None
+    value = str(ref).strip()
+    if value.startswith("/files/"):
+        candidate = (files_root / value.removeprefix("/files/")).resolve()
+        if files_root.resolve() in candidate.parents and candidate.is_file():
+            return str(candidate)
+        return None
+    candidate = Path(value).expanduser()
+    return str(candidate.resolve()) if candidate.is_file() else None
+
+
+async def _materialize_four_stage_image_ref(
+    ref: str | None,
+    files_root: Path,
+    destination: Path,
+) -> str | None:
+    """Materialize an external OSS image so the local Qwen service can read it."""
+    local = _resolve_four_stage_image_ref(ref, files_root)
+    if local:
+        return local
+    value = str(ref or "").strip()
+    if not value.startswith(("http://", "https://")):
+        return None
+    try:
+        def _download() -> bytes:
+            with urlopen(value, timeout=45) as response:
+                data = response.read(20 * 1024 * 1024 + 1)
+            if len(data) > 20 * 1024 * 1024:
+                raise ValueError("source image exceeds 20 MB")
+            return data
+
+        data = await asyncio.to_thread(_download)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+        return str(destination)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("could not materialize source image %s: %s", value[:160], exc)
+        return None
+
+
+async def _four_stage_generate_images(
+    spec,
+    *,
+    session_id: str | None = None,
+    run_id: str | None = None,
+) -> list[dict[str, object]]:
+    """Render the Gate-selected prompts with Qwen-Image and persist PNGs."""
+    import shutil
+
+    files_root = Path(__file__).resolve().parents[1] / "storage" / "files"
+    out_root = files_root / "four_stage" / spec.generation_id
+    out_root.mkdir(parents=True, exist_ok=True)
+    # 新批次按时间线生成：清理旧的 four_stage 批次，只保留最近 5 批，
+    # 避免前端/Solution Space 看到历史残留图片。
+    try:
+        batches = sorted(
+            (entry for entry in (files_root / "four_stage").iterdir() if entry.is_dir()),
+            key=lambda entry: entry.stat().st_mtime,
+            reverse=True,
+        )
+        for stale in batches[5:]:
+            shutil.rmtree(stale, ignore_errors=True)
+            logger.info("four_stage pruned stale batch %s", stale.name)
+    except OSError:
+        pass
+    total = len(spec.prompt_candidates[: spec.candidate_count])
+    source = getattr(spec, "source", None)
+    source_image = await _materialize_four_stage_image_ref(
+        getattr(source, "source_image_ref", None) if source else None,
+        files_root,
+        out_root / "source.png",
+    )
+    source_mask = await _materialize_four_stage_image_ref(
+        getattr(source, "target_mask_ref", None) if source else None,
+        files_root,
+        out_root / "mask.png",
+    )
+    if not source_image:
+        raise RuntimeError(
+            "source identity image is required for four-stage generation; "
+            "upload/attach a viewport image before Generate"
+        )
+    identity_mode = "masked" if source_mask else "conditioned"
+    progress_artifacts: list[dict[str, object]] = []
+
+    async def _generate_attempt(
+        index: int,
+        prompt: str,
+        seed: int,
+        attempt: int,
+    ) -> dict[str, object] | None:
+        retry_seed = seed + attempt * 1_000_003
+        try:
+            png = await qwen_image_client.generate_conditioned(
+                prompt,
+                retry_seed,
+                source_image_path=source_image,
+                mask_image_path=source_mask,
+            )
+        except QwenImageUnavailable as exc:
+            raise RuntimeError(f"Qwen-Image generation unavailable: {exc}") from exc
+        relative = f"four_stage/{spec.generation_id}/candidate_{index + 1:02d}.png"
+        image_path = out_root / f"candidate_{index + 1:02d}.png"
+        image_path.write_bytes(png)
+        from remote_worker.variation_stage2_images import (
+            fit_generated_subject_safe_margin,
+            normalize_generated_studio_background,
+            visual_acceptance,
+        )
+
+        await asyncio.to_thread(normalize_generated_studio_background, image_path)
+        await asyncio.to_thread(fit_generated_subject_safe_margin, image_path)
+
+        qa = await asyncio.to_thread(
+            visual_acceptance,
+            image_path,
+            stage=str(getattr(spec.target, "scope", "whole")),
+        )
+        if not qa["accepted"]:
+            logger.warning(
+                "four_stage rejected candidate=%s attempt=%s qa=%s",
+                index + 1,
+                attempt + 1,
+                qa,
+            )
+            return None
+        artifact: dict[str, object] = {
+            "candidate_id": f"cand_{spec.generation_id}_{index + 1:02d}",
+            "url": f"/files/{relative}",
+            "prompt": prompt,
+            "seed": retry_seed,
+            "identity_mode": identity_mode,
+            "source_image_ref": getattr(source, "source_image_ref", None) if source else None,
+            "target_mask_ref": getattr(source, "target_mask_ref", None) if source else None,
+            "visual_acceptance": qa,
+            "kind": "png",
+        }
+        progress_artifacts.append(artifact)
+        # 串行生成：每完成一张就实时推给前端（进度 + 已完成产物），
+        # 避免 8 张生成期间前端长时间无反馈。
+        if session_id and websocket_manager is not None:
+            try:
+                await websocket_manager.broadcast(
+                    session_id,
+                    "four_stage.generation_progress",
+                    {
+                        "run_id": run_id,
+                        "session_id": session_id,
+                        "stage": "generation",
+                        "generation_id": spec.generation_id,
+                        "completed_count": len(progress_artifacts),
+                        "total_count": total,
+                        "artifacts": list(progress_artifacts),
+                    },
+                )
+            except Exception:  # pragma: no cover - ws must not break generation
+                logger.warning("four_stage progress ws failed", exc_info=True)
+        return artifact
+
+    return await generate_accepted_image_batch(
+        spec.prompt_candidates[: spec.candidate_count],
+        spec.seeds,
+        generate_attempt=_generate_attempt,
+        minimum_accepted=min(6, total),
+        max_attempts_per_prompt=3,
+    )
+
+
+async def _four_stage_dispatch(run, spec) -> dict[str, object]:
+    """Render Gate-selected prompts; run the Hy3D 3D chain when requested."""
+    if getattr(spec, "run_hy3d", False):
+        return await _four_stage_dispatch_hy3d(run, spec)
+    artifacts = await _four_stage_generate_images(
+        spec,
+        session_id=run.session_id,
+        run_id=run.run_id,
+    )
+    return {
+        "remote_job_id": f"direct_{spec.generation_id}",
+        "artifacts": artifacts,
+    }
+
+
+async def _four_stage_dispatch_hy3d(run, spec) -> dict[str, object]:
+    """Staged CreativeFlow -> candidates -> Hy3D mesh (strategy doc 9.4/9.5)."""
+    from app.models import GenerationOptions, Intent, Selection, SelectionType
+
+    is_part = bool(spec.target.part_id) or spec.target.scope == "part"
+    stage = "part" if is_part else "silhouette"
+    pipeline = f"creativeflow-{'part' if is_part else 'global'}"
+    fidelity = "medium" if is_part else "low"
+    request = GenerationRequest(
+        session_id=run.session_id,
+        asset_id=spec.asset_id or "",
+        selection=Selection(
+            type=SelectionType.part if is_part else SelectionType.none,
+            part_id=spec.target.part_id,
+            label=spec.target.part_id,
+        ),
+        intent=Intent(
+            mode=GenerationMode.diverge,
+            text=spec.prompt_candidates[0]
+            if spec.prompt_candidates
+            else (spec.keywords[0] if spec.keywords else "diverge"),
+            constraints=spec.preserved_constraints,
+            metadata={
+                "four_stage_generation_id": spec.generation_id,
+                "four_stage_run_id": run.run_id,
+                "prompt_candidates": spec.prompt_candidates,
+                "seeds": spec.seeds,
+            },
+        ),
+        generation=GenerationOptions(
+            candidate_count=spec.candidate_count,
+            diversity=0.7,
+            output_format="glb",
+            metadata={
+                "pipeline": pipeline,
+                "stage": stage,
+                "fidelity": fidelity,
+                "divergence_axes": spec.keywords,
+                "fit_policy": "preserve_socket" if is_part else "stage_default",
+                "four_stage": True,
+                "prompts": spec.prompt_candidates,
+                "seeds": spec.seeds,
+            },
+        ),
+    )
+    job = await generation_orchestrator.create_generation_job(request)
+    deadline = time.monotonic() + 1800
+    while time.monotonic() < deadline:
+        current = studio_store.get_job(job.job_id)
+        if current is None:
+            raise RuntimeError("hy3d source job disappeared")
+        if current.status.value == "completed":
+            break
+        if current.status.value in {"failed", "cancelled"}:
+            detail = current.error.message if current.error else "no detail"
+            raise RuntimeError(f"hy3d staged source failed: {detail}")
+        await asyncio.sleep(5)
+    else:
+        raise TimeoutError("hy3d staged source timed out")
+
+    candidates = [
+        candidate
+        for candidate_id in (current.candidate_ids or [])
+        if (candidate := studio_store.get_candidate(candidate_id)) is not None
+    ]
+    if not candidates:
+        raise RuntimeError("hy3d staged source produced no candidates")
+    target = candidates[0]
+    await generation_orchestrator.generate_candidate_hy3d(
+        target.candidate_id, run.session_id
+    )
+    refreshed = studio_store.get_candidate(target.candidate_id) or target
+    artifacts: list[dict[str, object]] = []
+    if refreshed.thumbnail_url:
+        artifacts.append(
+            {
+                "candidate_id": refreshed.candidate_id,
+                "url": refreshed.thumbnail_url,
+                "kind": "image",
+                "label": refreshed.label,
+            }
+        )
+    if refreshed.mesh_url:
+        artifacts.append(
+            {
+                "candidate_id": refreshed.candidate_id,
+                "url": refreshed.mesh_url,
+                "kind": "mesh_glb",
+                "label": refreshed.label,
+            }
+        )
+    if refreshed.obj_url:
+        artifacts.append(
+            {
+                "candidate_id": refreshed.candidate_id,
+                "url": refreshed.obj_url,
+                "kind": "mesh_obj",
+                "label": refreshed.label,
+            }
+        )
+    if not artifacts:
+        raise RuntimeError("hy3d produced no artifacts (image or mesh)")
+    return {
+        "remote_job_id": f"hy3d_{spec.generation_id}",
+        "artifacts": artifacts,
+    }
+
+
+async def _four_stage_poll(remote_job_id: str) -> dict[str, object]:
+    job = studio_store.get_job(remote_job_id)
+    if job is None:
+        return {"status": "running"}
+    if job.status.value == "completed":
+        candidates = [
+            candidate
+            for candidate in studio_store.candidates.values()
+            if candidate.job_id == remote_job_id
+        ]
+        artifacts = [
+            {
+                "candidate_id": candidate.candidate_id,
+                "url": candidate.thumbnail_url or candidate.mesh_url,
+                "label": candidate.label,
+            }
+            for candidate in candidates
+            if candidate.thumbnail_url or candidate.mesh_url
+        ]
+        return {"status": "completed", "artifacts": artifacts}
+    if job.status.value in {"failed", "cancelled"}:
+        return {
+            "status": job.status.value,
+            "error": job.error.model_dump(mode="json") if job.error else None,
+        }
+    return {"status": "running"}
+
+
+four_stage_generation_service = FourStageGenerationService(
+    four_stage_store,
+    builder=GenerationSpecBuilder(),
+    quality_gate=GenerationQualityGate(),
+    dispatch=_four_stage_dispatch,
+    poll=_four_stage_poll,
+)
+four_stage_orchestrator = FourStageOrchestrator(
+    store=four_stage_store,
+    encoding_service=four_stage_encoding_service,
+    retrieval_service=four_stage_retrieval_service,
+    decision_service=four_stage_decision_service,
+    generation_service=four_stage_generation_service,
+    semantic_divergence_service=semantic_divergence_service,
+    websocket_manager=websocket_manager,
+)
+realtime_observation_service = RealtimeObservationService(
+    four_stage_store,
+    four_stage_orchestrator,
+    recorder=experiment_project_store,
+)
+interaction_orchestrator = InteractionOrchestrator(
+    store=four_stage_store,
+    pipeline=four_stage_orchestrator,
+    observation=realtime_observation_service,
+    websocket_manager=websocket_manager,
+)
+
+
+async def _four_stage_on_failed(run_id: str, error: Exception) -> None:
+    await four_stage_orchestrator.finalize_generation(run_id, error=error)
+    await realtime_observation_service.on_run_finished(run_id)
+
+
+async def _four_stage_on_complete(
+    run_id: str,
+    artifacts: list[dict[str, object]] | None = None,
+) -> None:
+    await four_stage_orchestrator.finalize_generation(run_id, artifacts=artifacts)
+    await realtime_observation_service.on_run_finished(run_id)
+
+
+four_stage_generation_service.set_completion_callbacks(
+    on_complete=_four_stage_on_complete,
+    on_failed=_four_stage_on_failed,
+)
 interaction_service = InteractionUnderstandingService(
     studio_store,
     predictor=build_multimodal_intent_predictor(
@@ -194,125 +728,6 @@ def api_error(
     return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
 
 
-def _compact_evidence_summary(interpretation: InteractionInterpretation) -> list[dict[str, object]]:
-    features = interpretation.features if isinstance(interpretation.features, dict) else {}
-    signals = features.get("signals") if isinstance(features.get("signals"), dict) else {}
-    geometric = signals.get("geometric") if isinstance(signals.get("geometric"), dict) else {}
-    semantic = signals.get("semantic") if isinstance(signals.get("semantic"), dict) else {}
-    visual = signals.get("visual_context") if isinstance(signals.get("visual_context"), dict) else {}
-    interaction = signals.get("interaction") if isinstance(signals.get("interaction"), dict) else {}
-    rows: list[dict[str, object]] = [
-        {
-            "label": "intent",
-            "value": interpretation.primary_intent.value,
-            "source": "planner",
-            "confidence": interpretation.confidence,
-        }
-    ]
-
-    event_type = interaction.get("event_type") or features.get("event_type")
-    if event_type:
-        rows.append({"label": "behavior", "value": event_type, "source": "interaction"})
-    part_label = semantic.get("part_label") or semantic.get("part_id")
-    if part_label:
-        rows.append({"label": "target", "value": part_label, "source": "semantic"})
-    object_type = semantic.get("object_type")
-    if object_type:
-        rows.append({"label": "object", "value": object_type, "source": "semantic"})
-
-    evidence_fields = [
-        ("focus", "dwell_ms", geometric.get("dwell_ms"), "attention"),
-        ("brush", "coverage", geometric.get("brush_coverage"), "surface mask"),
-        ("drag", "length", geometric.get("drag_length"), "3d transform"),
-        ("smooth", "strength", geometric.get("smooth_strength"), "local geometry"),
-        ("add", "primitive", semantic.get("primitive"), "3d primitive"),
-    ]
-    for group, label, value, source in evidence_fields:
-        if value is not None:
-            rows.append({"label": f"{group}_{label}", "value": value, "source": source})
-
-    artifact_fields = [
-        ("focus_artifact", visual.get("focus_observation_artifact_id")),
-        ("brush_artifact", visual.get("brush_mask_artifact_id")),
-        ("drag_artifact", visual.get("drag_operation_artifact_id")),
-        ("smooth_artifact", visual.get("smooth_operation_artifact_id")),
-        ("add_artifact", visual.get("primitive_addition_artifact_id")),
-        ("annotation_artifact", visual.get("annotation_artifact_id")),
-    ]
-    for label, value in artifact_fields:
-        if value:
-            rows.append({"label": label, "value": value, "source": "artifact"})
-            break
-
-    ir = features.get("design_state_ir") if isinstance(features.get("design_state_ir"), dict) else {}
-    matches = ir.get("matches") if isinstance(ir.get("matches"), list) else []
-    recommended_axes = ir.get("recommended_axes") if isinstance(ir.get("recommended_axes"), list) else []
-    if recommended_axes:
-        rows.append(
-            {
-                "label": "next_axes",
-                "value": " / ".join(str(axis) for axis in recommended_axes[:3]),
-                "source": "design_state_ir",
-            }
-        )
-    if matches and isinstance(matches[0], dict):
-        top = matches[0]
-        design_state = top.get("design_state") or "matched_design_state"
-        route = top.get("route") or "design_state_ir"
-        case_id = top.get("case_id") or top.get("ir_id")
-        rows.append(
-            {
-                "label": "ir_state",
-                "value": f"{design_state} → {route}",
-                "source": f"design_state_ir:{case_id}" if case_id else "design_state_ir",
-                "score": top.get("score"),
-            }
-        )
-
-    return rows[:8]
-
-
-def _perception_payload(interpretation: InteractionInterpretation) -> dict[str, object]:
-    return {
-        "perception_id": interpretation.interpretation_id,
-        "summary": interpretation.primary_intent.value,
-        "behavior_label": interpretation.action_type,
-        "confidence": interpretation.confidence,
-        "ambiguity": interpretation.ambiguity,
-        "evidence": interpretation.evidence,
-        "evidence_summary": _compact_evidence_summary(interpretation),
-        "features": interpretation.features,
-        "created_at": interpretation.created_at.isoformat(),
-    }
-
-
-async def _publish_perception(
-    session_id: str,
-    interpretation: InteractionInterpretation,
-    *,
-    include_stage: bool = True,
-) -> None:
-    """Single broadcast path for interpretation → perception (+ optional stage)."""
-    await websocket_manager.broadcast(
-        session_id,
-        "interaction_interpretation",
-        interpretation.model_dump(mode="json"),
-    )
-    await websocket_manager.broadcast(
-        session_id,
-        "perception_updated",
-        _perception_payload(interpretation),
-    )
-    if include_stage:
-        session = studio_store.get_session(session_id)
-        if session is not None:
-            await websocket_manager.broadcast(
-                session_id,
-                "stage_update",
-                session.stage.model_dump(mode="json"),
-            )
-
-
 def _log_deprecated_api(endpoint: str, session_id: str | None = None) -> None:
     logger.warning(
         "DEPRECATED_API_USED endpoint=%s session_id=%s",
@@ -347,54 +762,6 @@ def _looks_like_prompt_chip_action(request: ActionAtomCreateRequest) -> bool:
             if "prompt" in text.lower() or "analogy" in text.lower():
                 return True
     return False
-
-
-def _clean_live_signals(raw: object) -> dict[str, object]:
-    if not isinstance(raw, dict):
-        return {}
-    clean: dict[str, object] = {}
-    for key, value in raw.items():
-        if not isinstance(key, str):
-            continue
-        if isinstance(value, (str, int, float, bool)) or value is None:
-            clean[key] = value
-    return clean
-
-
-def _live_signals_payload(session: SessionRecord) -> dict[str, object]:
-    signals = session.metadata.get("live_signals")
-    return {
-        "session_id": session.session_id,
-        "live_signals": signals if isinstance(signals, dict) else {},
-        "updated_at": session.metadata.get("live_signals_updated_at"),
-        "source": session.metadata.get("live_signals_source"),
-    }
-
-
-def _update_session_live_signals(
-    session_id: str,
-    raw_signals: object,
-    source: str,
-) -> dict[str, object]:
-    clean = _clean_live_signals(raw_signals)
-    if not clean:
-        return _live_signals_payload(require_session(session_id))
-    session = require_session(session_id)
-    current = session.metadata.get("live_signals")
-    if not isinstance(current, dict):
-        current = {}
-    updated = {**current, **clean}
-    studio_store.update_session(
-        session_id,
-        SessionUpdateRequest(
-            metadata={
-                "live_signals": updated,
-                "live_signals_updated_at": now_utc().isoformat(),
-                "live_signals_source": source,
-            }
-        ),
-    )
-    return _live_signals_payload(require_session(session_id))
 
 
 def _local_creativeflow_state(root: Path | None) -> dict[str, object]:
@@ -440,59 +807,6 @@ def require_session(session_id: str) -> SessionRecord:
     if session is None:
         raise HTTPException(status_code=404, detail=f"Session not found: {session_id}")
     return session
-
-
-async def create_direction_suggestions(
-    request: CrossDomainDivergenceRequest,
-    *,
-    endpoint_name: str,
-) -> CrossDomainDivergenceResponse:
-    """Canonical direction builder shared by suggest + deprecated cross-domain proxy."""
-    session = require_session(request.session_id)
-    asset = studio_store.get_asset(request.asset_id)
-    if asset is None:
-        raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-    draft = None
-    if request.intent_draft_id:
-        draft = studio_store.get_intent_draft(request.intent_draft_id)
-        if draft is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Intent draft not found: {request.intent_draft_id}",
-            )
-        if draft.session_id != request.session_id:
-            raise HTTPException(status_code=400, detail="Intent draft belongs to another session")
-    response = _build_cross_domain_response(request, asset, draft, session)
-    response.metadata["direction_endpoint"] = endpoint_name
-    response.metadata.setdefault("canonical_endpoint", "suggested_analogy_directions")
-    response.metadata.setdefault("task", "direction_suggest")
-    if request.interpretation_id:
-        response.metadata["interpretation_id"] = request.interpretation_id
-    for direction in response.directions:
-        direction.metadata.setdefault("status", "suggested")
-        direction.metadata.setdefault("asset_id", request.asset_id)
-        direction.metadata.setdefault("session_id", request.session_id)
-        direction.metadata.setdefault("direction_endpoint", endpoint_name)
-        studio_store.save_direction(request.session_id, direction)
-    studio_store.save_memory(
-        MemoryRecord(
-            memory_id=f"mem_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            category="working",
-            type=endpoint_name,
-            source_id=request.intent_draft_id,
-            asset_id=request.asset_id,
-            confidence=0.78,
-            content=response.model_dump(mode="json"),
-            tags=["cross_domain", "analogy_direction", endpoint_name],
-        )
-    )
-    await websocket_manager.broadcast(
-        request.session_id,
-        "cross_domain_directions",
-        response.model_dump(mode="json"),
-    )
-    return response
 
 
 def _validate_optional_session(session_id: str | None) -> None:
@@ -621,70 +935,6 @@ def _session_id_for_direction(direction_id: str) -> str:
         if direction_id in direction_ids:
             return session_id
     raise HTTPException(status_code=400, detail="Direction is missing session provenance")
-
-
-def _build_prompt_chip_package(request: PromptComposeRequest) -> dict[str, object]:
-    base_prompt = re.sub(r"\s+", " ", request.base_prompt or "").strip()
-    tokens: list[dict[str, object]] = []
-    seen_labels: set[str] = set()
-    inferred_direction_ids: list[str] = []
-    for raw in request.selected_prompt_tokens:
-        label = re.sub(
-            r"\s+",
-            " ",
-            str(raw.get("label") or raw.get("text") or raw.get("value") or ""),
-        ).strip(" ,.;")
-        if not label or label.lower() in seen_labels:
-            continue
-        seen_labels.add(label.lower())
-        source_direction_id = raw.get("source_direction_id") or raw.get("direction_id")
-        if isinstance(source_direction_id, str) and source_direction_id:
-            inferred_direction_ids.append(source_direction_id)
-        weight = raw.get("weight")
-        tokens.append(
-            {
-                "token_id": str(raw.get("token_id") or f"tok_user_{uuid4().hex[:8]}"),
-                "label": label[:80],
-                "dimension": str(raw.get("dimension") or "Cross-domain")[:40],
-                "role": str(raw.get("role") or "keyword")[:40],
-                "source_direction_id": source_direction_id if isinstance(source_direction_id, str) else None,
-                "weight": float(weight) if isinstance(weight, (int, float)) else None,
-            }
-        )
-    direction_ids = list(dict.fromkeys([*request.direction_ids, *inferred_direction_ids]))
-    selected_directions: list[dict[str, object]] = []
-    for direction_id in direction_ids:
-        direction = studio_store.get_direction(direction_id)
-        if direction is None:
-            continue
-        selected_directions.append(
-            {
-                "direction_id": direction.direction_id,
-                "label": direction.label,
-                "dimension": direction.dimension,
-                "source_domain": direction.source_domain,
-                "target_domain": direction.target_domain,
-                "relation": direction.relation,
-                "transfer_rationale": direction.transfer_rationale,
-                "constraints": direction.constraints,
-                "score": direction.score,
-            }
-        )
-    selected_prompt_text = ", ".join(str(token["label"]) for token in tokens)
-    final_prompt = base_prompt
-    if selected_prompt_text and selected_prompt_text.lower() not in base_prompt.lower():
-        final_prompt = f"{base_prompt}\nAnalogy keywords: {selected_prompt_text}".strip()
-    return {
-        "prompt_token_mode": "human_selectable_chips",
-        "source": "backend_prompt_compose",
-        "final_prompt": final_prompt,
-        "selected_prompt_text": selected_prompt_text,
-        "selected_prompt_tokens": tokens,
-        "direction_ids": direction_ids,
-        "selected_directions": selected_directions,
-        "intent_draft_id": request.intent_draft_id,
-        "metadata": request.metadata,
-    }
 
 
 def _decode_data_url(value: str) -> bytes:
@@ -876,13 +1126,25 @@ async def cancel_remote_worker_jobs(job: object) -> list[dict[str, object]]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="FlowStudio Backend", version="0.1.0")
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
     storage_root = Path(__file__).resolve().parents[1] / "storage"
     files_root = storage_root / "files"
     files_root.mkdir(parents=True, exist_ok=True)
+    configure_cross_domain(
+        studio_store=studio_store,
+        planner_control_context=_planner_control_context,
+        interaction_service=interaction_service,
+        settings=settings,
+    )
+    configure_perception(studio_store=studio_store, websocket_manager=websocket_manager, require_session=require_session)
+    configure_cases(studio_store=studio_store, files_root=files_root)
+    configure_prompt_chip(studio_store=studio_store)
     state_root = storage_root / "state"
     state_root.mkdir(parents=True, exist_ok=True)
     state_snapshot_path = state_root / "latest.json"
     if "pytest" not in sys.modules:
+        four_stage_store.reopen(storage_root / "four_stage.sqlite3")
+        experiment_project_store.reopen(storage_root / "experiment_projects.sqlite3")
         try:
             studio_store.configure_persistence(state_snapshot_path, load_existing=True)
         except Exception:
@@ -930,6 +1192,125 @@ def create_app() -> FastAPI:
             cancel_remote_worker_jobs=cancel_remote_worker_jobs,
         )
     )
+    app.include_router(
+        create_assets_router(
+            require_session=require_session,
+            studio_store=studio_store,
+            files_root=files_root,
+            websocket_manager=websocket_manager,
+            remote_worker_adapter=remote_worker_adapter,
+            autopartgen_adapter=autopartgen_adapter,
+            discover_benchmark_assets=discover_benchmark_assets,
+            download_oss_object=_download_oss_object,
+            resolve_benchmark_texture_key=_resolve_benchmark_texture_key,
+            benchmark_tree_material=_benchmark_tree_material,
+            export_url_for_format=_export_url_for_format,
+            read_export_artifact=_read_export_artifact,
+            export_filename=_export_filename,
+        )
+    )
+    app.include_router(
+        create_actions_router(
+            require_session=require_session,
+            studio_store=studio_store,
+            websocket_manager=websocket_manager,
+            interaction_service=interaction_service,
+            publish_perception=_publish_perception,
+            update_session_live_signals=_update_session_live_signals,
+            looks_like_prompt_chip_action=_looks_like_prompt_chip_action,
+            files_root=files_root,
+            find_part=find_part,
+            read_lifecycle=read_lifecycle,
+            interpret_and_publish=interpret_and_publish,
+        )
+    )
+    app.include_router(
+        create_sessions_router(
+            require_session=require_session,
+            studio_store=studio_store,
+            websocket_manager=websocket_manager,
+            live_signals_payload=_live_signals_payload,
+            create_direction_suggestions=create_direction_suggestions,
+            clear_four_stage_session=four_stage_store.clear_session,
+        )
+    )
+    app.include_router(
+        create_candidates_router(
+            require_session=require_session,
+            studio_store=studio_store,
+            websocket_manager=websocket_manager,
+            generation_orchestrator=generation_orchestrator,
+            publish_perception=_publish_perception,
+            interaction_service=interaction_service,
+            record_candidate_memory=_record_candidate_memory,
+            legacy_job_store=legacy_job_store,
+            files_root=files_root,
+            validate_optional_session=_validate_optional_session,
+            record_candidate_rejection=_record_candidate_rejection,
+            build_prompt_chip_package=_build_prompt_chip_package,
+            hydrate_geometry_request=_hydrate_geometry_request,
+            hydrate_render_request=_hydrate_render_request,
+            next_action_after_accept=_next_action_after_accept,
+            next_action_after_reject=_next_action_after_reject,
+            geometry_worker=geometry_worker,
+            render_preview_worker=render_preview_worker,
+            interpret_and_publish=interpret_and_publish,
+            create_direction_suggestions=create_direction_suggestions,
+            register_worker_artifacts=_register_worker_artifacts,
+            save_worker_job=_save_worker_job,
+        )
+    )
+    app.include_router(create_system_router(enabled=settings.system_services_enabled))
+    app.include_router(
+        create_four_stage_router(
+            orchestrator=four_stage_orchestrator,
+            require_session=require_session,
+            files_root=files_root,
+            remote_worker_adapter=remote_worker_adapter,
+        )
+    )
+    app.include_router(
+        create_realtime_observation_router(
+            service=realtime_observation_service,
+            require_session=require_session,
+            interaction_service=interaction_orchestrator,
+        )
+    )
+    app.include_router(
+        create_interaction_router(
+            service=interaction_orchestrator,
+            require_session=require_session,
+        )
+    )
+    app.include_router(
+        create_projects_router(
+            store=experiment_project_store,
+            require_session=require_session,
+            files_root=files_root,
+        )
+    )
+
+    if (
+        settings.system_services_auto_bootstrap
+        and settings.system_services_enabled
+        and "pytest" not in sys.modules
+    ):
+
+        @app.on_event("startup")
+        async def _auto_bootstrap_services() -> None:
+            # Start cheap infrastructure (tunnels/worker/frontend) only. GPU
+            # model services are started explicitly from the UI bootstrap.
+            started = await system_services.auto_bootstrap_infra()
+            for item in started:
+                logger.info("AUTO_BOOTSTRAP service=%s ok=%s", item.get("id"), item.get("ok"))
+
+    if "pytest" not in sys.modules:
+
+        @app.on_event("startup")
+        async def _recover_four_stage_jobs() -> None:
+            recovered = four_stage_generation_service.recover_pending_jobs()
+            if recovered:
+                logger.info("FOUR_STAGE_RECOVERED_JOBS count=%s", recovered)
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
@@ -1237,25 +1618,6 @@ def create_app() -> FastAPI:
             },
         )
 
-    @app.get("/api/v1/assets/{asset_id}/export")
-    async def export_asset_mesh(asset_id: str, format: str = "glb") -> Response:
-        asset = studio_store.get_asset(asset_id)
-        if asset is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        url = _export_url_for_format(asset.mesh_url, asset.obj_url, format)
-        if not url:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Asset has no exportable {format.upper()} mesh",
-            )
-        content, content_type = await _read_export_artifact(url)
-        filename = _export_filename(asset.label or asset.asset_id, format)
-        return Response(
-            content=content,
-            media_type=content_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-        )
-
     @app.get("/api/v1/candidates/{candidate_id}/export")
     async def export_candidate_mesh(candidate_id: str, format: str = "glb") -> Response:
         candidate = studio_store.get_candidate(candidate_id)
@@ -1273,1969 +1635,6 @@ def create_app() -> FastAPI:
             content=content,
             media_type=content_type,
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-        )
-
-    @app.post("/api/v1/sessions")
-    async def create_session(request: SessionCreateRequest) -> SessionRecord:
-        return studio_store.create_session(request)
-
-    @app.get("/api/v1/sessions/{session_id}")
-    async def get_session(session_id: str) -> SessionRecord:
-        return require_session(session_id)
-
-    @app.get("/api/v1/sessions/{session_id}/memory")
-    async def get_session_memory(session_id: str) -> dict[str, object]:
-        session = require_session(session_id)
-        recent_events = studio_store.recent_events(session_id, limit=12)
-        recent_interpretations = studio_store.recent_interpretations(session_id, limit=12)
-        return {
-            "session_id": session_id,
-            "stage": session.stage.model_dump(mode="json"),
-            "candidate_memory": session.metadata.get("candidate_memory", {}),
-            "structured_memory": {
-                category: [item.model_dump(mode="json") for item in rows]
-                for category, rows in studio_store.memory_by_category(session_id, limit_per_category=8).items()
-            },
-            "recent_events": [
-                {
-                    "event_id": event.event_id,
-                    "type": event.type,
-                    "timestamp": event.timestamp.isoformat(),
-                    "asset_id": event.payload.get("asset_id"),
-                    "part_id": event.payload.get("part_id")
-                    or (event.payload.get("selection") or {}).get("part_id"),
-                    "creative_stage": event.payload.get("creative_stage")
-                    or (event.payload.get("generation") or {}).get("metadata", {}).get("stage"),
-                    "fidelity": event.payload.get("fidelity")
-                    or (event.payload.get("generation") or {}).get("metadata", {}).get("fidelity"),
-                    "candidate_id": event.payload.get("candidate_id"),
-                }
-                for event in recent_events
-            ],
-            "recent_interpretations": [
-                {
-                    "interpretation_id": item.interpretation_id,
-                    "source_event_id": item.source_event_id,
-                    "action_type": item.action_type,
-                    "predictor": item.predictor,
-                    "predictor_version": item.predictor_version,
-                    "primary_intent": item.primary_intent.value,
-                    "confidence": item.confidence,
-                    "ambiguity": item.ambiguity,
-                    "assistance_policy": item.assistance_policy.value,
-                    "target": item.target.model_dump(mode="json"),
-                }
-                for item in recent_interpretations
-            ],
-        }
-
-    @app.get("/api/v1/sessions/{session_id}/snapshot")
-    async def get_session_snapshot(session_id: str) -> SessionSnapshotResponse:
-        session = require_session(session_id)
-        active_asset = studio_store.get_asset(session.stage.active_asset_id) if session.stage.active_asset_id else None
-        active_job = studio_store.recent_session_job(session_id)
-        visible_candidates: list[Candidate] = []
-        if active_job:
-            visible_candidates = [
-                candidate
-                for candidate_id in active_job.candidate_ids[:12]
-                if (candidate := studio_store.get_candidate(candidate_id)) is not None
-            ]
-        artifacts = studio_store.list_artifacts(
-            session_id=session_id,
-            asset_id=active_asset.asset_id if active_asset else None,
-            limit=50,
-        )
-        if active_job:
-            for candidate in visible_candidates:
-                artifacts.extend(
-                    studio_store.list_artifacts(
-                        session_id=session_id,
-                        candidate_id=candidate.candidate_id,
-                        limit=20,
-                    )
-                )
-        deduped = {artifact.artifact_id: artifact for artifact in artifacts}
-        return SessionSnapshotResponse(
-            session=session,
-            active_asset=active_asset,
-            active_parts=active_asset.parts if active_asset else [],
-            active_job=active_job,
-            live_signals=_live_signals_payload(session)["live_signals"],
-            visible_candidates=visible_candidates,
-            recent_events=studio_store.recent_events(session_id, limit=20),
-            recent_interpretations=studio_store.recent_interpretations(session_id, limit=20),
-            artifacts=list(deduped.values())[:80],
-            intent_drafts=studio_store.list_intent_drafts(session_id, include_archived=True),
-            action_atoms=studio_store.list_action_atoms(session_id, limit=100),
-            directions=studio_store.list_directions(session_id, limit=100),
-            memory=studio_store.memory_by_category(session_id, limit_per_category=12),
-            solution_space=build_solution_space_view(studio_store, session, limit=50),
-        )
-
-    @app.get("/api/v1/sessions/{session_id}/memories")
-    async def list_session_memories(
-        session_id: str,
-        category: str | None = None,
-        asset_id: str | None = None,
-        part_id: str | None = None,
-        candidate_id: str | None = None,
-        limit: int = 100,
-    ) -> MemoryListResponse:
-        require_session(session_id)
-        return MemoryListResponse(
-            memories=studio_store.list_memories(
-                session_id=session_id,
-                category=category,
-                asset_id=asset_id,
-                part_id=part_id,
-                candidate_id=candidate_id,
-                limit=limit,
-            )
-        )
-
-    @app.get("/api/v1/artifacts")
-    async def list_artifacts(
-        session_id: str | None = None,
-        asset_id: str | None = None,
-        candidate_id: str | None = None,
-        worker: str | None = None,
-        type: str | None = None,
-        limit: int = 100,
-    ) -> ArtifactListResponse:
-        return ArtifactListResponse(
-            artifacts=studio_store.list_artifacts(
-                session_id=session_id,
-                asset_id=asset_id,
-                candidate_id=candidate_id,
-                worker=worker,
-                artifact_type=type,
-                limit=limit,
-            )
-        )
-
-    @app.get("/api/v1/artifacts/{artifact_id}")
-    async def get_artifact(artifact_id: str) -> ArtifactRecord:
-        artifact = studio_store.get_artifact(artifact_id)
-        if artifact is None:
-            raise HTTPException(status_code=404, detail=f"Artifact not found: {artifact_id}")
-        return artifact
-
-    @app.get("/api/v1/admin/state/export")
-    async def export_store_state() -> StoreStateSnapshot:
-        return studio_store.export_state()
-
-    @app.post("/api/v1/admin/state/import")
-    async def import_store_state(request: StoreStateImportRequest) -> StoreStateImportResponse:
-        try:
-            return studio_store.import_state(request.snapshot, replace=request.replace)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @app.post("/api/v1/interpretations/{interpretation_id}/decision")
-    async def decide_planner_interpretation(
-        interpretation_id: str,
-        request: PlannerInterpretationDecisionRequest,
-    ) -> PlannerInterpretationDecisionResponse:
-        session = require_session(request.session_id)
-        interpretation = studio_store.get_interpretation(interpretation_id)
-        if interpretation is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Interpretation not found: {interpretation_id}",
-            )
-        if interpretation.session_id != request.session_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Interpretation does not belong to the supplied session",
-            )
-
-        event_type = f"planner_interpretation_{request.decision}"
-        event = UserEvent(
-            type=event_type,
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "interpretation_id": interpretation.interpretation_id,
-                "decision": request.decision,
-                "reason": request.reason,
-                "primary_intent": interpretation.primary_intent.value,
-                "confidence": interpretation.confidence,
-                "ambiguity": interpretation.ambiguity,
-                "assistance_policy": interpretation.assistance_policy.value,
-                "target": interpretation.target.model_dump(mode="json"),
-                "suggested_assistance": [
-                    item.model_dump(mode="json") for item in interpretation.suggested_assistance
-                ],
-                "metadata": request.metadata,
-                "asset_id": interpretation.target.asset_id,
-                "part_id": interpretation.target.part_id,
-            },
-        )
-        studio_store.save_event(event)
-
-        memory = MemoryRecord(
-            memory_id=f"mem_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            category="reflective",
-            type=event_type,
-            source_id=interpretation.interpretation_id,
-            asset_id=interpretation.target.asset_id,
-            part_id=interpretation.target.part_id,
-            candidate_id=interpretation.features.get("candidate_id")
-            if isinstance(interpretation.features, dict)
-            else None,
-            confidence=interpretation.confidence,
-            content={
-                "decision": request.decision,
-                "reason": request.reason,
-                "primary_intent": interpretation.primary_intent.value,
-                "assistance_policy": interpretation.assistance_policy.value,
-                "suggested_assistance": [
-                    item.model_dump(mode="json") for item in interpretation.suggested_assistance
-                ],
-                "evidence": interpretation.evidence,
-                "metadata": request.metadata,
-            },
-            tags=["planner_control_gate", request.decision, interpretation.primary_intent.value],
-        )
-        studio_store.save_memory(memory)
-
-        stage = session.stage
-        if request.decision == "accepted":
-            stage.confidence = interpretation.confidence
-            stage.current_goal = f"Accepted planner intent: {interpretation.primary_intent.value}"
-            stage.active_asset_id = interpretation.target.asset_id or stage.active_asset_id
-            stage.active_part_id = interpretation.target.part_id or stage.active_part_id
-            if interpretation.suggested_assistance:
-                suggestion = interpretation.suggested_assistance[0]
-                stage.suggested_action = str(
-                    suggestion.metadata.get("suggested_next_action")
-                    or suggestion.label
-                    or suggestion.type
-                )
-            else:
-                stage.suggested_action = "continue_with_confirmed_intent"
-            if stage.phase == DesignPhase.idle:
-                stage.phase = DesignPhase.exploring
-            stage.evidence = [
-                *stage.evidence[-5:],
-                f"planner_interpretation_accepted:{interpretation.interpretation_id}",
-            ]
-        else:
-            stage.confidence = min(stage.confidence, max(0.2, 1.0 - interpretation.ambiguity))
-            stage.current_goal = "Planner interpretation rejected; revise intent or continue editing"
-            stage.suggested_action = "revise_intent_or_continue_editing"
-            stage.evidence = [
-                *stage.evidence[-5:],
-                f"planner_interpretation_rejected:{interpretation.interpretation_id}",
-            ]
-        studio_store.save_stage(request.session_id, stage)
-        session.metadata.setdefault("planner_control_gate", {})
-        if isinstance(session.metadata["planner_control_gate"], dict):
-            session.metadata["planner_control_gate"] = {
-                **session.metadata["planner_control_gate"],
-                "last_interpretation_id": interpretation.interpretation_id,
-                "last_decision": request.decision,
-                "last_event_id": event.event_id,
-                "last_memory_id": memory.memory_id,
-            }
-            studio_store.update_session(
-                request.session_id,
-                SessionUpdateRequest(metadata={"planner_control_gate": session.metadata["planner_control_gate"]}),
-            )
-
-        await websocket_manager.broadcast(
-            request.session_id,
-            "planner_interpretation_decision",
-            {
-                "interpretation_id": interpretation.interpretation_id,
-                "decision": request.decision,
-                "event_id": event.event_id,
-                "memory_id": memory.memory_id,
-            },
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "stage_update",
-            stage.model_dump(mode="json"),
-        )
-        direction_response: CrossDomainDivergenceResponse | None = None
-        if request.decision == "accepted" and request.metadata.get("auto_suggest_directions"):
-            asset_id = interpretation.target.asset_id or stage.active_asset_id
-            if asset_id and studio_store.get_asset(asset_id):
-                direction_response = await create_direction_suggestions(
-                    CrossDomainDivergenceRequest(
-                        session_id=request.session_id,
-                        asset_id=asset_id,
-                        interpretation_id=interpretation.interpretation_id,
-                        source_summary=str(
-                            request.metadata.get("source_summary")
-                            or "confirmed planner intent prompt expansion"
-                        ),
-                        constraints=[
-                            str(value)
-                            for value in request.metadata.get("preserved_constraints", [])
-                            if isinstance(value, str)
-                        ],
-                        dimensions=request.metadata.get("dimensions", []),
-                        candidate_count=int(request.metadata.get("direction_count") or 4),
-                        metadata={
-                            **request.metadata,
-                            "auto_suggest_source": "planner_interpretation_decision",
-                            "interpretation_id": interpretation.interpretation_id,
-                        },
-                    ),
-                    endpoint_name="suggested_analogy_directions",
-                )
-        return PlannerInterpretationDecisionResponse(
-            interpretation_id=interpretation.interpretation_id,
-            session_id=request.session_id,
-            decision=request.decision,
-            event_id=event.event_id,
-            memory_id=memory.memory_id,
-            updated_stage=stage,
-            suggested_directions=direction_response.directions if direction_response else [],
-            direction_response=direction_response,
-        )
-
-    @app.patch("/api/v1/sessions/{session_id}")
-    async def update_session(session_id: str, request: SessionUpdateRequest) -> SessionRecord:
-        session = studio_store.update_session(session_id, request)
-        if session is None:
-            raise HTTPException(status_code=404, detail=f"Session not found: {session_id}")
-        return session
-
-    @app.post("/api/v1/assets")
-    async def create_asset(request: AssetCreateRequest) -> object:
-        require_session(request.session_id)
-        return studio_store.create_asset(request)
-
-    @app.get("/api/v1/benchmark-assets")
-    async def list_benchmark_assets() -> BenchmarkAssetListResponse:
-        return BenchmarkAssetListResponse(assets=discover_benchmark_assets(files_root))
-
-    @app.post("/api/v1/benchmark-assets/{benchmark_id}/load")
-    async def load_benchmark_asset(
-        benchmark_id: str,
-        request: BenchmarkAssetLoadRequest,
-    ) -> object:
-        require_session(request.session_id)
-        benchmarks = {item.benchmark_id: item for item in discover_benchmark_assets(files_root)}
-        benchmark = benchmarks.get(benchmark_id)
-        if benchmark is None:
-            raise HTTPException(status_code=404, detail=f"Benchmark asset not found: {benchmark_id}")
-        if benchmark.metadata.get("source") in {"creativeflow_github_pages_picked", "local_white_model"}:
-            source_kind = str(benchmark.metadata.get("source") or "benchmark")
-            return studio_store.create_asset(
-                AssetCreateRequest(
-                    session_id=request.session_id,
-                    object_type=benchmark.object_type,
-                    label=benchmark.label,
-                    mesh_url=benchmark.mesh_url,
-                    obj_url=benchmark.obj_url,
-                    thumbnail_url=str(benchmark.metadata.get("image") or ""),
-                    metadata={
-                        "source": "benchmark",
-                        "benchmark_id": benchmark.benchmark_id,
-                        "benchmark_metadata": benchmark.metadata,
-                        "remote_asset": {
-                            "source": source_kind,
-                            "mesh_url": benchmark.mesh_url,
-                            "obj_url": benchmark.obj_url,
-                        },
-                        "storage_path": benchmark.metadata.get("storage_path"),
-                        "white_model_category": benchmark.metadata.get("category"),
-                        "white_model_collection": benchmark.metadata.get("collection"),
-                        "texture_index_rule": benchmark.metadata.get("texture_index_rule"),
-                    },
-                )
-            )
-        remote_source_mesh_path = benchmark.metadata.get("remote_source_mesh_path")
-        remote_source_glb_path = benchmark.metadata.get("remote_source_glb_path")
-        oss_host = str(benchmark.metadata.get("oss_host") or "").strip()
-        mesh_glb_key = str(benchmark.metadata.get("mesh_glb_key") or "").strip()
-        mesh_obj_key = str(
-            benchmark.metadata.get("mesh_obj_key")
-            or benchmark.metadata.get("source_mesh_obj_key")
-            or ""
-        ).strip()
-        materialized_mesh: tuple[bytes, str] | None = None
-        materialized_source: str | None = None
-        sidecar_files: dict[str, bytes] = {}
-        if oss_host and mesh_glb_key:
-            try:
-                materialized_mesh = (_download_oss_object(oss_host, mesh_glb_key), ".glb")
-                materialized_source = "oss_glb"
-            except OSError as exc:
-                raise HTTPException(
-                    status_code=502,
-                    detail=f"Benchmark GLB could not be loaded from OSS: {exc}",
-                ) from exc
-        if materialized_mesh is None and isinstance(remote_source_glb_path, str) and remote_source_glb_path:
-            try:
-                content, _content_type = await remote_worker_adapter.get_artifact_file(remote_source_glb_path)
-                materialized_mesh = (content, ".glb")
-                materialized_source = "remote_worker_glb"
-            except RuntimeError:
-                materialized_mesh = None
-        if materialized_mesh is None and isinstance(remote_source_mesh_path, str) and remote_source_mesh_path:
-            try:
-                content, _content_type = await remote_worker_adapter.get_artifact_file(remote_source_mesh_path)
-                materialized_mesh = (content, ".obj")
-                materialized_source = "remote_worker_obj"
-            except RuntimeError as exc:
-                if not oss_host or not mesh_obj_key:
-                    raise HTTPException(
-                        status_code=502,
-                        detail=(
-                            "Benchmark source mesh is registered, but the remote worker "
-                            f"could not provide it: {exc}"
-                        ),
-                    ) from exc
-                try:
-                    materialized_mesh = (_download_oss_object(oss_host, mesh_obj_key), ".obj")
-                    materialized_source = "oss_obj"
-                except OSError as oss_exc:
-                    raise HTTPException(
-                        status_code=502,
-                        detail=(
-                            "Benchmark source mesh could not be loaded from remote worker "
-                            f"or OSS: remote={exc}; oss={oss_exc}"
-                        ),
-                    ) from oss_exc
-        if materialized_mesh is None and oss_host and mesh_obj_key:
-            try:
-                materialized_mesh = (_download_oss_object(oss_host, mesh_obj_key), ".obj")
-                materialized_source = "oss_obj"
-            except OSError as exc:
-                raise HTTPException(
-                    status_code=502,
-                    detail=f"Benchmark OBJ could not be loaded from OSS: {exc}",
-                ) from exc
-        if materialized_mesh is not None and materialized_mesh[1] == ".obj":
-            material_key = str(benchmark.metadata.get("source_material_mtl_key") or "").strip()
-            texture_key = _resolve_benchmark_texture_key(benchmark.metadata)
-            if oss_host and material_key:
-                try:
-                    sidecar_files["material.mtl"] = _download_oss_object(oss_host, material_key)
-                    if texture_key:
-                        sidecar_files[Path(texture_key).name] = _download_oss_object(oss_host, texture_key)
-                except OSError:
-                    sidecar_files = {}
-            elif oss_host and texture_key:
-                try:
-                    texture_name = Path(texture_key).name
-                    sidecar_files["material.mtl"] = _benchmark_tree_material(texture_name)
-                    sidecar_files[texture_name] = _download_oss_object(oss_host, texture_key)
-                except OSError:
-                    sidecar_files = {}
-        remote_asset = (
-            {
-                "path": remote_source_mesh_path,
-                "glb_path": remote_source_glb_path,
-                "source": "creativeflow_benchmark_oss_manifest",
-                "asset_id": benchmark.benchmark_id,
-            }
-            if isinstance(remote_source_mesh_path, str) and remote_source_mesh_path
-            else None
-        )
-        asset = studio_store.create_asset(
-            AssetCreateRequest(
-                session_id=request.session_id,
-                object_type=benchmark.object_type,
-                label=benchmark.label,
-                mesh_url=benchmark.mesh_url if materialized_mesh is None else None,
-                obj_url=benchmark.obj_url if materialized_mesh is None else None,
-                thumbnail_url=None,
-                metadata={
-                    "source": "benchmark",
-                    "benchmark_id": benchmark.benchmark_id,
-                    "remote_asset": remote_asset,
-                    "remote_source_mesh_path": remote_source_mesh_path,
-                    "benchmark_metadata": benchmark.metadata,
-                    "texture_index_rule": benchmark.metadata.get("texture_index_rule"),
-                },
-            )
-        )
-        if materialized_mesh is not None:
-            content, suffix = materialized_mesh
-            asset_dir = files_root / "assets" / asset.asset_id
-            asset_dir.mkdir(parents=True, exist_ok=True)
-            target = asset_dir / f"source{suffix}"
-            target.write_bytes(content)
-            for name, data in sidecar_files.items():
-                (asset_dir / name).write_bytes(data)
-            if suffix == ".glb":
-                asset.mesh_url = f"/files/assets/{asset.asset_id}/source{suffix}"
-                asset.obj_url = None
-            else:
-                asset.mesh_url = None
-                asset.obj_url = f"/files/assets/{asset.asset_id}/source{suffix}"
-            asset.metadata["storage_path"] = str(target)
-            asset.metadata["materialized_from_remote"] = True
-            asset.metadata["materialized_source"] = materialized_source or "unknown"
-            if sidecar_files:
-                asset.metadata["material_sidecars"] = sorted(sidecar_files)
-                asset.metadata["material_sidecars_generated_by_rule"] = "material.mtl" in sidecar_files and not benchmark.metadata.get(
-                    "source_material_mtl_key"
-                )
-        return asset
-
-    @app.post("/api/v1/assets/upload")
-    async def upload_asset(
-        session_id: str = Form(...),
-        object_type: str = Form("object"),
-        label: str | None = Form(None),
-        metadata: str | None = Form(None),
-        file: UploadFile = File(...),
-    ) -> object:
-        require_session(session_id)
-        suffix = Path(file.filename or "source.glb").suffix.lower()
-        if suffix not in {".glb", ".obj", ".zip"}:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {suffix}")
-        asset_id = f"asset_{uuid4().hex[:10]}"
-        asset_dir = files_root / "assets" / asset_id
-        asset_dir.mkdir(parents=True, exist_ok=True)
-        target = asset_dir / f"source{suffix}"
-        with target.open("wb") as out:
-            shutil.copyfileobj(file.file, out)
-        parsed_metadata = {}
-        if metadata:
-            try:
-                parsed_metadata = json.loads(metadata)
-            except json.JSONDecodeError as exc:
-                raise HTTPException(status_code=400, detail="metadata must be JSON") from exc
-        asset = studio_store.create_asset(
-            AssetCreateRequest(
-                session_id=session_id,
-                object_type=object_type,
-                label=label or file.filename or f"{object_type} source model",
-                mesh_url=f"/files/assets/{asset_id}/source{suffix}" if suffix in {".glb", ".zip"} else None,
-                obj_url=f"/files/assets/{asset_id}/source{suffix}" if suffix == ".obj" else None,
-                thumbnail_url=None,
-                metadata={
-                    **parsed_metadata,
-                    "uploaded_filename": file.filename,
-                    "storage_path": str(target),
-                },
-            )
-        )
-        old_asset_id = asset.asset_id
-        asset.asset_id = asset_id
-        if old_asset_id in studio_store.assets:
-            del studio_store.assets[old_asset_id]
-        studio_store.assets[asset_id] = asset
-        session = require_session(session_id)
-        session.stage.active_asset_id = asset_id
-        studio_store.save_stage(session_id, session.stage)
-        return asset
-
-    @app.post("/api/v1/reference-images/upload")
-    async def upload_reference_image(
-        session_id: str = Form(...),
-        asset_id: str | None = Form(None),
-        role: str = Form("shape_reference"),
-        metadata: str | None = Form(None),
-        file: UploadFile = File(...),
-    ) -> ArtifactRecord:
-        require_session(session_id)
-        if asset_id and studio_store.get_asset(asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        suffix = Path(file.filename or "reference.png").suffix.lower()
-        if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
-            raise HTTPException(status_code=400, detail=f"Unsupported reference image type: {suffix}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        ref_dir = files_root / "references" / artifact_id
-        ref_dir.mkdir(parents=True, exist_ok=True)
-        target = ref_dir / f"source{suffix}"
-        with target.open("wb") as out:
-            shutil.copyfileobj(file.file, out)
-        parsed_metadata: dict[str, object] = {}
-        if metadata:
-            try:
-                raw_metadata = json.loads(metadata)
-            except json.JSONDecodeError as exc:
-                raise HTTPException(status_code=400, detail="metadata must be JSON") from exc
-            if isinstance(raw_metadata, dict):
-                parsed_metadata = raw_metadata
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="reference_image",
-                url=f"/files/references/{artifact_id}/source{suffix}",
-                session_id=session_id,
-                asset_id=asset_id,
-                worker="manual",
-                operation="reference_image_upload",
-                metadata={
-                    **parsed_metadata,
-                    "role": role,
-                    "uploaded_filename": file.filename,
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="reference_image_attached",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "artifact_url": artifact.url,
-                "asset_id": asset_id,
-                "role": role,
-                "filename": file.filename,
-                "metadata": parsed_metadata,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=session_id,
-                category="working",
-                type="reference_image",
-                source_id=artifact.artifact_id,
-                asset_id=asset_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "role": role,
-                },
-                tags=["reference_image", role],
-            )
-        )
-        await websocket_manager.broadcast(
-            session_id,
-            "reference_image_attached",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/reference-models/upload")
-    async def upload_reference_model(
-        session_id: str = Form(...),
-        asset_id: str | None = Form(None),
-        role: str = Form("model_reference"),
-        metadata: str | None = Form(None),
-        file: UploadFile = File(...),
-    ) -> ArtifactRecord:
-        require_session(session_id)
-        if asset_id and studio_store.get_asset(asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        suffix = Path(file.filename or "reference.glb").suffix.lower()
-        if suffix not in {".glb", ".obj", ".zip"}:
-            raise HTTPException(status_code=400, detail=f"Unsupported reference model type: {suffix}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        ref_dir = files_root / "reference-models" / artifact_id
-        ref_dir.mkdir(parents=True, exist_ok=True)
-        target = ref_dir / f"source{suffix}"
-        with target.open("wb") as out:
-            shutil.copyfileobj(file.file, out)
-        parsed_metadata: dict[str, object] = {}
-        if metadata:
-            try:
-                raw_metadata = json.loads(metadata)
-            except json.JSONDecodeError as exc:
-                raise HTTPException(status_code=400, detail="metadata must be JSON") from exc
-            if isinstance(raw_metadata, dict):
-                parsed_metadata = raw_metadata
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="reference_model",
-                url=f"/files/reference-models/{artifact_id}/source{suffix}",
-                session_id=session_id,
-                asset_id=asset_id,
-                worker="manual",
-                operation="reference_model_upload",
-                metadata={
-                    **parsed_metadata,
-                    "role": role,
-                    "uploaded_filename": file.filename,
-                    "storage_path": str(target),
-                    "model_ref_kind": "intent_reference_not_active_asset",
-                },
-            )
-        )
-        event = UserEvent(
-            type="reference_model_attached",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "artifact_url": artifact.url,
-                "asset_id": asset_id,
-                "role": role,
-                "filename": file.filename,
-                "metadata": parsed_metadata,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=session_id,
-                category="working",
-                type="reference_model",
-                source_id=artifact.artifact_id,
-                asset_id=asset_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "role": role,
-                },
-                tags=["reference_model", role],
-            )
-        )
-        await websocket_manager.broadcast(
-            session_id,
-            "reference_model_attached",
-            {"artifact": artifact.model_dump(mode="json"), "event_id": event.event_id},
-        )
-        return artifact
-
-    @app.get("/api/v1/assets/{asset_id}")
-    async def get_asset(asset_id: str) -> object:
-        asset = studio_store.get_asset(asset_id)
-        if asset is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        return asset
-
-    @app.get("/api/v1/assets/{asset_id}/parts")
-    async def get_asset_parts(asset_id: str) -> AssetPartsResponse:
-        asset = studio_store.get_asset(asset_id)
-        if asset is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        return AssetPartsResponse(asset_id=asset_id, parts=asset.parts)
-
-    @app.patch("/api/v1/assets/{asset_id}/parts/{part_id}")
-    async def update_asset_part(
-        asset_id: str,
-        part_id: str,
-        request: PartUpdateRequest,
-    ) -> PartRecord:
-        asset = studio_store.get_asset(asset_id)
-        if asset is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
-        for index, part in enumerate(asset.parts):
-            if part.part_id != part_id:
-                continue
-            if request.label is not None:
-                part.label = request.label.strip() or part.label
-            if request.type is not None:
-                part.type = request.type.strip() or part.type
-            if request.lifecycle is not None:
-                part.lifecycle = request.lifecycle
-                part.metadata = {**part.metadata, "lifecycle": request.lifecycle}
-            if request.metadata:
-                part.metadata = {**part.metadata, **request.metadata}
-                if "lifecycle" in request.metadata:
-                    part.lifecycle = request.metadata["lifecycle"]
-            asset.parts[index] = part
-            studio_store.assets[asset_id] = asset
-            return part
-        raise HTTPException(status_code=404, detail=f"Part not found: {part_id}")
-
-    @app.post("/api/v1/parts/discover")
-    async def discover_parts(request: PartDiscoveryRequest) -> PartDiscoveryResponse:
-        require_session(request.session_id)
-        if studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        try:
-            return await autopartgen_adapter.discover_parts(request)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    @app.post("/api/v1/parts/from-mask")
-    async def discover_parts_from_mask(request: PartDiscoveryRequest) -> PartDiscoveryResponse:
-        request.mode = "image_mask"
-        require_session(request.session_id)
-        if studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        return await autopartgen_adapter.discover_parts(request)
-
-    @app.post("/api/v1/geometry/{operation}")
-    async def run_geometry_operation(
-        operation: str,
-        request: GeometryWorkerRequest,
-    ) -> GeometryWorkerResponse:
-        _validate_optional_session(request.session_id)
-        _hydrate_geometry_request(request)
-        response = await geometry_worker.run(operation, request)
-        artifacts = _register_worker_artifacts(worker="geometry", response=response, request=request)
-        if artifacts:
-            response.artifacts = {
-                **response.artifacts,
-                "artifact_ids": [artifact.artifact_id for artifact in artifacts],
-            }
-        _save_worker_job(worker="geometry", request=request, response=response, artifacts=artifacts)
-        return response
-
-    @app.get("/api/v1/geometry/jobs/{job_id}")
-    async def get_geometry_job(job_id: str) -> GeometryWorkerResponse:
-        job = studio_store.get_worker_job(job_id)
-        if job is None or job.worker != "geometry":
-            raise HTTPException(status_code=404, detail=f"Geometry worker job not found: {job_id}")
-        return GeometryWorkerResponse(**job.response)
-
-    @app.post("/api/v1/geometry/jobs/{job_id}/cancel")
-    async def cancel_geometry_job(job_id: str) -> GeometryWorkerResponse:
-        job = studio_store.get_worker_job(job_id)
-        if job is None or job.worker != "geometry":
-            raise HTTPException(status_code=404, detail=f"Geometry worker job not found: {job_id}")
-        if job.status in {JobStatus.queued, JobStatus.running}:
-            job.status = JobStatus.cancelled
-            job.ok = False
-            job.error = ApiErrorBody(code="GEOMETRY_JOB_CANCELLED", message="Geometry job cancelled.", retryable=False)
-            job.response = {
-                **job.response,
-                "ok": False,
-                "status": JobStatus.cancelled.value,
-                "error": job.error.model_dump(mode="json"),
-            }
-            studio_store.save_worker_job(job)
-        return GeometryWorkerResponse(**job.response)
-
-    @app.post("/api/v1/render/{operation}")
-    async def run_render_operation(
-        operation: str,
-        request: RenderPreviewRequest,
-    ) -> RenderPreviewResponse:
-        _validate_optional_session(request.session_id)
-        _hydrate_render_request(request)
-        response = await render_preview_worker.run(operation, request)
-        artifacts = _register_worker_artifacts(worker="render", response=response, request=request)
-        if artifacts:
-            response.artifacts = {
-                **response.artifacts,
-                "artifact_ids": [artifact.artifact_id for artifact in artifacts],
-            }
-        _save_worker_job(worker="render", request=request, response=response, artifacts=artifacts)
-        return response
-
-    @app.get("/api/v1/render/jobs/{job_id}")
-    async def get_render_job(job_id: str) -> RenderPreviewResponse:
-        job = studio_store.get_worker_job(job_id)
-        if job is None or job.worker != "render":
-            raise HTTPException(status_code=404, detail=f"Render worker job not found: {job_id}")
-        return RenderPreviewResponse(**job.response)
-
-    @app.post("/api/v1/render/jobs/{job_id}/cancel")
-    async def cancel_render_job(job_id: str) -> RenderPreviewResponse:
-        job = studio_store.get_worker_job(job_id)
-        if job is None or job.worker != "render":
-            raise HTTPException(status_code=404, detail=f"Render worker job not found: {job_id}")
-        if job.status in {JobStatus.queued, JobStatus.running}:
-            job.status = JobStatus.cancelled
-            job.ok = False
-            job.error = ApiErrorBody(code="RENDER_JOB_CANCELLED", message="Render job cancelled.", retryable=False)
-            job.response = {
-                **job.response,
-                "ok": False,
-                "status": JobStatus.cancelled.value,
-                "error": job.error.model_dump(mode="json"),
-            }
-            studio_store.save_worker_job(job)
-        return RenderPreviewResponse(**job.response)
-
-    @app.post("/api/v1/intent-drafts")
-    async def create_intent_draft(request: IntentDraftCreateRequest) -> IntentDraft:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        draft = studio_store.create_intent_draft(request)
-        await websocket_manager.broadcast(
-            request.session_id,
-            "intent_draft_saved",
-            draft.model_dump(mode="json"),
-        )
-        return draft
-
-    @app.post("/api/v1/sessions/{session_id}/actions")
-    async def create_action_atom(
-        session_id: str,
-        request: ActionAtomCreateRequest,
-    ) -> ActionAtom:
-        require_session(session_id)
-        if _looks_like_prompt_chip_action(request):
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Prompt chips / analogy keywords are not ActionAtoms. "
-                    "Use POST /api/v1/prompt/compose and generation.metadata.selected_prompt_tokens."
-                ),
-            )
-        target_asset_id = (
-            (request.target or {}).get("asset_id")
-            or (request.evidence or {}).get("asset_id")
-            or (request.metadata or {}).get("asset_id")
-        )
-        target_part_id = (
-            (request.target or {}).get("part_id")
-            or (request.evidence or {}).get("part_id")
-            or (request.metadata or {}).get("part_id")
-        )
-        part_lifecycle = (
-            (request.target or {}).get("lifecycle")
-            or (request.evidence or {}).get("part_lifecycle")
-            or (request.metadata or {}).get("lifecycle")
-        )
-        if target_asset_id and target_part_id:
-            asset_for_atom = studio_store.get_asset(str(target_asset_id))
-            if asset_for_atom is not None:
-                matched = find_part(asset_for_atom.parts, str(target_part_id))
-                if matched is not None:
-                    part_lifecycle = read_lifecycle(matched)
-        if not part_lifecycle:
-            part_lifecycle = "tentative_raycast"
-
-        evidence = dict(request.evidence or {})
-        evidence["part_lifecycle"] = part_lifecycle
-        target = dict(request.target or {})
-        target["lifecycle"] = part_lifecycle
-        atom = ActionAtom(
-            atom_id=request.atom_id or f"atom_{uuid4().hex[:10]}",
-            tool=request.tool,
-            target=target,
-            evidence={**evidence, "metadata": {**(request.metadata or {}), "part_lifecycle": part_lifecycle}}
-            if request.metadata
-            else evidence,
-            order=request.order,
-        )
-        studio_store.save_action_atom(session_id, atom)
-        event = UserEvent(
-            type="action_atom_created",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=session_id,
-            payload={
-                "atom": atom.model_dump(mode="json"),
-                "asset_id": atom.target.get("asset_id") or atom.evidence.get("asset_id"),
-                "part_id": atom.target.get("part_id") or atom.evidence.get("part_id"),
-                "part_lifecycle": part_lifecycle,
-                "selection": {
-                    "type": "part" if atom.target.get("part_id") or atom.evidence.get("part_id") else "none",
-                    "part_id": atom.target.get("part_id") or atom.evidence.get("part_id"),
-                    "asset_id": atom.target.get("asset_id") or atom.evidence.get("asset_id"),
-                    "label": atom.target.get("label"),
-                    "lifecycle": part_lifecycle,
-                },
-                "intent_text": atom.evidence.get("intent_text") or atom.evidence.get("text"),
-                "live_signals": atom.evidence.get("live_signals") or {},
-            },
-        )
-        studio_store.save_event(event)
-        live_signals_update = _update_session_live_signals(
-            session_id,
-            event.payload.get("live_signals"),
-            "action_atom_created",
-        )
-        if live_signals_update["live_signals"]:
-            await websocket_manager.broadcast(
-                session_id,
-                "live_signals_updated",
-                live_signals_update,
-            )
-        await websocket_manager.broadcast(
-            session_id,
-            "action_atom_created",
-            {
-                "event_id": event.event_id,
-                "action_atom_id": atom.atom_id,
-                "atom": atom.model_dump(mode="json"),
-            },
-        )
-        await interpret_and_publish(
-            session_id=session_id,
-            event=event,
-            interaction_service=interaction_service,
-            publish_perception=_publish_perception,
-            defer_vlm=True,
-        )
-        return atom
-
-    @app.get("/api/v1/sessions/{session_id}/actions")
-    async def list_action_atoms(session_id: str, limit: int = 100) -> dict[str, list[ActionAtom]]:
-        require_session(session_id)
-        return {"actions": studio_store.list_action_atoms(session_id, limit=limit)}
-
-    @app.post("/api/v1/annotations")
-    async def create_annotation_artifact(
-        request: AnnotationArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        annotation_dir = files_root / "annotations" / artifact_id
-        annotation_dir.mkdir(parents=True, exist_ok=True)
-        target = annotation_dir / "stroke.json"
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "text": request.text,
-            "strokes": request.strokes,
-            "projection": request.projection,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="annotation_stroke",
-                url=f"/files/annotations/{artifact_id}/stroke.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="annotation_stroke_commit",
-                metadata={
-                    **request.metadata,
-                    "text": request.text,
-                    "stroke_count": len(request.strokes),
-                    "projection": request.projection,
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="annotation_stroke_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "stroke_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "annotation_text": request.text,
-                "stroke_count": len(request.strokes),
-                "projection": request.projection,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="annotation_stroke",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "text": request.text,
-                    "stroke_count": len(request.strokes),
-                    "projection": request.projection,
-                },
-                tags=["annotation", "2d_pencil"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "annotation_stroke_committed",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/brush-masks")
-    async def create_brush_mask_artifact(
-        request: BrushMaskArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        mask_dir = files_root / "brush-masks" / artifact_id
-        mask_dir.mkdir(parents=True, exist_ok=True)
-        target = mask_dir / "mask.json"
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "label": request.label,
-            "mask": request.mask,
-            "projection": request.projection,
-            "metrics": request.metrics,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="brush_mask",
-                url=f"/files/brush-masks/{artifact_id}/mask.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="brush_mask_commit",
-                metrics=request.metrics,
-                metadata={
-                    **request.metadata,
-                    "label": request.label,
-                    "projection": request.projection,
-                    "mask_kind": request.mask.get("kind"),
-                    "coverage": request.metrics.get("coverage"),
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="brush_mask_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "mask_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "label": request.label,
-                "coverage": request.metrics.get("coverage"),
-                "projection": request.projection,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="brush_mask",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "label": request.label,
-                    "coverage": request.metrics.get("coverage"),
-                    "projection": request.projection,
-                    "mask": request.mask,
-                },
-                tags=["brush", "surface_mask", "3d_brush"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "brush_mask_committed",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/smooth-operations")
-    async def create_smooth_operation_artifact(
-        request: SmoothOperationArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        operation_dir = files_root / "smooth-operations" / artifact_id
-        operation_dir.mkdir(parents=True, exist_ok=True)
-        target = operation_dir / "operation.json"
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "label": request.label,
-            "region": request.region,
-            "brush": request.brush,
-            "parameters": request.parameters,
-            "preview": request.preview,
-            "metrics": request.metrics,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="smooth_operation",
-                url=f"/files/smooth-operations/{artifact_id}/operation.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="smooth_operation_commit",
-                metrics=request.metrics,
-                metadata={
-                    **request.metadata,
-                    "label": request.label,
-                    "region": request.region,
-                    "brush_radius": request.brush.get("radius"),
-                    "strength": request.parameters.get("strength"),
-                    "preserve_boundary": request.parameters.get("preserve_boundary"),
-                    "preview_mesh_url": request.preview.get("preview_mesh_url"),
-                    "geometry_job_id": request.preview.get("geometry_job_id"),
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="smooth_operation_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "operation_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "label": request.label,
-                "region": request.region,
-                "strength": request.parameters.get("strength"),
-                "preserve_boundary": request.parameters.get("preserve_boundary"),
-                "preview_mesh_url": request.preview.get("preview_mesh_url"),
-                "geometry_job_id": request.preview.get("geometry_job_id"),
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="smooth_operation",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "label": request.label,
-                    "region": request.region,
-                    "brush": request.brush,
-                    "parameters": request.parameters,
-                    "preview": request.preview,
-                    "metrics": request.metrics,
-                },
-                tags=["smooth", "3d_sculpt", "local_geometry"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "smooth_operation_committed",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/primitive-additions")
-    async def create_primitive_addition_artifact(
-        request: PrimitiveAdditionArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        primitive_dir = files_root / "primitive-additions" / artifact_id
-        primitive_dir.mkdir(parents=True, exist_ok=True)
-        target = primitive_dir / "primitive.json"
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "primitive": request.primitive,
-            "transform": request.transform,
-            "relation": request.relation,
-            "constraints": request.constraints,
-            "preview": request.preview,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="primitive_addition",
-                url=f"/files/primitive-additions/{artifact_id}/primitive.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="primitive_addition_commit",
-                metadata={
-                    **request.metadata,
-                    "primitive": request.primitive,
-                    "transform": request.transform,
-                    "relation": request.relation,
-                    "constraint_count": len(request.constraints),
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="primitive_addition_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "primitive_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "primitive": request.primitive,
-                "transform": request.transform,
-                "relation": request.relation,
-                "constraints": request.constraints,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="primitive_addition",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "primitive": request.primitive,
-                    "transform": request.transform,
-                    "relation": request.relation,
-                    "constraints": request.constraints,
-                    "preview": request.preview,
-                },
-                tags=["add", "primitive", "3d_geometry"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "primitive_addition_committed",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/drag-operations")
-    async def create_drag_operation_artifact(
-        request: DragOperationArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        drag_dir = files_root / "drag-operations" / artifact_id
-        drag_dir.mkdir(parents=True, exist_ok=True)
-        target = drag_dir / "drag.json"
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "label": request.label,
-            "drag": request.drag,
-            "region": request.region,
-            "preview": request.preview,
-            "metrics": request.metrics,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="drag_operation",
-                url=f"/files/drag-operations/{artifact_id}/drag.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="drag_operation_commit",
-                metrics=request.metrics,
-                metadata={
-                    **request.metadata,
-                    "label": request.label,
-                    "drag": request.drag,
-                    "region": request.region,
-                    "drag_length": request.metrics.get("drag_length"),
-                    "direction_relation": request.metrics.get("direction_relation"),
-                    "influence_radius": request.drag.get("influence_radius"),
-                    "preview_mesh_url": request.preview.get("preview_mesh_url"),
-                    "geometry_job_id": request.preview.get("geometry_job_id"),
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="drag_operation_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "drag_operation_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "label": request.label,
-                "drag": request.drag,
-                "region": request.region,
-                "preview": request.preview,
-                "metrics": request.metrics,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="drag_operation",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "label": request.label,
-                    "drag": request.drag,
-                    "region": request.region,
-                    "preview": request.preview,
-                    "metrics": request.metrics,
-                },
-                tags=["drag", "3d_transform", "local_geometry"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "drag_operation_committed",
-            {
-                "artifact": artifact.model_dump(mode="json"),
-                "event_id": event.event_id,
-            },
-        )
-        return artifact
-
-    @app.post("/api/v1/focus-observations")
-    async def create_focus_observation_artifact(
-        request: FocusObservationArtifactCreateRequest,
-    ) -> ArtifactRecord:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        artifact_id = f"art_{uuid4().hex[:10]}"
-        focus_dir = files_root / "focus-observations" / artifact_id
-        focus_dir.mkdir(parents=True, exist_ok=True)
-        target = focus_dir / "focus.json"
-        part_lifecycle = None
-        if request.asset_id and request.part_id:
-            asset_for_focus = studio_store.get_asset(request.asset_id)
-            if asset_for_focus is not None:
-                focused = find_part(asset_for_focus.parts, request.part_id)
-                if focused is not None:
-                    part_lifecycle = read_lifecycle(focused)
-        if part_lifecycle is None:
-            part_lifecycle = str(
-                (request.metadata or {}).get("lifecycle")
-                or (request.observation or {}).get("lifecycle")
-                or "tentative_raycast"
-            )
-        observation = {
-            **(request.observation or {}),
-            "part_lifecycle": part_lifecycle,
-            "lifecycle": part_lifecycle,
-        }
-        payload = {
-            "artifact_id": artifact_id,
-            "session_id": request.session_id,
-            "asset_id": request.asset_id,
-            "part_id": request.part_id,
-            "label": request.label,
-            "part_lifecycle": part_lifecycle,
-            "observation": observation,
-            "viewport": request.viewport,
-            "metrics": request.metrics,
-            "metadata": request.metadata,
-            "created_at": now_utc().isoformat(),
-        }
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = studio_store.save_artifact(
-            ArtifactRecord(
-                artifact_id=artifact_id,
-                type="focus_observation",
-                url=f"/files/focus-observations/{artifact_id}/focus.json",
-                session_id=request.session_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                worker="manual",
-                operation="focus_observation_commit",
-                metrics=request.metrics,
-                metadata={
-                    **request.metadata,
-                    "label": request.label,
-                    "observation": observation,
-                    "viewport": request.viewport,
-                    "dwell_ms": request.metrics.get("dwell_ms"),
-                    "focus_source": observation.get("focus_source"),
-                    "part_lifecycle": part_lifecycle,
-                    "storage_path": str(target),
-                },
-            )
-        )
-        event = UserEvent(
-            type="focus_observation_committed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "artifact_id": artifact.artifact_id,
-                "focus_observation_url": artifact.url,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "label": request.label,
-                "part_lifecycle": part_lifecycle,
-                "observation": observation,
-                "viewport": request.viewport,
-                "metrics": request.metrics,
-            },
-        )
-        studio_store.save_event(event)
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="focus_observation",
-                source_id=artifact.artifact_id,
-                asset_id=request.asset_id,
-                part_id=request.part_id,
-                content={
-                    "artifact": artifact.model_dump(mode="json"),
-                    "event_id": event.event_id,
-                    "label": request.label,
-                    "observation": request.observation,
-                    "viewport": request.viewport,
-                    "metrics": request.metrics,
-                },
-                tags=["hover", "attention", "focus_observation"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "focus_observation_committed",
-            {"artifact": artifact.model_dump(mode="json"), "event_id": event.event_id},
-        )
-        return artifact
-
-    @app.get("/api/v1/sessions/{session_id}/intent-drafts")
-    async def list_intent_drafts(
-        session_id: str,
-        include_archived: bool = False,
-    ) -> IntentDraftListResponse:
-        require_session(session_id)
-        return IntentDraftListResponse(
-            drafts=studio_store.list_intent_drafts(
-                session_id,
-                include_archived=include_archived,
-            )
-        )
-
-    @app.patch("/api/v1/intent-drafts/{draft_id}")
-    async def update_intent_draft(
-        draft_id: str,
-        request: IntentDraftUpdateRequest,
-    ) -> IntentDraft:
-        draft = studio_store.update_intent_draft(draft_id, request)
-        if draft is None:
-            raise HTTPException(status_code=404, detail=f"Intent draft not found: {draft_id}")
-        await websocket_manager.broadcast(
-            draft.session_id,
-            "intent_draft_saved",
-            draft.model_dump(mode="json"),
-        )
-        return draft
-
-    @app.post("/api/v1/sessions/{session_id}/episodes")
-    async def create_intent_episode(
-        session_id: str,
-        request: IntentEpisodeCreateRequest,
-    ) -> IntentEpisodeResponse:
-        session = require_session(session_id)
-        draft = None
-        if request.intent_draft_id:
-            draft = studio_store.get_intent_draft(request.intent_draft_id)
-            if draft is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Intent draft not found: {request.intent_draft_id}",
-                )
-            if draft.session_id != session_id:
-                raise HTTPException(status_code=400, detail="Intent draft belongs to another session")
-        atoms: list[ActionAtom] = []
-        seen: set[str] = set()
-        for atom_id in request.action_atom_ids:
-            atom = studio_store.get_action_atom(atom_id)
-            if atom is None:
-                raise HTTPException(status_code=404, detail=f"Action atom not found: {atom_id}")
-            atoms.append(atom)
-            seen.add(atom.atom_id)
-        if draft:
-            for atom in draft.behavior_atoms:
-                if atom.atom_id not in seen:
-                    atoms.append(atom)
-                    seen.add(atom.atom_id)
-        for atom in request.behavior_atoms:
-            if atom.atom_id not in seen:
-                atoms.append(atom)
-                seen.add(atom.atom_id)
-                studio_store.save_action_atom(session_id, atom)
-        episode = IntentEpisodeResponse(
-            episode_id=f"ep_{uuid4().hex[:10]}",
-            session_id=session_id,
-            asset_id=draft.asset_id if draft else session.stage.active_asset_id,
-            intent_draft_id=request.intent_draft_id,
-            behavior_atoms=sorted(atoms, key=lambda item: item.order),
-            text=request.text if request.text is not None else (draft.text if draft else None),
-            image_refs=request.image_refs or (draft.image_refs if draft else []),
-            model_refs=request.model_refs or (draft.model_refs if draft else []),
-            context_snapshot_id=request.context_snapshot_id,
-            metadata={
-                **request.metadata,
-                "behavior_count": len(atoms),
-                "compatibility_endpoint": True,
-            },
-        )
-        event = UserEvent(
-            type="intent_episode_submitted",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=session_id,
-            payload=episode.model_dump(mode="json"),
-        )
-        studio_store.save_event(event)
-        interpretation = await interpret_and_publish(
-            session_id=session_id,
-            event=event,
-            interaction_service=interaction_service,
-            publish_perception=_publish_perception,
-            defer_vlm=True,
-        )
-        episode.planner_interpretation = interpretation
-        episode.metadata = {
-            **episode.metadata,
-            "planner_interpretation_id": interpretation.interpretation_id,
-            "planner_confidence": interpretation.confidence,
-            "planner_primary_intent": interpretation.primary_intent.value,
-        }
-        studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=session_id,
-                category="working",
-                type="intent_episode",
-                source_id=episode.episode_id,
-                asset_id=episode.asset_id,
-                confidence=0.84,
-                content=episode.model_dump(mode="json"),
-                tags=["intent_episode", "behavior_composition"],
-            )
-        )
-        if draft and draft.status != "sent":
-            studio_store.update_intent_draft(
-                draft.draft_id,
-                IntentDraftUpdateRequest(
-                    status="sent",
-                    metadata={"episode_id": episode.episode_id},
-                ),
-            )
-        await websocket_manager.broadcast(
-            session_id,
-            "intent_episode_submitted",
-            episode.model_dump(mode="json"),
-        )
-        return episode
-
-    @app.patch("/api/v1/directions/{direction_id}")
-    async def update_direction(
-        direction_id: str,
-        request: DirectionUpdateRequest,
-    ) -> AnalogyDirection:
-        direction = studio_store.get_direction(direction_id)
-        if direction is None:
-            raise HTTPException(status_code=404, detail=f"Direction not found: {direction_id}")
-        if request.status is not None:
-            direction.metadata["status"] = request.status
-            direction.metadata["selected"] = request.status in {"selected", "pinned"}
-        direction.metadata.update(request.metadata)
-        session_id = str(direction.metadata.get("session_id") or "")
-        if not session_id:
-            session_id = _session_id_for_direction(direction_id)
-        studio_store.save_direction(session_id, direction)
-        await websocket_manager.broadcast(
-            session_id,
-            "directions_updated",
-            {"directions": [direction.model_dump(mode="json")]},
-        )
-        return direction
-
-    @app.post("/api/v1/prompt/compose")
-    async def compose_prompt_tokens(request: PromptComposeRequest) -> PromptComposeResponse:
-        require_session(request.session_id)
-        if request.asset_id and studio_store.get_asset(request.asset_id) is None:
-            raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
-        package = _build_prompt_chip_package(request)
-        event = UserEvent(
-            type="prompt_tokens_composed",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "asset_id": request.asset_id,
-                "intent_draft_id": request.intent_draft_id,
-                "analogy_prompt_package": package,
-                "final_prompt": package["final_prompt"],
-                "selected_prompt_tokens": package["selected_prompt_tokens"],
-                "direction_ids": package["direction_ids"],
-                "metadata": request.metadata,
-            },
-        )
-        studio_store.save_event(event)
-        memory = studio_store.save_memory(
-            MemoryRecord(
-                memory_id=f"mem_{uuid4().hex[:10]}",
-                session_id=request.session_id,
-                category="working",
-                type="prompt_chip_composition",
-                source_id=event.event_id,
-                asset_id=request.asset_id,
-                confidence=0.86,
-                content=event.payload,
-                tags=["prompt_chip_composition", "more_creative", "human_selectable_chips"],
-            )
-        )
-        await websocket_manager.broadcast(
-            request.session_id,
-            "prompt_tokens_composed",
-            {
-                "event_id": event.event_id,
-                "memory_id": memory.memory_id,
-                "analogy_prompt_package": package,
-            },
-        )
-        return PromptComposeResponse(
-            session_id=request.session_id,
-            asset_id=request.asset_id,
-            final_prompt=package["final_prompt"],
-            analogy_prompt_package=package,
-            event_id=event.event_id,
-            memory_id=memory.memory_id,
-        )
-
-    @app.get("/api/v1/candidates/{candidate_id}")
-    async def get_candidate(candidate_id: str):
-        candidate = studio_store.get_candidate(candidate_id)
-        if candidate is None:
-            raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
-        return candidate
-
-    @app.post("/api/v1/candidates/{candidate_id}/accept")
-    async def accept_candidate(
-        candidate_id: str, request: CandidateDecisionRequest
-    ) -> CandidateDecisionResponse:
-        return await _decide_candidate(candidate_id, request, CandidateDecision.accepted)
-
-    @app.post("/api/v1/candidates/{candidate_id}/reject")
-    async def reject_candidate(
-        candidate_id: str, request: CandidateDecisionRequest
-    ) -> CandidateDecisionResponse:
-        return await _decide_candidate(candidate_id, request, CandidateDecision.rejected)
-
-    @app.post("/api/v1/candidates/{candidate_id}/preview")
-    async def preview_candidate(candidate_id: str, request: CandidateDecisionRequest) -> Candidate:
-        require_session(request.session_id)
-        candidate = studio_store.get_candidate(candidate_id)
-        if candidate is None:
-            raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
-        if candidate.session_id != request.session_id:
-            raise HTTPException(status_code=400, detail="Candidate belongs to another session")
-        candidate.metadata["last_previewed_at"] = now_utc().isoformat()
-        candidate.metadata["preview_reason"] = request.reason
-        studio_store.save_candidate(candidate)
-        event = UserEvent(
-            type="candidate_compared",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "candidate_id": candidate_id,
-                "reason": request.reason,
-                "asset_id": candidate.source_asset_id,
-                "part_id": candidate.source_part_id,
-                "artifact_level": "mesh" if candidate.mesh_url or candidate.obj_url else "image",
-            },
-        )
-        studio_store.save_event(event)
-        await websocket_manager.broadcast(
-            request.session_id,
-            "candidate_previewed",
-            candidate.model_dump(mode="json"),
-        )
-        return candidate
-
-    @app.post("/api/v1/candidates/{candidate_id}/commit")
-    async def commit_candidate(
-        candidate_id: str,
-        request: CandidateDecisionRequest,
-    ) -> CandidateDecisionResponse:
-        request.make_active_asset = True
-        return await _decide_candidate(candidate_id, request, CandidateDecision.accepted)
-
-    @app.post("/api/v1/candidates/{candidate_id}/hy3d")
-    async def generate_candidate_hy3d(candidate_id: str, request: CandidateDecisionRequest) -> Candidate:
-        require_session(request.session_id)
-        try:
-            return await generation_orchestrator.generate_candidate_hy3d(
-                candidate_id,
-                request.session_id,
-            )
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        except RuntimeError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    @app.post("/api/v1/candidates/{candidate_id}/fit")
-    async def fit_candidate(candidate_id: str, request: CandidateFitRequest) -> Candidate:
-        require_session(request.session_id)
-        try:
-            return await generation_orchestrator.fit_candidate_to_part(candidate_id, request)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        except RuntimeError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    async def _decide_candidate(
-        candidate_id: str,
-        request: CandidateDecisionRequest,
-        decision: CandidateDecision,
-    ) -> CandidateDecisionResponse:
-        session = require_session(request.session_id)
-        candidate = studio_store.get_candidate(candidate_id)
-        if candidate is None:
-            raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
-        candidate.decision = decision
-        studio_store.save_candidate(candidate)
-
-        candidate_stage = str(candidate.metadata.get("stage") or "").strip()
-        candidate_fidelity = str(candidate.metadata.get("fidelity") or "").strip()
-        is_direction_candidate = candidate_stage in {"silhouette", "rough_form", "global", "form"}
-        has_asset_output = bool(candidate.mesh_url or candidate.obj_url)
-        commit_policy = "active_asset" if request.make_active_asset and has_asset_output else "direction_memory"
-
-        active_asset_id = None
-        if (
-            decision == CandidateDecision.accepted
-            and request.make_active_asset
-            and has_asset_output
-        ):
-            active_asset = studio_store.create_asset(
-                AssetCreateRequest(
-                    session_id=request.session_id,
-                    object_type=studio_store.get_asset(candidate.source_asset_id).object_type
-                    if studio_store.get_asset(candidate.source_asset_id)
-                    else "object",
-                    label=candidate.label,
-                    mesh_url=candidate.mesh_url,
-                    obj_url=candidate.obj_url,
-                    thumbnail_url=candidate.thumbnail_url,
-                    metadata={"source_candidate_id": candidate.candidate_id},
-                )
-            )
-            active_asset_id = active_asset.asset_id
-
-        if decision == CandidateDecision.accepted:
-            _record_candidate_memory(
-                session,
-                candidate,
-                commit_policy,
-                candidate_stage,
-                candidate_fidelity,
-            )
-        else:
-            _record_candidate_rejection(session, candidate, candidate_stage, candidate_fidelity)
-
-        phase = (
-            DesignPhase.exploring
-            if decision == CandidateDecision.accepted
-            and is_direction_candidate
-            and commit_policy == "direction_memory"
-            else DesignPhase.refinement
-            if decision == CandidateDecision.accepted
-            else DesignPhase.candidate_comparison
-        )
-        goal = request.reason
-        if decision == CandidateDecision.accepted and not goal:
-            if commit_policy == "direction_memory":
-                goal = f"Accepted direction: {candidate.label}"
-            else:
-                goal = f"Accepted asset candidate: {candidate.label}"
-        stage = StageState(
-            phase=phase,
-            confidence=0.86 if decision == CandidateDecision.accepted else 0.78,
-            current_goal=goal,
-            active_asset_id=active_asset_id or session.stage.active_asset_id,
-            active_part_id=candidate.source_part_id or session.stage.active_part_id,
-            suggested_action=_next_action_after_accept(candidate_stage, commit_policy)
-            if decision == CandidateDecision.accepted
-            else _next_action_after_reject(session, candidate_stage),
-            evidence=[
-                f"Candidate {decision.value}: {candidate_id}",
-                f"commit_policy={commit_policy}",
-                f"stage={candidate_stage or 'unspecified'}",
-                f"fidelity={candidate_fidelity or 'unspecified'}",
-            ],
-        )
-        studio_store.save_stage(request.session_id, stage)
-
-        event = UserEvent(
-            type=f"candidate_{decision.value}",
-            event_id=f"evt_{uuid4().hex[:10]}",
-            session_id=request.session_id,
-            payload={
-                "candidate_id": candidate_id,
-                "reason": request.reason,
-                "asset_id": candidate.source_asset_id,
-                "part_id": candidate.source_part_id,
-                "creative_stage": candidate_stage or None,
-                "fidelity": candidate_fidelity or None,
-                "commit_policy": commit_policy,
-                "make_active_asset": bool(active_asset_id),
-                "active_asset_id": active_asset_id,
-                "suggested_action": stage.suggested_action,
-            },
-        )
-        studio_store.save_event(event)
-        await interpret_and_publish(
-            session_id=request.session_id,
-            event=event,
-            interaction_service=interaction_service,
-            publish_perception=_publish_perception,
-            defer_vlm=True,
-        )
-
-        return CandidateDecisionResponse(
-            candidate_id=candidate_id,
-            decision=decision,
-            active_asset_id=active_asset_id,
-            updated_stage=studio_store.get_session(request.session_id).stage,
         )
 
     @app.post("/api/v1/cases")
@@ -3331,6 +1730,26 @@ def create_app() -> FastAPI:
             while True:
                 raw = await websocket.receive_json()
                 message = WebSocketMessage.model_validate(raw)
+                if message.type == "interaction.replay":
+                    cursor = int(message.payload.get("last_event_cursor") or 0)
+                    for event in interaction_orchestrator.events(session_id, after_cursor=max(0, cursor)):
+                        await websocket.send_json(
+                            {
+                                "type": "interaction.event",
+                                "event_id": event.event_id,
+                                "session_id": session_id,
+                                "timestamp": event.occurred_at.isoformat(),
+                                "payload": event.payload,
+                                "event_cursor": event.event_cursor,
+                                "event_type": event.event_type,
+                                "revision_id": event.revision_id,
+                                "aggregate_type": event.aggregate_type.value,
+                                "aggregate_id": event.aggregate_id,
+                                "aggregate_version": event.aggregate_version,
+                                "correlation_id": event.correlation_id,
+                            }
+                        )
+                    continue
                 event = UserEvent(
                     type=message.type,
                     event_id=message.event_id,
@@ -3392,9 +1811,6 @@ def create_app() -> FastAPI:
             websocket_manager.disconnect(session_id, websocket)
 
     return app
-
-
-app = create_app()
 
 
 def _record_candidate_memory(
@@ -3529,218 +1945,6 @@ def _next_action_after_reject(session: SessionRecord, candidate_stage: str) -> s
     return "revise_candidate_direction"
 
 
-def render_case_report(
-    case: CaseRecord,
-    stage: StageState,
-    session_metadata: dict[str, object],
-    asset: object,
-    accepted_candidates: list[object],
-) -> str:
-    asset_label = getattr(asset, "label", case.asset_id)
-    mesh_url = getattr(asset, "mesh_url", None) or getattr(asset, "obj_url", None) or ""
-    rows = "\n".join(
-        "<tr>"
-        f"<td>{escape(getattr(candidate, 'candidate_id', ''))}</td>"
-        f"<td>{escape(getattr(candidate, 'label', ''))}</td>"
-        f"<td>{_preview_cell(str(getattr(candidate, 'thumbnail_url', '') or ''))}</td>"
-        f"<td>{escape(str(getattr(candidate, 'mesh_url', '') or ''))}</td>"
-        f"<td>{escape(str(getattr(candidate, 'obj_url', '') or ''))}</td>"
-        "</tr>"
-        for candidate in accepted_candidates
-    )
-    if not rows:
-        rows = '<tr><td colspan="5">No accepted candidates were attached.</td></tr>'
-    memory_rows = _direction_memory_rows(session_metadata)
-    pipeline_rows = _pipeline_evidence_rows(accepted_candidates)
-    prompt_chip_rows = _prompt_chip_evidence_rows(accepted_candidates)
-    return f"""<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{escape(case.title)}</title>
-    <style>
-      body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 36px; color: #172033; line-height: 1.5; }}
-      main {{ max-width: 880px; }}
-      h1 {{ margin-bottom: 4px; }}
-      section {{ border-top: 1px solid #d7e0eb; padding-top: 18px; margin-top: 18px; }}
-      dl {{ display: grid; grid-template-columns: 160px 1fr; gap: 8px 14px; }}
-      dt {{ color: #5f6f82; }}
-      dd {{ margin: 0; overflow-wrap: anywhere; }}
-      table {{ width: 100%; border-collapse: collapse; }}
-      th, td {{ border: 1px solid #d7e0eb; padding: 8px; text-align: left; vertical-align: top; }}
-      th {{ background: #f3f6fa; }}
-      .preview-img {{ display: block; max-width: 180px; max-height: 130px; object-fit: contain; border: 1px solid #d7e0eb; background: #f8fafc; margin-bottom: 6px; }}
-      a {{ color: #1d5fd3; overflow-wrap: anywhere; }}
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>{escape(case.title)}</h1>
-      <p>Saved FlowStudio case: {escape(case.case_id)}</p>
-      <section>
-        <h2>Design State</h2>
-        <dl>
-          <dt>Session</dt><dd>{escape(case.session_id)}</dd>
-          <dt>Asset</dt><dd>{escape(case.asset_id)} - {escape(asset_label)}</dd>
-          <dt>Mesh</dt><dd>{escape(mesh_url)}</dd>
-          <dt>Phase</dt><dd>{escape(stage.phase.value)}</dd>
-          <dt>Goal</dt><dd>{escape(stage.current_goal or "")}</dd>
-        </dl>
-      </section>
-      <section>
-        <h2>Direction Memory</h2>
-        <table>
-          <thead><tr><th>Candidate</th><th>Stage</th><th>Commit</th><th>Label</th></tr></thead>
-          <tbody>{memory_rows}</tbody>
-        </table>
-      </section>
-      <section>
-        <h2>Accepted Candidates</h2>
-        <table>
-          <thead><tr><th>ID</th><th>Label</th><th>Preview</th><th>Mesh</th><th>OBJ</th></tr></thead>
-          <tbody>{rows}</tbody>
-        </table>
-      </section>
-      <section>
-        <h2>Pipeline Evidence</h2>
-        <table>
-          <thead><tr><th>Candidate</th><th>Remote Job</th><th>Stage</th><th>Direction</th><th>Preview</th><th>Socket</th><th>Result</th></tr></thead>
-          <tbody>{pipeline_rows}</tbody>
-        </table>
-      </section>
-      <section>
-        <h2>Prompt Chip Evidence</h2>
-        <table>
-          <thead><tr><th>Candidate</th><th>Mode</th><th>Selected Tokens</th><th>Source Directions</th><th>Final Prompt</th></tr></thead>
-          <tbody>{prompt_chip_rows}</tbody>
-        </table>
-      </section>
-      <section>
-        <h2>Notes</h2>
-        <p>{escape(case.notes or "")}</p>
-      </section>
-    </main>
-  </body>
-</html>
-"""
-
-
-def _preview_cell(url: str) -> str:
-    if not url:
-        return ""
-    safe = escape(url)
-    return f'<img class="preview-img" src="{safe}" alt="candidate preview" /><a href="{safe}">{safe}</a>'
-
-
-def _pipeline_evidence_rows(candidates: list[object]) -> str:
-    rows = []
-    for candidate in candidates:
-        metadata = getattr(candidate, "metadata", {})
-        evidence = metadata.get("pipeline_evidence") if isinstance(metadata, dict) else None
-        if not isinstance(evidence, dict):
-            evidence = {}
-        socket = _socket_evidence_label(evidence)
-        rows.append(
-            "<tr>"
-            f"<td>{escape(getattr(candidate, 'candidate_id', ''))}</td>"
-            f"<td>{escape(_evidence_value(evidence, metadata, 'remote_job_id'))}</td>"
-            f"<td>{escape(_evidence_value(evidence, metadata, 'stage'))}</td>"
-            f"<td>{escape(_evidence_value(evidence, metadata, 'direction_id'))}</td>"
-            f"<td>{_preview_cell(_evidence_value(evidence, metadata, 'remote_image_url'))}</td>"
-            f"<td>{escape(socket)}</td>"
-            f"<td>{escape(_evidence_value(evidence, metadata, 'result_path', 'remote_result_path'))}</td>"
-            "</tr>"
-        )
-    return "\n".join(rows) or '<tr><td colspan="7">No pipeline evidence was recorded.</td></tr>'
-
-
-def _prompt_chip_evidence_rows(candidates: list[object]) -> str:
-    rows = []
-    for candidate in candidates:
-        metadata = getattr(candidate, "metadata", {})
-        evidence = metadata.get("pipeline_evidence") if isinstance(metadata, dict) else None
-        if not isinstance(metadata, dict):
-            metadata = {}
-        if not isinstance(evidence, dict):
-            evidence = {}
-        package = metadata.get("analogy_prompt_package")
-        if not isinstance(package, dict):
-            package = {}
-        tokens = (
-            metadata.get("selected_prompt_tokens")
-            or evidence.get("selected_prompt_tokens")
-            or package.get("selected_prompt_tokens")
-            or []
-        )
-        if isinstance(tokens, list):
-            token_text = ", ".join(
-                str(item.get("label") if isinstance(item, dict) else item)
-                for item in tokens
-                if item
-            )
-        else:
-            token_text = ""
-        direction_ids = (
-            evidence.get("analogy_direction_ids")
-            or package.get("direction_ids")
-            or metadata.get("direction_ids")
-            or []
-        )
-        if isinstance(direction_ids, list):
-            direction_text = ", ".join(str(item) for item in direction_ids if item)
-        else:
-            direction_text = str(direction_ids or "")
-        prompt = str(
-            package.get("final_prompt")
-            or metadata.get("execution_prompt")
-            or evidence.get("execution_prompt")
-            or ""
-        )
-        mode = str(
-            metadata.get("prompt_token_mode")
-            or evidence.get("prompt_token_mode")
-            or package.get("prompt_token_mode")
-            or ""
-        )
-        if not (mode or token_text or prompt):
-            continue
-        rows.append(
-            "<tr>"
-            f"<td>{escape(getattr(candidate, 'candidate_id', ''))}</td>"
-            f"<td>{escape(mode)}</td>"
-            f"<td>{escape(token_text)}</td>"
-            f"<td>{escape(direction_text)}</td>"
-            f"<td>{escape(prompt)}</td>"
-            "</tr>"
-        )
-    return "\n".join(rows) or '<tr><td colspan="5">No prompt-chip evidence was recorded.</td></tr>'
-
-
-def _evidence_value(
-    evidence: dict[str, object],
-    metadata: object,
-    key: str,
-    metadata_key: str | None = None,
-) -> str:
-    value = evidence.get(key)
-    if value is None and isinstance(metadata, dict):
-        value = metadata.get(metadata_key or key)
-    return str(value or "")
-
-
-def _socket_evidence_label(evidence: dict[str, object]) -> str:
-    source_part = evidence.get("source_part_id") or evidence.get("target_part_id")
-    face_count = evidence.get("socket_face_count")
-    if source_part and face_count:
-        return f"{source_part} / {face_count} faces"
-    if source_part:
-        return str(source_part)
-    if face_count:
-        return f"{face_count} faces"
-    return ""
-
-
 def build_case_manifest(
     case: CaseRecord,
     stage: StageState,
@@ -3773,919 +1977,6 @@ def build_case_manifest(
             if isinstance(item.get("metadata"), dict)
         ],
     }
-
-
-def write_case_index(cases_root: Path, cases: object) -> None:
-    cases_root.mkdir(parents=True, exist_ok=True)
-    rows_by_id = {
-        str(row["case_id"]): row
-        for row in _read_existing_case_index_rows(cases_root / "index.json")
-        if row.get("case_id")
-    }
-    current_rows = [
-        {
-            "case_id": case.case_id,
-            "session_id": case.session_id,
-            "title": case.title,
-            "asset_id": case.asset_id,
-            "report_url": case.report_url,
-            "case_url": case.metadata.get("case_url"),
-            "accepted_candidate_ids": case.accepted_candidate_ids,
-            "created_at": case.created_at.isoformat(),
-        }
-        for case in cases
-    ]
-    rows_by_id.update({str(row["case_id"]): row for row in current_rows})
-    rows = list(rows_by_id.values())
-    rows.sort(key=lambda item: str(item["created_at"]), reverse=True)
-    (cases_root / "index.json").write_text(
-        json.dumps(
-            {
-                "schema_version": "flowstudio.case_index.v1",
-                "cases": rows,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-
-
-def discover_benchmark_assets(files_root: Path) -> list[BenchmarkAssetRecord]:
-    local_white_records = _discover_local_white_model_assets(files_root)
-    picked_records = _discover_creativeflow_picked_assets(files_root)
-    if picked_records:
-        return [*local_white_records, *picked_records]
-    pinpoint_records = _discover_pinpoint_benchmark_assets(files_root)
-    if pinpoint_records:
-        return [*local_white_records, *pinpoint_records]
-    manifest = _read_benchmark_oss_manifest(files_root)
-    native_sources = manifest.get("native_sources") if isinstance(manifest, dict) else None
-    selected_cases = manifest.get("selected20_cases") if isinstance(manifest, dict) else None
-    if not isinstance(native_sources, list) and not isinstance(selected_cases, list):
-        return local_white_records
-    records: list[BenchmarkAssetRecord] = []
-    oss_host = str(manifest.get("oss_host") or "")
-
-    if isinstance(native_sources, list):
-        for item in native_sources:
-            if not isinstance(item, dict):
-                continue
-            first_target = next(
-                (
-                    target
-                    for target in item.get("targets", [])
-                    if isinstance(target, dict) and target.get("mesh_glb_key")
-                ),
-                None,
-            )
-            if not isinstance(first_target, dict):
-                continue
-            object_type = str(item.get("object_type") or "benchmark_object")
-            source_id = str(item.get("source_id") or "")
-            candidate_id = str(first_target.get("candidate_id") or "candidate")
-            rationale_id = str(first_target.get("rationale_id") or "relation")
-            benchmark_id = f"native15-target:{source_id}:{candidate_id}"
-            records.append(
-                BenchmarkAssetRecord(
-                    benchmark_id=benchmark_id,
-                    label=f"CreativeFlow {object_type}",
-                    object_type=object_type,
-                    relation_text=None,
-                    target_text=None,
-                    mesh_url=None,
-                    obj_url=None,
-                    file_size_bytes=0,
-                    reference_status="OSS_GENERATED_GLB",
-                    model_available=True,
-                    metadata={
-                        "source": "creativeflow_benchmark_oss_manifest",
-                        "asset_kind": "native_generated_target",
-                        "case_index": item.get("case_index"),
-                        "source_id": item.get("source_id"),
-                        "candidate_id": first_target.get("candidate_id"),
-                        "rationale_id": first_target.get("rationale_id"),
-                        "creativeflow_tree": _creativeflow_tree_metadata(
-                            source_id=source_id,
-                            object_type=object_type,
-                            source_image_key=item.get("source_image_key"),
-                            source_mesh_obj_key=item.get("source_mesh_obj_key"),
-                            relation_id=rationale_id,
-                            relation_key=rationale_id,
-                            relation_text=None,
-                            target_id=candidate_id,
-                            target_key=candidate_id,
-                            target_text=None,
-                            target=first_target,
-                        ),
-                        "mesh_glb_key": first_target.get("mesh_glb_key"),
-                        "mesh_obj_key": first_target.get("mesh_obj_key"),
-                        "canonical_image_key": first_target.get("canonical_image_key"),
-                        "creative_image_key": first_target.get("creative_image_key"),
-                        "multiview_grid_key": first_target.get("multiview_grid_key"),
-                        "source_image_key": item.get("source_image_key"),
-                        "oss_host": oss_host,
-                        "native_case_id": manifest.get("native_case_id"),
-                        "selected20_run_id": manifest.get("selected20_run_id"),
-                        "texture_index_rule": _benchmark_texture_index_rule("generated_glb"),
-                    },
-                )
-            )
-
-    if isinstance(selected_cases, list):
-        selected20_references = _read_creativeflow_selected20_references(files_root)
-        for item in selected_cases:
-            if not isinstance(item, dict):
-                continue
-            first_target = next(
-                (
-                    target
-                    for target in item.get("targets", [])
-                    if isinstance(target, dict) and target.get("mesh_glb_key")
-                ),
-                None,
-            )
-            if not isinstance(first_target, dict):
-                continue
-            object_type = str(item.get("object_type") or "benchmark_object")
-            benchmark_id = str(item.get("benchmark_id") or f"selected20:{item.get('source_id')}")
-            source_id = str(item.get("source_id") or "")
-            relation_key, target_key = _parse_creativeflow_relation_target_keys(first_target)
-            reference = selected20_references.get((source_id, relation_key, target_key), {})
-            relation_text = str(reference.get("relation_text") or "") or None
-            target_text = str(reference.get("target_text") or "") or None
-            records.append(
-                BenchmarkAssetRecord(
-                    benchmark_id=benchmark_id,
-                    label=f"CreativeFlow dataset {object_type}",
-                    object_type=object_type,
-                    relation_text=relation_text,
-                    target_text=target_text,
-                    mesh_url=None,
-                    obj_url=None,
-                    file_size_bytes=0,
-                    reference_status="OSS_SELECTED20_GLB",
-                    model_available=True,
-                    metadata={
-                        "source": "creativeflow_benchmark_oss_manifest",
-                        "asset_kind": "selected20_generated_target",
-                        "case_index": item.get("case_index"),
-                        "source_id": item.get("source_id"),
-                        "relation_key": relation_key,
-                        "target_key": target_key,
-                        "relation_text": relation_text,
-                        "target_text": target_text,
-                        "candidate_id": first_target.get("candidate_id"),
-                        "rationale_id": first_target.get("rationale_id"),
-                        "creativeflow_tree": _creativeflow_tree_metadata(
-                            source_id=source_id,
-                            object_type=object_type,
-                            source_image_key=item.get("source_image_key"),
-                            source_mesh_obj_key=item.get("source_mesh_obj_key"),
-                            relation_id=relation_key or str(first_target.get("rationale_id") or ""),
-                            relation_key=relation_key,
-                            relation_text=relation_text,
-                            target_id=target_key or str(first_target.get("candidate_id") or ""),
-                            target_key=target_key,
-                            target_text=target_text,
-                            target=first_target,
-                            reference=reference,
-                        ),
-                        "mesh_glb_key": first_target.get("mesh_glb_key"),
-                        "mesh_obj_key": first_target.get("mesh_obj_key"),
-                        "canonical_image_key": first_target.get("canonical_image_key"),
-                        "creative_image_key": first_target.get("creative_image_key"),
-                        "multiview_grid_key": first_target.get("multiview_grid_key"),
-                        "source_image_key": item.get("source_image_key"),
-                        "oss_host": oss_host,
-                        "native_case_id": manifest.get("native_case_id"),
-                        "selected20_run_id": manifest.get("selected20_run_id"),
-                        "texture_index_rule": _benchmark_texture_index_rule("generated_glb"),
-                    },
-                )
-            )
-
-    if not isinstance(native_sources, list):
-        return [*local_white_records, *records]
-    for item in native_sources:
-        if not isinstance(item, dict):
-            continue
-        benchmark_id = str(item.get("benchmark_id") or item.get("source_id") or "")
-        source_mesh_path = str(item.get("local_source_mesh_path") or "")
-        source_glb_path = source_mesh_path.rsplit(".", 1)[0] + ".glb" if source_mesh_path.endswith(".obj") else ""
-        object_type = str(item.get("object_type") or "benchmark_object")
-        if not benchmark_id:
-            continue
-        mesh_url = (
-            f"/api/v1/remote-worker/artifact-file?path={quote(source_glb_path, safe='')}"
-            if item.get("local_source_mesh_exists") and source_glb_path
-            else None
-        )
-        obj_url = (
-            f"/api/v1/remote-worker/artifact-file?path={quote(source_mesh_path, safe='')}"
-            if item.get("local_source_mesh_exists") and source_mesh_path
-            else None
-        )
-        records.append(
-            BenchmarkAssetRecord(
-                benchmark_id=benchmark_id,
-                label=f"Benchmark {object_type} source",
-                object_type=object_type,
-                mesh_url=mesh_url,
-                obj_url=obj_url,
-                file_size_bytes=0,
-                reference_status="OSS_MANIFEST",
-                model_available=bool(obj_url),
-                metadata={
-                    "source": "creativeflow_benchmark_oss_manifest",
-                    "case_index": item.get("case_index"),
-                    "source_id": item.get("source_id"),
-                    "creativeflow_tree": _creativeflow_tree_metadata(
-                        source_id=str(item.get("source_id") or ""),
-                        object_type=object_type,
-                        source_image_key=item.get("source_image_key"),
-                        source_mesh_obj_key=item.get("source_mesh_obj_key"),
-                        relation_id=None,
-                        relation_key=None,
-                        relation_text=None,
-                        target_id=None,
-                        target_key=None,
-                        target_text=None,
-                        target=None,
-                    ),
-                    "remote_source_mesh_path": source_mesh_path,
-                    "remote_source_glb_path": source_glb_path,
-                    "source_mesh_obj_key": item.get("source_mesh_obj_key"),
-                    "source_material_mtl_key": item.get("source_material_mtl_key")
-                    or item.get("material_mtl_key")
-                    or item.get("mtl_key"),
-                    "source_texture_key": item.get("source_texture_key")
-                    or item.get("texture_key")
-                    or item.get("albedo_key")
-                    or item.get("diffuse_key")
-                    or item.get("basecolor_key"),
-                    "source_image_key": item.get("source_image_key"),
-                    "mesh_obj_key": item.get("source_mesh_obj_key"),
-                    "target_count": item.get("target_count"),
-                    "targets": item.get("targets") or [],
-                    "oss_host": oss_host,
-                    "native_case_id": manifest.get("native_case_id"),
-                    "selected20_run_id": manifest.get("selected20_run_id"),
-                    "texture_index_rule": _benchmark_texture_index_rule("source_obj"),
-                },
-            )
-        )
-    return [*local_white_records, *records]
-
-
-def _discover_local_white_model_assets(files_root: Path) -> list[BenchmarkAssetRecord]:
-    manifest_path = files_root / "white-models" / "manifest.json"
-    if not manifest_path.exists():
-        return []
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return []
-    assets = manifest.get("assets") if isinstance(manifest, dict) else None
-    if not isinstance(assets, list):
-        return []
-    records: list[BenchmarkAssetRecord] = []
-    for item in assets:
-        if not isinstance(item, dict):
-            continue
-        obj_url = str(item.get("obj_url") or "")
-        rel_path = unquote(obj_url.removeprefix("/files/")) if obj_url.startswith("/files/") else ""
-        storage_path = str((files_root / rel_path).resolve()) if rel_path else ""
-        if not obj_url or (storage_path and not Path(storage_path).exists()):
-            continue
-        label = str(item.get("label") or Path(obj_url).stem)
-        category = str(item.get("category") or "white_models")
-        records.append(
-            BenchmarkAssetRecord(
-                benchmark_id=str(item.get("benchmark_id") or f"white:{category}:{Path(obj_url).stem}"),
-                label=f"{category.replace('_', ' ').title()} · {label}",
-                object_type=str(item.get("object_type") or category),
-                obj_url=obj_url,
-                file_size_bytes=int(item.get("file_size_bytes") or 0),
-                reference_status="LOCAL_WHITE_MODEL",
-                model_available=True,
-                metadata={
-                    "source": "local_white_model",
-                    "asset_kind": "white_model_source",
-                    "category": category,
-                    "collection": item.get("collection"),
-                    "source_zip": item.get("source_zip"),
-                    "image": item.get("thumbnail_url"),
-                    "storage_path": storage_path,
-                    "texture_index_rule": _benchmark_texture_index_rule("source_obj"),
-                },
-            )
-        )
-    return records
-
-
-def _discover_creativeflow_picked_assets(files_root: Path) -> list[BenchmarkAssetRecord]:
-    payload = _read_creativeflow_picked_dataset(files_root)
-    sources = payload.get("sources") if isinstance(payload, dict) else None
-    if not isinstance(sources, list):
-        return []
-    records: list[BenchmarkAssetRecord] = []
-    for source_index, source in enumerate(sources):
-        if not isinstance(source, dict):
-            continue
-        source = _clean_creativeflow_payload(source)
-        source_id = str(source.get("id") or source.get("source_id") or "")
-        if not source_id:
-            continue
-        noun_text = str(source.get("noun") or source.get("noun_text") or source.get("object_type") or "source")
-        if "[DELETE]" in noun_text or source.get("deleted") is True:
-            continue
-        project_id = str(source.get("project") or source.get("project_id") or "")
-        source_image_url = _clean_url_value(source.get("image") or source.get("source_image_url"))
-        source_mesh_glb_url = _clean_url_value(
-            source.get("mesh_glb") or source.get("source_mesh_glb_url") or source.get("source_mesh_url")
-        )
-        source_mesh_obj_url = _clean_url_value(
-            source.get("mesh_obj") or source.get("source_mesh_obj_url")
-        )
-        source_multiview_url = _clean_url_value(
-            source.get("multiview") or source.get("source_multiview_url")
-        )
-        source_image_key = _oss_key_from_url(source_image_url)
-        source_mesh_glb_key = _oss_key_from_url(source_mesh_glb_url)
-        source_mesh_obj_key = _oss_key_from_url(source_mesh_obj_url)
-        source_multiview_key = _oss_key_from_url(source_multiview_url)
-        relations = source.get("relations")
-        relations_payload = relations if isinstance(relations, list) else []
-        target_records = [
-            target
-            for relation in relations_payload
-            if isinstance(relation, dict)
-            for target in relation.get("targets", [])
-            if isinstance(target, dict)
-        ]
-        first_mesh_target = next(
-            (
-                target
-                for target in target_records
-                if target.get("mesh_ready") and (target.get("mesh_glb") or target.get("mesh_obj"))
-            ),
-            None,
-        )
-        target_payload: dict[str, object] | None = None
-        relation_payload: dict[str, object] | None = None
-        if isinstance(first_mesh_target, dict):
-            for relation in relations_payload:
-                if isinstance(relation, dict) and first_mesh_target in relation.get("targets", []):
-                    relation_payload = relation
-                    break
-            target_mesh_glb_key = _oss_key_from_url(first_mesh_target.get("mesh_glb"))
-            target_payload = {
-                "mesh_glb_key": target_mesh_glb_key,
-                "mesh_obj_key": _oss_key_from_url(first_mesh_target.get("mesh_obj"))
-                or _mesh_obj_key_from_glb_key(target_mesh_glb_key),
-                "canonical_image_key": _oss_key_from_url(first_mesh_target.get("image")),
-                "creative_image_key": _oss_key_from_url(first_mesh_target.get("image")),
-                "multiview_grid_key": _oss_key_from_url(first_mesh_target.get("multiview"))
-                or _multiview_grid_key_from_mesh_key(target_mesh_glb_key),
-            }
-        relation_id = str((relation_payload or {}).get("id") or "")
-        relation_text = str((relation_payload or {}).get("label") or "")
-        target_id = str((first_mesh_target or {}).get("id") or "")
-        relation_key, target_key = _relation_target_from_target_key(
-            str(target_payload.get("mesh_glb_key") if target_payload else "")
-        )
-        records.append(
-            BenchmarkAssetRecord(
-                benchmark_id=source_id,
-                label=noun_text,
-                object_type=noun_text,
-                noun_text=noun_text,
-                relation_text=relation_text or None,
-                target_text=str((first_mesh_target or {}).get("text") or "") or None,
-                mesh_url=source_mesh_glb_url or None,
-                obj_url=source_mesh_obj_url or None,
-                file_size_bytes=0,
-                reference_status="GITHUB_PAGES_PICKED",
-                model_available=bool(source_mesh_glb_url or source_mesh_obj_url),
-                metadata={
-                    "source": "creativeflow_github_pages_picked",
-                    "asset_kind": "github_picked_source",
-                    "project_id": project_id,
-                    "source_id": source_id,
-                    "source_index": source_index,
-                    "category_id": source.get("category_id"),
-                    "category_label": source.get("category") or source.get("category_label"),
-                    "image": source_image_url,
-                    "mesh_glb": source_mesh_glb_url,
-                    "mesh_obj": source_mesh_obj_url,
-                    "multiview": source_multiview_url,
-                    "source_image_key": source_image_key,
-                    "source_mesh_glb_key": source_mesh_glb_key,
-                    "source_mesh_obj_key": source_mesh_obj_key,
-                    "source_multiview_key": source_multiview_key,
-                    "relation_count": source.get("relation_count"),
-                    "target_count": source.get("target_count"),
-                    "target_image_count": source.get("target_image_count"),
-                    "target_mesh_count": source.get("target_mesh_count"),
-                    "summary": {
-                        "relation_count": source.get("relation_count"),
-                        "target_count": source.get("target_count"),
-                        "target_image_count": source.get("target_image_count"),
-                        "target_mesh_count": source.get("target_mesh_count"),
-                    },
-                    "relations": relations_payload,
-                    "targets": target_records,
-                    "relation_id": relation_id,
-                    "relation_key": relation_key,
-                    "relation_text": relation_text,
-                    "target_id": target_id,
-                    "target_key": target_key,
-                    "target_text": (first_mesh_target or {}).get("text"),
-                    "mesh_glb_key": source_mesh_glb_key,
-                    "mesh_obj_key": source_mesh_obj_key,
-                    "picked_dataset_url": "https://creativeflow-bench.github.io/Creativeflow-Dataset/data/creativeflow-picked.json",
-                    "creativeflow_tree": _creativeflow_tree_metadata(
-                        source_id=source_id,
-                        object_type=noun_text,
-                        source_image_key=source_image_key,
-                        source_mesh_obj_key=source_mesh_obj_key,
-                        source_mesh_glb_key=source_mesh_glb_key,
-                        relation_id=relation_id or None,
-                        relation_key=relation_key or relation_id or None,
-                        relation_text=relation_text or None,
-                        target_id=target_id or None,
-                        target_key=target_key or target_id or None,
-                        target_text=str((first_mesh_target or {}).get("text") or "") or None,
-                        target=target_payload,
-                    ),
-                    "oss_host": "creativeflow.oss-cn-beijing.aliyuncs.com",
-                    "texture_index_rule": _benchmark_texture_index_rule("source_glb"),
-                },
-            )
-        )
-    records.sort(
-        key=lambda item: (
-            int(item.metadata.get("source_index") or 0),
-            str(item.metadata.get("source_id") or ""),
-        )
-    )
-    return records
-
-
-def _picked_benchmark_label(
-    noun_text: str, relation_key: str, target_key: str, relation_text: str
-) -> str:
-    if relation_key and target_key:
-        return f"CreativeFlow picked {noun_text} · {relation_key}/{target_key}"
-    if relation_text:
-        return f"CreativeFlow picked {noun_text} · {relation_text[:42]}"
-    return f"CreativeFlow picked {noun_text}"
-
-
-def _read_creativeflow_picked_dataset(files_root: Path) -> dict[str, object]:
-    cache_path = files_root.parent / "benchmark" / "creativeflow-picked.json"
-    request = UrlRequest(
-        "https://creativeflow-bench.github.io/Creativeflow-Dataset/data/creativeflow-picked.json",
-        headers={
-            "Accept": "application/json",
-            "User-Agent": "FlowStudio/0.1 creativeflow-picked-loader",
-        },
-    )
-    try:
-        payload = json.loads(
-            urlopen(request, timeout=30, context=ssl._create_unverified_context())
-            .read()
-            .decode("utf-8")
-        )
-        if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
-            cache_path.parent.mkdir(parents=True, exist_ok=True)
-            cache_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-            return payload
-    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
-        pass
-    candidates = [
-        cache_path,
-        files_root.parent / "benchmark" / "creativeflow_picked.json",
-        Path("/benchmark/creativeflow-picked.json"),
-        Path("/benchmark/creativeflow_picked.json"),
-    ]
-    for path in candidates:
-        if not path.exists():
-            continue
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            continue
-        if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
-            return payload
-    return {}
-
-
-def _discover_pinpoint_benchmark_assets(files_root: Path) -> list[BenchmarkAssetRecord]:
-    index = _read_pinpoint_benchmark_index(files_root)
-    sources = index.get("sources") if isinstance(index, dict) else None
-    if not isinstance(sources, list):
-        return []
-    records: list[BenchmarkAssetRecord] = []
-    for source in sources:
-        if not isinstance(source, dict):
-            continue
-        source_id = str(source.get("source_id") or "")
-        noun_text = str(source.get("noun_text") or source.get("classification", {}).get("matched") or "benchmark_object")
-        project_id = str(source.get("project_id") or "")
-        if not source_id or not project_id:
-            continue
-        if "[DELETE]" in noun_text or source.get("deleted") is True:
-            continue
-        source_image_key = _oss_key_from_url(source.get("source_image_url"))
-        source_mesh_glb_key = _oss_key_from_url(source.get("source_mesh_url"))
-        preview_key = _oss_key_from_url(source.get("preview_image_url"))
-        target_mesh_glb_key = _target_mesh_glb_key_from_preview_key(preview_key)
-        relation_key, target_key = _relation_target_from_target_key(target_mesh_glb_key or preview_key)
-        mesh_glb_key = target_mesh_glb_key or source_mesh_glb_key
-        if not mesh_glb_key:
-            continue
-        target: dict[str, object] | None = None
-        if target_mesh_glb_key:
-            target = {
-                "mesh_glb_key": target_mesh_glb_key,
-                "mesh_obj_key": target_mesh_glb_key.rsplit(".", 1)[0] + ".obj",
-                "canonical_image_key": preview_key,
-                "creative_image_key": preview_key,
-                "multiview_grid_key": target_mesh_glb_key.rsplit("/", 1)[0] + "/multiview/grid.png",
-            }
-        benchmark_id = (
-            f"pinpoint:{source_id}:{relation_key}:{target_key}"
-            if target_mesh_glb_key
-            else f"pinpoint-source:{source_id}"
-        )
-        records.append(
-            BenchmarkAssetRecord(
-                benchmark_id=benchmark_id,
-                label=_pinpoint_benchmark_label(noun_text, relation_key, target_key, bool(target_mesh_glb_key)),
-                object_type=noun_text,
-                noun_text=noun_text,
-                relation_text=str(source.get("preview_relation_text") or "") or None,
-                target_text=None,
-                mesh_url=None,
-                obj_url=None,
-                file_size_bytes=0,
-                reference_status="PINPOINT_BENCHMARK_TREE",
-                model_available=True,
-                metadata={
-                    "source": "pinpoint_benchmark",
-                    "asset_kind": "pinpoint_target" if target_mesh_glb_key else "pinpoint_source",
-                    "project_id": project_id,
-                    "source_id": source_id,
-                    "category_id": source.get("category_id"),
-                    "category_label": source.get("category_label"),
-                    "benchmark_status": source.get("benchmark_status"),
-                    "source_status": source.get("source_status"),
-                    "quality_status": source.get("quality_status"),
-                    "target_count": source.get("target_count"),
-                    "target_mesh_ready_count": source.get("target_mesh_ready_count"),
-                    "relation_count": source.get("relation_count"),
-                    "relation_key": relation_key,
-                    "target_key": target_key,
-                    "mesh_glb_key": mesh_glb_key,
-                    "mesh_obj_key": mesh_glb_key.rsplit(".", 1)[0] + ".obj",
-                    "source_image_key": source_image_key,
-                    "source_mesh_glb_key": source_mesh_glb_key,
-                    "source_mesh_obj_key": source_mesh_glb_key.rsplit(".", 1)[0] + ".obj" if source_mesh_glb_key else "",
-                    "preview_image_key": preview_key,
-                    "detail_url": source.get("detail_url"),
-                    "pinpoint_api": {
-                        "relations_url": f"https://pinpoint.asia/api/v2/sources/{source_id}/relations",
-                        "targets_url_template": "https://pinpoint.asia/api/v2/relations/{relation_id}/targets",
-                    },
-                    "creativeflow_tree": _creativeflow_tree_metadata(
-                        source_id=source_id,
-                        object_type=noun_text,
-                        source_image_key=source_image_key,
-                        source_mesh_obj_key=source_mesh_glb_key.rsplit(".", 1)[0] + ".obj" if source_mesh_glb_key else "",
-                        source_mesh_glb_key=source_mesh_glb_key,
-                        relation_id=relation_key,
-                        relation_key=relation_key,
-                        relation_text=None,
-                        target_id=target_key,
-                        target_key=target_key,
-                        target_text=None,
-                        target=target,
-                    ),
-                    "oss_host": "creativeflow.oss-cn-beijing.aliyuncs.com",
-                    "texture_index_rule": _benchmark_texture_index_rule(
-                        "generated_glb" if target_mesh_glb_key else "source_glb"
-                    ),
-                },
-            )
-        )
-    records.sort(
-        key=lambda item: (
-            0 if item.metadata.get("asset_kind") == "pinpoint_target" else 1,
-            str(item.object_type),
-            str(item.metadata.get("source_id") or ""),
-        )
-    )
-    return records
-
-
-def _pinpoint_benchmark_label(noun_text: str, relation_key: str, target_key: str, has_target: bool) -> str:
-    if has_target and relation_key and target_key:
-        return f"CreativeFlow {noun_text} · {relation_key}/{target_key}"
-    return f"CreativeFlow source {noun_text}"
-
-
-def _target_mesh_glb_key_from_preview_key(preview_key: str) -> str:
-    if "/targets/" not in preview_key or not preview_key.endswith("/image.png"):
-        return ""
-    return preview_key[: -len("/image.png")] + "/mesh.glb"
-
-
-def _mesh_obj_key_from_glb_key(mesh_glb_key: str) -> str:
-    return mesh_glb_key.rsplit(".", 1)[0] + ".obj" if mesh_glb_key else ""
-
-
-def _multiview_grid_key_from_mesh_key(mesh_glb_key: str) -> str:
-    return mesh_glb_key.rsplit("/", 1)[0] + "/multiview/grid.png" if mesh_glb_key else ""
-
-
-def _relation_target_from_target_key(key: str) -> tuple[str, str]:
-    if "/targets/" not in key:
-        return "", ""
-    tail = key.split("/targets/", 1)[1].split("/")
-    if len(tail) < 2:
-        return "", ""
-    return tail[0], tail[1]
-
-
-def _oss_key_from_url(value: object) -> str:
-    if not isinstance(value, str) or not value.strip():
-        return ""
-    if value.strip().lower() in {"none", "null", "undefined", "nan"}:
-        return ""
-    parsed = urlparse(value.strip())
-    path = parsed.path if parsed.scheme else value.strip()
-    path = unquote(path).lstrip("/")
-    if path.startswith("creativeflow/"):
-        return path
-    return ""
-
-
-def _clean_url_value(value: object) -> str:
-    if not isinstance(value, str):
-        return ""
-    cleaned = value.strip()
-    if not cleaned or cleaned.lower() in {"none", "null", "undefined", "nan"}:
-        return ""
-    parsed = urlparse(cleaned)
-    if (
-        parsed.netloc == "creativeflow.oss-cn-beijing.aliyuncs.com"
-        and "OSSAccessKeyId=" in parsed.query
-        and "Signature=" in parsed.query
-    ):
-        return parsed._replace(query="", fragment="").geturl()
-    return cleaned
-
-
-def _clean_creativeflow_payload(value: object) -> object:
-    if isinstance(value, dict):
-        return {str(key): _clean_creativeflow_payload(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_clean_creativeflow_payload(item) for item in value]
-    if isinstance(value, str):
-        return _clean_url_value(value)
-    return value
-
-
-def _read_pinpoint_benchmark_index(files_root: Path) -> dict[str, object]:
-    candidates = [
-        files_root.parent / "benchmark" / "benchmark_index.json",
-        files_root.parent / "benchmark" / "benchmark_index_lite.json",
-        Path("/benchmark/benchmark_index.json"),
-        Path("/benchmark/benchmark_index_lite.json"),
-    ]
-    for path in candidates:
-        if not path.exists():
-            continue
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            continue
-        if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
-            return payload
-    for url in (
-        "https://pinpoint.asia/benchmark/benchmark_index.json",
-        "https://pinpoint.asia/benchmark/benchmark_index_lite.json",
-    ):
-        try:
-            request = UrlRequest(
-                url,
-                headers={
-                    "Accept": "application/json",
-                    "User-Agent": "FlowStudio/0.1 benchmark-index-loader",
-                },
-            )
-            payload = json.loads(
-                urlopen(request, timeout=30, context=ssl._create_unverified_context())
-                .read()
-                .decode("utf-8")
-            )
-        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
-            continue
-        if isinstance(payload, dict) and isinstance(payload.get("sources"), list):
-            return payload
-    return {}
-
-
-def _benchmark_texture_index_rule(asset_kind: str) -> dict[str, object]:
-    if asset_kind == "generated_glb":
-        return {
-            "version": "creativeflow_benchmark_texture_tree.v1",
-            "tree": "source -> relation -> target",
-            "priority": [
-                "target.mesh_glb_key: load GLB directly; CreativeFlow/Hunyuan GLB embeds baseColorTexture",
-                "target.mesh_obj_key + explicit material/texture keys",
-                "target.mesh_obj_key + target.canonical_image_key only as an OBJ preview fallback",
-            ],
-            "missing_texture_policy": "do_not_synthesize_texture; render material-only/white-shell regions",
-        }
-    if asset_kind == "source_glb":
-        return {
-            "version": "creativeflow_benchmark_texture_tree.v1",
-            "tree": "source -> relation -> target",
-            "priority": [
-                "source.source_mesh_glb_key: load GLB directly; Hunyuan GLB embeds baseColorTexture when present",
-                "source.source_mesh_obj_key + source.source_image_key fallback",
-            ],
-            "missing_texture_policy": "do_not_synthesize_texture; render material-only/white-shell regions",
-        }
-    return {
-        "version": "creativeflow_benchmark_texture_tree.v1",
-        "tree": "source -> relation -> target",
-        "priority": [
-            "source.source_material_mtl_key + source.source_texture_key",
-            "source.source_texture_key",
-            "source.source_image_key from the same source/ tree",
-            "source sibling source.png/texture.png if explicitly indexed later",
-        ],
-        "missing_texture_policy": "do_not_synthesize_texture; render material-only/white-shell regions",
-    }
-
-
-def _creativeflow_tree_metadata(
-    *,
-    source_id: str,
-    object_type: str,
-    source_image_key: object,
-    source_mesh_obj_key: object,
-    relation_id: str | None,
-    relation_key: str | None,
-    relation_text: str | None,
-    target_id: str | None,
-    target_key: str | None,
-    target_text: str | None,
-    target: dict | None,
-    reference: dict | None = None,
-    source_mesh_glb_key: object | None = None,
-) -> dict[str, object]:
-    target = target if isinstance(target, dict) else {}
-    reference = reference if isinstance(reference, dict) else {}
-    return {
-        "source": {
-            "id": source_id,
-            "object_type": object_type,
-            "image_key": source_image_key,
-            "mesh_glb_key": source_mesh_glb_key,
-            "mesh_obj_key": source_mesh_obj_key,
-            "reference_image_path": reference.get("source_image_path"),
-            "reference_mesh_path": reference.get("source_mesh_path"),
-            "texture_rule": "source.image_key is the source texture preview when OBJ has no explicit MTL sidecar",
-        },
-        "relation": {
-            "id": relation_id,
-            "key": relation_key,
-            "text": relation_text,
-        },
-        "target": {
-            "id": target_id,
-            "key": target_key,
-            "text": target_text,
-            "mesh_glb_key": target.get("mesh_glb_key"),
-            "mesh_obj_key": target.get("mesh_obj_key"),
-            "canonical_image_key": target.get("canonical_image_key"),
-            "creative_image_key": target.get("creative_image_key"),
-            "multiview_grid_key": target.get("multiview_grid_key"),
-            "reference_image_path": reference.get("target_image_path"),
-            "reference_mesh_path": reference.get("target_mesh_path"),
-            "texture_rule": "target.mesh_glb_key is authoritative when available because it embeds baseColorTexture",
-        },
-    }
-
-
-def _parse_creativeflow_relation_target_keys(target: dict[str, object]) -> tuple[str, str]:
-    haystack = " ".join(
-        str(target.get(key) or "")
-        for key in ("mesh_glb_key", "mesh_obj_key", "canonical_image_key", "creative_image_key")
-    )
-    match = re.search(r"__(g\d+_r\d+)__(e\d+_t\d+)", haystack)
-    if not match:
-        return "", ""
-    return match.group(1).replace("_", "-"), match.group(2).replace("_", "-")
-
-
-def _read_creativeflow_selected20_references(files_root: Path) -> dict[tuple[str, str, str], dict[str, object]]:
-    selected_path = files_root.parent / "benchmark" / "creativeflow_selected20.json"
-    if not selected_path.exists():
-        return {}
-    try:
-        payload = json.loads(selected_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    if not isinstance(payload, list):
-        return {}
-    references: dict[tuple[str, str, str], dict[str, object]] = {}
-    for item in payload:
-        if not isinstance(item, dict):
-            continue
-        source_id = str(item.get("source_id") or "")
-        relation_key = str(item.get("relation_key") or "")
-        target_key = str(item.get("target_key") or "")
-        reference = item.get("creativeflow_reference")
-        if not source_id or not relation_key or not target_key or not isinstance(reference, dict):
-            continue
-        references[(source_id, relation_key, target_key)] = {
-            **reference,
-            "relation_text": item.get("relation_text"),
-            "target_text": item.get("target_text"),
-            "noun_text": item.get("noun_text"),
-            "source_prompt": item.get("source_prompt"),
-            "analogy_prompt": item.get("analogy_prompt"),
-        }
-    return references
-
-
-def _resolve_benchmark_texture_key(metadata: dict[str, object]) -> str:
-    for key in (
-        "source_texture_key",
-        "texture_key",
-        "albedo_key",
-        "diffuse_key",
-        "basecolor_key",
-        "texture_image_key",
-        "source_image_key",
-        "canonical_image_key",
-        "creative_image_key",
-    ):
-        value = metadata.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return ""
-
-
-def _benchmark_tree_material(texture_name: str) -> bytes:
-    return (
-        "newmtl material_0\n"
-        "Ka 1.000000 1.000000 1.000000\n"
-        "Kd 1.000000 1.000000 1.000000\n"
-        "Ks 0.000000 0.000000 0.000000\n"
-        f"map_Kd {texture_name}\n"
-    ).encode("utf-8")
-
-
-def _download_oss_object(oss_host: str, object_key: str) -> bytes:
-    oss_url = f"https://{oss_host.rstrip('/')}/{object_key.lstrip('/')}"
-    with urlopen(oss_url, timeout=30, context=ssl._create_unverified_context()) as response:
-        return response.read()
-
-
-def _read_benchmark_oss_manifest(files_root: Path) -> dict[str, object]:
-    manifest_path = files_root.parent / "benchmark" / "creativeflow_oss_manifest.json"
-    if not manifest_path.exists():
-        return {}
-    try:
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def _read_existing_case_index_rows(index_path: Path) -> list[dict[str, object]]:
-    if not index_path.exists():
-        return []
-    try:
-        payload = json.loads(index_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
-    rows = payload.get("cases") if isinstance(payload, dict) else None
-    if not isinstance(rows, list):
-        return []
-    return [row for row in rows if isinstance(row, dict)]
-
-
-def _case_direction_memory(session_metadata: dict[str, object]) -> dict[str, object]:
-    memory = session_metadata.get("candidate_memory")
-    return memory if isinstance(memory, dict) else {}
 
 
 def _planner_control_context(session: SessionRecord) -> dict[str, object]:
@@ -4734,704 +2025,12 @@ def _planner_control_context(session: SessionRecord) -> dict[str, object]:
             context["rejected_intent"] = payload
     return context
 
-
-def _request_image_ref_count(image_refs: list[object], reference_images: list[object]) -> int:
-    keys: set[str] = set()
-    for item in image_refs:
-        if isinstance(item, str) and item:
-            keys.add(item)
-    for item in reference_images:
-        if isinstance(item, dict):
-            value = item.get("url") or item.get("artifact_id")
-            if isinstance(value, str) and value:
-                keys.add(value)
-        elif isinstance(item, str) and item:
-            keys.add(item)
-    return len(keys)
+create_direction_suggestions = create_direction_suggestion_builder(
+    require_session=require_session,
+    studio_store=studio_store,
+    websocket_manager=websocket_manager,
+    build_cross_domain_response=_build_cross_domain_response,
+)
 
 
-def _build_cross_domain_response(
-    request: CrossDomainDivergenceRequest,
-    asset: object,
-    draft: IntentDraft | None,
-    session: SessionRecord,
-) -> CrossDomainDivergenceResponse:
-    object_type = str(getattr(asset, "object_type", None) or "object")
-    label = str(getattr(asset, "label", None) or object_type)
-    draft_text = draft.text if draft and draft.text else None
-    control_context = _planner_control_context(session)
-    reference_images = request.metadata.get("reference_images")
-    if not isinstance(reference_images, list):
-        reference_images = []
-    image_refs = request.metadata.get("image_refs")
-    if not isinstance(image_refs, list):
-        image_refs = []
-    image_ref_count = _request_image_ref_count(image_refs, reference_images)
-    confirmed_intent = control_context.get("confirmed_intent")
-    rejected_intent = control_context.get("rejected_intent")
-    confirmed_intent_text = (
-        str(confirmed_intent.get("primary_intent"))
-        if isinstance(confirmed_intent, dict)
-        else ""
-    )
-    rejected_intent_text = (
-        str(rejected_intent.get("primary_intent"))
-        if isinstance(rejected_intent, dict)
-        else ""
-    )
-    source_summary = (
-        request.source_summary
-        or draft_text
-        or f"{label}: a {object_type} with the current confirmed edits and constraints"
-    )
-    constraints = list(
-        dict.fromkeys(
-            [
-                *request.constraints,
-                "preserve object identity",
-                *(
-                    [f"honor confirmed planner intent: {confirmed_intent_text}"]
-                    if confirmed_intent_text
-                    else []
-                ),
-                *(
-                    [f"do not act on rejected planner intent: {rejected_intent_text}"]
-                    if rejected_intent_text
-                    else []
-                ),
-            ]
-        )
-    )
-    ir_matches = _cross_domain_ir_matches(
-        request=request,
-        object_type=object_type,
-        source_summary=source_summary,
-        draft=draft,
-        control_context=control_context,
-    )
-    ir_reused = any(isinstance(match, dict) and match.get("ir_reuse") for match in ir_matches)
-    ir_recommended_axes = _recommended_axes_from_ir_matches(ir_matches)
-    selected_dimensions = request.dimensions or ir_recommended_axes or ["Aesthetic", "Functional", "Structural"]
-    qwen_response = _qwen_cross_domain_response(
-        request=request,
-        asset_label=label,
-        object_type=object_type,
-        source_summary=source_summary,
-        constraints=constraints,
-        selected_dimensions=selected_dimensions,
-        draft=draft,
-        ir_matches=ir_matches,
-        control_context=control_context,
-    )
-    if qwen_response is not None:
-        qwen_response.metadata = {
-            **qwen_response.metadata,
-            "ir_reused_from_interpretation": ir_reused,
-            "task": "direction_suggest",
-            "interpretation_id": request.interpretation_id
-            or request.metadata.get("interpretation_id"),
-        }
-        return qwen_response
-    templates = [
-        (
-            "Aesthetic",
-            "fashion accessory",
-            "transfer softness, cuteness, color rhythm, and visual character",
-            "Use fashion styling as an analogy source while keeping the base object's recognizability.",
-        ),
-        (
-            "Structural",
-            "architecture",
-            "transfer layered support, openings, modules, and boundary logic",
-            "Use architectural composition to suggest bigger form moves without overwriting protected regions.",
-        ),
-        (
-            "Functional",
-            "tool ergonomics",
-            "transfer grasp, affordance, visibility, and action cues",
-            "Use tool-use relations to turn ambiguous added shapes into purposeful parts.",
-        ),
-        (
-            "Aesthetic",
-            "toy design",
-            "transfer friendliness, exaggeration, and simplified readable proportions",
-            "Use toy-language proportions to make the object more approachable and emotionally legible.",
-        ),
-        (
-            "Structural",
-            "plant growth",
-            "transfer branching, swelling, tapering, and organic continuity",
-            "Use growth patterns to guide extensions while preserving attachment continuity.",
-        ),
-        (
-            "Functional",
-            "wearable product",
-            "transfer comfort, wrap, fastening, and material-function coupling",
-            "Use wearable constraints to reason about additions that touch or surround the object.",
-        ),
-    ]
-    directions: list[AnalogyDirection] = []
-    for index, (dimension, target_domain, relation, rationale) in enumerate(templates, start=1):
-        if dimension not in selected_dimensions:
-            continue
-        direction = AnalogyDirection(
-            direction_id=f"xdom_{uuid4().hex[:8]}",
-            label=f"{dimension}: {object_type} as {target_domain}",
-            dimension=dimension,  # type: ignore[arg-type]
-            source_domain=f"current {object_type}",
-            target_domain=target_domain,
-            relation=relation,
-            transfer_rationale=rationale,
-            constraints=constraints,
-            score=max(0.56, 0.86 - index * 0.035),
-            metadata={
-                "asset_label": label,
-                "requested_dimensions": selected_dimensions,
-                "intent_draft_id": request.intent_draft_id,
-                "behavior_count": len(draft.behavior_atoms) if draft else 0,
-                "image_ref_count": image_ref_count,
-                "reference_images": reference_images[:6],
-                "planner_control_gate": control_context,
-                "uses_design_state_ir": bool(ir_matches),
-                "ir_recommended_axes": ir_recommended_axes,
-                "analogy_expansion_mode": "prompt_chip_composition",
-                "retrieved_ir_cases": [match.get("case_id") for match in ir_matches[:3]],
-                "prompt_tokens": _analogy_prompt_tokens(
-                    dimension=dimension,
-                    target_domain=target_domain,
-                    relation=relation,
-                    object_type=object_type,
-                ),
-            },
-        )
-        directions.append(direction)
-        if len(directions) >= request.candidate_count:
-            break
-    return CrossDomainDivergenceResponse(
-        session_id=request.session_id,
-        asset_id=request.asset_id,
-        intent_draft_id=request.intent_draft_id,
-        source_summary=source_summary,
-        directions=directions,
-        evidence=[
-            f"active_asset={label}",
-            f"object_type={object_type}",
-            f"intent_draft={request.intent_draft_id or 'none'}",
-            f"planner_gate={control_context.get('status')}",
-            f"image_refs={image_ref_count}",
-            f"dimensions={','.join(selected_dimensions)}",
-            f"design_state_ir={','.join(str(match.get('case_id')) for match in ir_matches[:3]) or 'none'}",
-        ],
-        metadata={
-            "planner_mode": "whole_object_cross_domain_divergence",
-            "direct_generation": False,
-            "planner_source": "rule_fallback",
-            "prompt_token_mode": "human_selectable_chips",
-            "analogy_expansion_mode": "prompt_chip_composition",
-            "planner_control_gate": control_context,
-            "image_refs": image_refs,
-            "reference_images": reference_images,
-            "uses_design_state_ir": bool(ir_matches),
-            "ir_reused_from_interpretation": ir_reused,
-            "task": "direction_suggest",
-            "interpretation_id": request.interpretation_id
-            or request.metadata.get("interpretation_id"),
-            "ir_recommended_axes": ir_recommended_axes,
-            "retrieved_design_state_ir": ir_matches[:4],
-            "retrieved_ir_cases": ir_matches[:4],
-            "scope": request.metadata.get("scope"),
-            "context_snapshot_id": request.metadata.get("context_snapshot_id"),
-            "minimum_semantic_distance": request.metadata.get("minimum_semantic_distance"),
-        },
-    )
-
-
-def _qwen_cross_domain_response(
-    *,
-    request: CrossDomainDivergenceRequest,
-    asset_label: str,
-    object_type: str,
-    source_summary: str,
-    constraints: list[str],
-    selected_dimensions: list[str],
-    draft: IntentDraft | None,
-    ir_matches: list[dict[str, object]],
-    control_context: dict[str, object],
-) -> CrossDomainDivergenceResponse | None:
-    endpoint = settings.iul_vlm_intent_url
-    if not endpoint:
-        return None
-    request_image_refs = (
-        request.metadata.get("image_refs")
-        if isinstance(request.metadata.get("image_refs"), list)
-        else []
-    )
-    request_reference_images = (
-        request.metadata.get("reference_images")
-        if isinstance(request.metadata.get("reference_images"), list)
-        else []
-    )
-    request_image_ref_count = _request_image_ref_count(
-        request_image_refs,
-        request_reference_images,
-    )
-    ir_recommended_axes = _recommended_axes_from_ir_matches(ir_matches)
-    behavior_atoms = [
-        {
-            "tool": atom.tool,
-            "target": atom.target,
-            "evidence": atom.evidence,
-            "order": atom.order,
-        }
-        for atom in (draft.behavior_atoms if draft else [])
-    ][:12]
-    prompt = {
-        "task": "direction_suggest",
-        "task_description": (
-            "Generate cross-domain analogy directions for an interaction-aware 3D creative tool."
-        ),
-        "object_type": object_type,
-        "asset_label": asset_label,
-        "source_summary": source_summary,
-        "confirmed_constraints": constraints,
-        "planner_control_gate": control_context,
-        "reference_images": request_reference_images,
-        "image_refs": request_image_refs,
-        "requested_dimensions": selected_dimensions,
-        "ir_recommended_axes": ir_recommended_axes,
-        "intent_draft": {
-            "draft_id": draft.draft_id if draft else None,
-            "title": draft.title if draft else None,
-            "text": draft.text if draft else None,
-            "behavior_atoms": behavior_atoms,
-        },
-        "retrieved_design_state_ir": ir_matches,
-        "requirements": [
-            "Return directions for the whole object, not only one part.",
-            "Keep object identity and confirmed constraints.",
-            "If planner_control_gate.status is confirmed, use confirmed_intent as the stable user-approved context.",
-            "If planner_control_gate.status is rejected, do not act on rejected_intent; offer broader or clarification-oriented prompt tokens instead.",
-            "This is prompt expansion, not the original CreativeFlow structured-transfer or KG generation pipeline.",
-            "Each direction must be specific, explainable, and suitable for later human prompt composition.",
-            "For each direction, include 3-6 short prompt_tokens that a human can click and combine into a final image prompt.",
-            "Prompt tokens should be concrete words or short phrases, not full sentences.",
-            "Do not imply that selecting a direction directly generates an image or mesh; generation happens only after the human confirms the composed prompt.",
-            "Do not include prose outside JSON.",
-        ],
-        "response_schema": {
-            "directions": [
-                {
-                    "label": "short readable label",
-                    "dimension": "Aesthetic | Functional | Structural",
-                    "source_domain": f"current {object_type}",
-                    "target_domain": "cross-domain source",
-                    "relation": "what relation transfers",
-                    "transfer_rationale": "why the analogy helps this intent",
-                    "prompt_tokens": [
-                        {
-                            "label": "short selectable word or phrase",
-                            "dimension": "Aesthetic | Functional | Structural",
-                            "role": "style | structure | material | behavior | mood"
-                        }
-                    ],
-                    "constraints": ["constraint strings"],
-                    "score": 0.0,
-                }
-            ],
-            "evidence": ["short evidence strings"],
-        },
-    }
-    payload = {
-        "model": settings.iul_vlm_model,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are the hidden Planner for FlowStudio. Return compact JSON only. "
-                    "Do not call tools and do not generate final images or meshes. "
-                    "The first character of your response must be { and the last character must be }."
-                ),
-            },
-            {
-                "role": "user",
-                "content": json.dumps(prompt, ensure_ascii=False),
-            },
-        ],
-        "temperature": 0.2,
-        "max_tokens": 900,
-        "response_format": {"type": "json_object"},
-    }
-    try:
-        http_request = UrlRequest(
-            endpoint,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urlopen(http_request, timeout=max(settings.iul_vlm_timeout_sec, 30)) as response:
-            raw = json.loads(response.read().decode("utf-8"))
-        content = _chat_completion_content(raw)
-        parsed = _extract_json_payload(content)
-        raw_directions = parsed.get("directions")
-        if not isinstance(raw_directions, list):
-            return None
-        directions: list[AnalogyDirection] = []
-        for index, item in enumerate(raw_directions[: request.candidate_count], start=1):
-            if not isinstance(item, dict):
-                continue
-            fallback_dimension = selected_dimensions[(index - 1) % len(selected_dimensions)]
-            direction_dimension = _safe_direction_dimension(item.get("dimension"), fallback=fallback_dimension)
-            try:
-                direction = AnalogyDirection(
-                    direction_id=f"xdom_qwen_{uuid4().hex[:8]}",
-                    label=str(item.get("label") or f"Cross-domain direction {index}")[:96],
-                    dimension=direction_dimension,
-                    divergence_mode="cross_domain",
-                    source_domain=str(item.get("source_domain") or f"current {object_type}")[:80],
-                    target_domain=str(item.get("target_domain") or "cross-domain source")[:80],
-                    relation=str(item.get("relation") or "transfer a relevant relation")[:240],
-                    transfer_rationale=str(
-                        item.get("transfer_rationale") or item.get("rationale") or ""
-                    )[:360],
-                    constraints=[
-                        str(value)[:120]
-                        for value in dict.fromkeys(
-                            [
-                                *(
-                                    item.get("constraints")
-                                    if isinstance(item.get("constraints"), list)
-                                    else []
-                                ),
-                                *constraints,
-                            ]
-                        )
-                    ][:8],
-                    score=max(0.0, min(1.0, float(item.get("score", 0.74)))),
-                    metadata={
-                        "planner_source": "qwen3-planner",
-                        "planner_model": settings.iul_vlm_model,
-                        "intent_draft_id": request.intent_draft_id,
-                        "behavior_count": len(behavior_atoms),
-                        "image_ref_count": request_image_ref_count,
-                        "planner_control_gate": control_context,
-                        "uses_design_state_ir": True,
-                        "ir_recommended_axes": ir_recommended_axes,
-                        "analogy_expansion_mode": "prompt_chip_composition",
-                        "prompt_tokens": _coerce_prompt_tokens(
-                            item.get("prompt_tokens"),
-                            fallback_dimension=direction_dimension,
-                            target_domain=str(item.get("target_domain") or "cross-domain source"),
-                            relation=str(item.get("relation") or "transfer a relevant relation"),
-                            object_type=object_type,
-                        ),
-                    },
-                )
-            except (TypeError, ValueError):
-                continue
-            directions.append(direction)
-        if not directions:
-            return None
-        evidence = parsed.get("evidence")
-        if not isinstance(evidence, list):
-            evidence = [
-                f"active_asset={asset_label}",
-                f"object_type={object_type}",
-                "planner=qwen3-planner",
-            ]
-        evidence = [
-            *[str(value)[:160] for value in evidence[:8]],
-            f"planner_gate={control_context.get('status')}",
-        ]
-        return CrossDomainDivergenceResponse(
-            session_id=request.session_id,
-            asset_id=request.asset_id,
-            intent_draft_id=request.intent_draft_id,
-            source_summary=source_summary,
-            directions=directions,
-            evidence=list(dict.fromkeys(evidence))[:9],
-            metadata={
-                "planner_mode": "whole_object_cross_domain_divergence",
-                "direct_generation": False,
-                "planner_source": "qwen3-planner",
-                "planner_model": settings.iul_vlm_model,
-                "prompt_token_mode": "human_selectable_chips",
-                "analogy_expansion_mode": "prompt_chip_composition",
-                "planner_control_gate": control_context,
-                "image_refs": request_image_refs,
-                "reference_images": request_reference_images,
-                "fallback_used": False,
-                "uses_design_state_ir": True,
-                "ir_recommended_axes": ir_recommended_axes,
-                "retrieved_design_state_ir": ir_matches[:4],
-                "retrieved_ir_cases": [match.get("case_id") for match in ir_matches[:4]],
-                "scope": request.metadata.get("scope"),
-                "context_snapshot_id": request.metadata.get("context_snapshot_id"),
-                "minimum_semantic_distance": request.metadata.get("minimum_semantic_distance"),
-            },
-        )
-    except Exception:
-        return None
-
-
-def _chat_completion_content(response: dict[str, object]) -> str:
-    choices = response.get("choices")
-    if isinstance(choices, list) and choices:
-        first = choices[0]
-        if isinstance(first, dict):
-            message = first.get("message")
-            if isinstance(message, dict) and isinstance(message.get("content"), str):
-                return message["content"]
-            if isinstance(first.get("text"), str):
-                return first["text"]
-    if isinstance(response.get("content"), str):
-        return response["content"]
-    return json.dumps(response, ensure_ascii=False)
-
-
-def _extract_json_payload(content: str) -> dict[str, object]:
-    stripped = content.strip()
-    if stripped.startswith("```"):
-        stripped = re.sub(r"^```(?:json)?", "", stripped, flags=re.IGNORECASE).strip()
-        stripped = re.sub(r"```$", "", stripped).strip()
-    try:
-        payload = json.loads(stripped)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", stripped, flags=re.DOTALL)
-        if match is None:
-            return {}
-        try:
-            payload = json.loads(match.group(0))
-        except json.JSONDecodeError:
-            return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def _safe_direction_dimension(value: object, fallback: str = "Aesthetic") -> str:
-    text = str(value or "").strip()
-    if text in {"Aesthetic", "Functional", "Structural"}:
-        return text
-    return fallback if fallback in {"Aesthetic", "Functional", "Structural"} else "Aesthetic"
-
-
-def _analogy_prompt_tokens(
-    *,
-    dimension: str,
-    target_domain: str,
-    relation: str,
-    object_type: str,
-) -> list[dict[str, object]]:
-    base: list[tuple[str, str]] = [
-        (target_domain, "source_domain"),
-        (relation, "relation"),
-    ]
-    if dimension == "Aesthetic":
-        base.extend([("cute proportion", "style"), ("soft color rhythm", "style")])
-    elif dimension == "Structural":
-        base.extend([("layered silhouette", "structure"), ("modular outline", "structure")])
-    elif dimension == "Functional":
-        base.extend([("clear affordance", "behavior"), ("purposeful detail", "behavior")])
-    else:
-        base.extend([("cross-domain analogy", "mood"), (f"recognizable {object_type}", "constraint")])
-    tokens: list[dict[str, object]] = []
-    seen: set[str] = set()
-    for index, (label, role) in enumerate(base, start=1):
-        clean = re.sub(r"\s+", " ", str(label)).strip(" .,:;")
-        if not clean or clean.lower() in seen:
-            continue
-        seen.add(clean.lower())
-        tokens.append(
-            {
-                "token_id": f"tok_{uuid4().hex[:8]}",
-                "label": clean[:64],
-                "dimension": dimension if dimension in {"Aesthetic", "Functional", "Structural"} else "Aesthetic",
-                "role": role,
-                "source": "planner_rule",
-                "weight": max(0.55, 0.9 - index * 0.06),
-            }
-        )
-        if len(tokens) >= 5:
-            break
-    return tokens
-
-
-def _coerce_prompt_tokens(
-    value: object,
-    *,
-    fallback_dimension: str,
-    target_domain: str,
-    relation: str,
-    object_type: str,
-) -> list[dict[str, object]]:
-    tokens: list[dict[str, object]] = []
-    if isinstance(value, list):
-        for item in value[:8]:
-            if isinstance(item, str):
-                label = item
-                dimension = fallback_dimension
-                role = "analogy"
-            elif isinstance(item, dict):
-                label = str(item.get("label") or item.get("text") or "").strip()
-                dimension = str(item.get("dimension") or fallback_dimension)
-                role = str(item.get("role") or "analogy")
-            else:
-                continue
-            label = re.sub(r"\s+", " ", label).strip(" .,:;")
-            if not label:
-                continue
-            tokens.append(
-                {
-                    "token_id": f"tok_qwen_{uuid4().hex[:8]}",
-                    "label": label[:64],
-                    "dimension": dimension if dimension in {"Aesthetic", "Functional", "Structural"} else "Aesthetic",
-                    "role": role[:32],
-                    "source": "qwen3-planner",
-                    "weight": 0.78,
-                }
-            )
-    if tokens:
-        return tokens[:6]
-    return _analogy_prompt_tokens(
-        dimension=fallback_dimension,
-        target_domain=target_domain,
-        relation=relation,
-        object_type=object_type,
-    )
-
-
-def _recommended_axes_from_ir_matches(matches: list[dict[str, object]]) -> list[str]:
-    scores: dict[str, float] = {}
-    for match in matches:
-        strength = {"high": 1.0, "medium": 0.75, "low": 0.45}.get(
-            str(match.get("evidence_strength") or "low"),
-            0.45,
-        )
-        raw_axes = match.get("recommended_axes")
-        if not isinstance(raw_axes, list):
-            continue
-        match_score = float(match.get("score") or 0.0)
-        for rank, raw_axis in enumerate(raw_axes):
-            axis = str(raw_axis)
-            if axis not in {"Aesthetic", "Functional", "Structural"}:
-                continue
-            scores[axis] = scores.get(axis, 0.0) + match_score * strength * max(0.35, 1.0 - rank * 0.18)
-    return [axis for axis, _ in sorted(scores.items(), key=lambda item: item[1], reverse=True)[:3]]
-
-
-def _cross_domain_ir_matches(
-    *,
-    request: CrossDomainDivergenceRequest,
-    object_type: str,
-    source_summary: str,
-    draft: IntentDraft | None,
-    control_context: dict[str, object],
-) -> list[dict[str, object]]:
-    interpretation_id = request.interpretation_id or request.metadata.get("interpretation_id")
-    if isinstance(interpretation_id, str) and interpretation_id:
-        interpretation = studio_store.get_interpretation(interpretation_id)
-        if interpretation is not None:
-            ir_block = interpretation.features.get("design_state_ir")
-            if isinstance(ir_block, dict):
-                matches = ir_block.get("matches")
-                if isinstance(matches, list) and matches:
-                    reused: list[dict[str, object]] = []
-                    for item in matches:
-                        if isinstance(item, dict):
-                            row = dict(item)
-                            row.setdefault("ir_reuse", True)
-                            row.setdefault("interpretation_id", interpretation_id)
-                            reused.append(row)
-                    if reused:
-                        return reused
-
-    retriever = interaction_service.ir_retriever
-    if not retriever.ready:
-        return []
-    behavior_tools = [
-        str(atom.tool)
-        for atom in (draft.behavior_atoms if draft else [])
-    ]
-    confirmed = control_context.get("confirmed_intent")
-    rejected = control_context.get("rejected_intent")
-    confirmed_text = (
-        str(confirmed.get("primary_intent"))
-        if isinstance(confirmed, dict)
-        else ""
-    )
-    rejected_text = (
-        str(rejected.get("primary_intent"))
-        if isinstance(rejected, dict)
-        else ""
-    )
-    image_refs = request.metadata.get("image_refs")
-    if not isinstance(image_refs, list):
-        image_refs = []
-    reference_images = request.metadata.get("reference_images")
-    if not isinstance(reference_images, list):
-        reference_images = []
-    image_ref_count = _request_image_ref_count(image_refs, reference_images)
-    live_signals = request.metadata.get("live_signals")
-    if not isinstance(live_signals, dict):
-        live_signals = {}
-    features = {
-        "event_type": "cross_domain_diverge",
-        "selection_type": "none",
-        "creative_stage": "global",
-        "intent_text": " ".join(
-            [
-                source_summary,
-                draft.text if draft and draft.text else "",
-                confirmed_text,
-                f"rejected:{rejected_text}" if rejected_text else "",
-                f"image_refs:{image_ref_count}",
-                " ".join(behavior_tools),
-                object_type,
-            ]
-        ),
-        "ir_scope_hint": "whole_object",
-        "recent_reject_count": 0,
-        "recent_accept_count": 1 if control_context.get("status") == "confirmed" else 0,
-        "same_event_type_recent_count": len(behavior_tools),
-        "live_signals": live_signals,
-        "signals": {
-            "interaction": {
-                "event_type": "cross_domain_diverge",
-                "behavior_tools": behavior_tools,
-                "planner_gate_status": control_context.get("status"),
-            },
-            "semantic": {
-                "object_type": object_type,
-                "intent_text": source_summary,
-                "confirmed_intent": confirmed_text,
-                "rejected_intent": rejected_text,
-                "image_ref_count": image_ref_count,
-            },
-            "visual_context": {
-                "image_refs": image_refs,
-                "reference_images": reference_images,
-                "image_ref_count": image_ref_count,
-            },
-        },
-    }
-    return [match.to_feature() for match in retriever.retrieve(features, top_k=4)]
-
-
-def _direction_memory_rows(session_metadata: dict[str, object]) -> str:
-    memory = session_metadata.get("candidate_memory")
-    if not isinstance(memory, dict):
-        return '<tr><td colspan="4">No direction memory was recorded.</td></tr>'
-    accepted = memory.get("accepted")
-    if not isinstance(accepted, list) or not accepted:
-        return '<tr><td colspan="4">No direction memory was recorded.</td></tr>'
-    rows = []
-    for item in accepted:
-        if not isinstance(item, dict):
-            continue
-        rows.append(
-            "<tr>"
-            f"<td>{escape(str(item.get('candidate_id') or ''))}</td>"
-            f"<td>{escape(str(item.get('stage') or ''))}</td>"
-            f"<td>{escape(str(item.get('commit_policy') or ''))}</td>"
-            f"<td>{escape(str(item.get('label') or ''))}</td>"
-            "</tr>"
-        )
-    return "\n".join(rows) or '<tr><td colspan="4">No direction memory was recorded.</td></tr>'
+app = create_app()

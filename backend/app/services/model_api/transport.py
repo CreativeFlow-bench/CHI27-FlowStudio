@@ -102,6 +102,7 @@ class OpenAICompatibleTransport:
                     request_id=request_id,
                     stage=stage.value,
                     model=model,
+                    provider=self._provider_for(model),
                     attempt=attempt,
                     latency_ms=int((time.monotonic() - started) * 1000),
                     status="ok",
@@ -115,6 +116,7 @@ class OpenAICompatibleTransport:
                     request_id=request_id,
                     stage=stage.value,
                     model=model,
+                    provider=self._provider_for(model),
                     attempt=attempt,
                     latency_ms=int((time.monotonic() - started) * 1000),
                     status="retryable_error",
@@ -210,3 +212,7 @@ class OpenAICompatibleTransport:
     def _audit(self, **event: Any) -> None:
         if self._audit_sink is not None:
             self._audit_sink(event)
+
+    @staticmethod
+    def _provider_for(model: str) -> str:
+        return "gemini" if model.lower().startswith("gemini") else "openai"
