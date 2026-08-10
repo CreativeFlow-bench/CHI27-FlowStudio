@@ -15,6 +15,7 @@ from app.models.semantic_divergence import SemanticTarget
 from app.services.divergence.semantic_model_clients import GatewaySemanticGenerator
 from app.services.encoding.event_normalizer import EventNormalizer
 from app.services.encoding.qwen_intent_encoder import ExternalIntentEncoder
+from app.services.generation.qwen_image_client import ExternalImageClient
 from app.services.model_api.runtime import build_external_model_runtime
 from app.services.model_api.config import ModelApiProfile
 from app.services.model_api.text_gateway import StructuredModelResult
@@ -200,6 +201,7 @@ def test_default_runtime_builds_only_external_adapters(monkeypatch) -> None:
     assert isinstance(runtime.decision_client, ExternalDecisionClient)
     assert isinstance(runtime.semantic_primary, GatewaySemanticGenerator)
     assert isinstance(runtime.semantic_fallback, GatewaySemanticGenerator)
+    assert isinstance(runtime.image_client, ExternalImageClient)
     assert runtime.semantic_primary.model == "gpt-5.5"
     assert runtime.semantic_fallback.model == "gemini-3.6-flash"
 
@@ -223,3 +225,4 @@ def test_application_default_wiring_uses_the_external_runtime() -> None:
         main.semantic_divergence_service.local_vlm,
         GatewaySemanticGenerator,
     )
+    assert isinstance(main.image_generation_client, ExternalImageClient)

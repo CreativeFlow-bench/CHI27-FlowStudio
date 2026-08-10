@@ -299,7 +299,11 @@ def _qwen_image_base() -> str:
     return raw.rsplit("/generate", 1)[0].rstrip("/") or "http://127.0.0.1:18082"
 
 
-qwen_image_client = QwenImageClient(_qwen_image_base())
+image_generation_client = (
+    QwenImageClient(_qwen_image_base())
+    if external_model_runtime.profile.enable_legacy_local_models
+    else external_model_runtime.image_client
+)
 
 
 def _resolve_four_stage_image_ref(ref: str | None, files_root: Path) -> str | None:
@@ -351,7 +355,7 @@ async def _four_stage_generate_images(
     session_id: str | None = None,
     run_id: str | None = None,
 ) -> list[dict[str, object]]:
-    """Render the Gate-selected prompts with Qwen-Image and persist PNGs."""
+    """Edit the identity source through the active image API and persist PNGs."""
     import shutil
 
     files_root = Path(__file__).resolve().parents[1] / "storage" / "files"
@@ -398,7 +402,7 @@ async def _four_stage_generate_images(
     ) -> dict[str, object] | None:
         retry_seed = seed + attempt * 1_000_003
         try:
-            png = await qwen_image_client.generate_conditioned(
+            png = await image_generation_client.generate_conditioned(
                 prompt,
                 retry_seed,
                 source_image_path=source_image,

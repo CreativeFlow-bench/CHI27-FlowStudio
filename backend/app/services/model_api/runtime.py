@@ -9,7 +9,9 @@ from typing import Any
 from app.config import Settings
 from app.services.divergence.semantic_model_clients import GatewaySemanticGenerator
 from app.services.encoding.qwen_intent_encoder import ExternalIntentEncoder
+from app.services.generation.qwen_image_client import ExternalImageClient
 from app.services.model_api.config import ModelApiProfile
+from app.services.model_api.image_gateway import ImageModelGateway
 from app.services.model_api.text_gateway import TextModelGateway
 from app.services.model_api.transport import OpenAICompatibleTransport
 from app.services.model_api.types import ModelStage
@@ -24,6 +26,8 @@ class ExternalModelRuntime:
     decision_client: ExternalDecisionClient
     semantic_primary: GatewaySemanticGenerator
     semantic_fallback: GatewaySemanticGenerator
+    image_gateway: ImageModelGateway
+    image_client: ExternalImageClient
 
 
 def build_external_model_runtime(
@@ -45,6 +49,7 @@ def build_external_model_runtime(
         audit=audit_sink if audit is not None else None,
     )
     gateway = TextModelGateway(profile, transport=transport)
+    image_gateway = ImageModelGateway(profile)
     return ExternalModelRuntime(
         profile=profile,
         text_gateway=gateway,
@@ -67,4 +72,6 @@ def build_external_model_runtime(
             min_candidates=settings.semantic_divergence_min_candidates,
             max_candidates=settings.semantic_divergence_max_candidates,
         ),
+        image_gateway=image_gateway,
+        image_client=ExternalImageClient(image_gateway),
     )
