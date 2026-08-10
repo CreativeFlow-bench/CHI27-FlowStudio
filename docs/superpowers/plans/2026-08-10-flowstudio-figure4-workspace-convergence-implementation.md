@@ -29,13 +29,13 @@
 - `frontend/src/utils/workspacePresentation.ts`: pure AI Behavior view-model selector; no React or store access.
 - `frontend/tests/workspacePresentation.test.ts`: cover narrative fallback and creative-control state precedence.
 - `frontend/src/components/panels/AIBehaviorPanel.tsx`: render the compact right-side behavior panel from the presentation model.
-- `frontend/tests/panelVisualHierarchy.test.ts`: prevent duplicate Gate/stage/next-action UI from returning.
+- `frontend/tests/workspaceBrowserContract.ts`: inspect the real Vite-rendered DOM for hierarchy, accessibility, overflow, and panel geometry.
+- `frontend/tests/panelVisualHierarchy.test.ts`: retain the existing menu test and remove the obsolete source-text AI hierarchy test.
 - `frontend/src/components/panels/SolutionSpaceRail.tsx`: static layout-owned result rail without inline React dimensions.
 - `frontend/src/main.tsx`: compute presentation once, mark the root layout state, and pass narrowed props.
 - `frontend/src/workspaceLayout.css`: single Figure 4 spatial contract and responsive rules.
 - `frontend/src/styles.css`: remove only the obsolete fixed-dock blocks that use `!important` and compete with the new contract.
-- `frontend/tests/workspaceLayout.test.ts`: source-level guard for the two-state contract and absence of layout-owned `ResizableShell` usage.
-- `frontend/tests/accessibility.test.ts`: preserve accessible panel toggles after semantic shell changes.
+- `frontend/tests/accessibility.test.ts`: retain existing legacy coverage; new workspace semantics are verified against the rendered DOM contract.
 
 ---
 
@@ -271,6 +271,7 @@ git commit -m "refactor: centralize AI behavior presentation"
 ### Task 3: Collapse AI Behavior to one narrative and More Creative
 
 **Files:**
+- Create: `frontend/tests/workspaceBrowserContract.ts`
 - Modify: `frontend/tests/panelVisualHierarchy.test.ts`
 - Modify: `frontend/src/components/panels/AIBehaviorPanel.tsx:1-359`
 - Modify: `frontend/src/main.tsx:1-35,490-507,729-768`
@@ -279,32 +280,64 @@ git commit -m "refactor: centralize AI behavior presentation"
 - Consumes: `AiBehaviorPresentation` from Task 2 plus existing divergence controls/actions.
 - Produces: static `<aside className="ai-behavior-float float-panel">` with one `.ai-behavior-narrative`, one More Creative disclosure, and optional collapsed `.behavior-details`.
 
-- [ ] **Step 1: Replace the old hierarchy assertions with the approved contract**
+- [ ] **Step 1: Write a real-browser hierarchy contract and remove the obsolete source-text test**
 
-Replace the AI Behavior test in `frontend/tests/panelVisualHierarchy.test.ts` with:
+Delete only the AI Behavior source-reading test from `frontend/tests/panelVisualHierarchy.test.ts`; keep the Studio Menu test unchanged.
+
+Create `frontend/tests/workspaceBrowserContract.ts`:
 
 ```ts
-test("AI behavior owns one narrative and progressive creative controls", async () => {
-  const source = await read("../src/components/panels/AIBehaviorPanel.tsx");
+export type WorkspaceContractResult = {
+  ok: boolean;
+  errors: string[];
+  gateQuestionCount: number;
+  narrativeCount: number;
+};
 
-  assert.match(source, /className="ai-behavior-narrative"/);
-  assert.match(source, /<details className={`creative-controls-disclosure/);
-  assert.match(source, /<details className="behavior-details"/);
-  assert.doesNotMatch(source, /four-stage-mini|four-stage-gate|ai-next-action-card/);
-  assert.doesNotMatch(source, /brief\?\.next_question|gateQuestion|pendingRevisionCount/);
-  assert.doesNotMatch(source, /<ResizableShell/);
-});
+function visible(element: Element): boolean {
+  const style = window.getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+  return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+}
+
+export function inspectWorkspaceHierarchy(root: Document = document): WorkspaceContractResult {
+  const errors: string[] = [];
+  const behavior = root.querySelector('.ai-behavior-float[aria-label="AI Behavior"]');
+  if (!(behavior instanceof HTMLElement) || !visible(behavior)) {
+    errors.push("AI Behavior is missing or hidden");
+  }
+
+  const narrativeCount = root.querySelectorAll(".ai-behavior-float .ai-behavior-narrative").length;
+  if (narrativeCount !== 1) errors.push(`expected one AI narrative, found ${narrativeCount}`);
+
+  const forbiddenCount = root.querySelectorAll(
+    ".ai-behavior-float .four-stage-mini, .ai-behavior-float .four-stage-gate, .ai-behavior-float .ai-next-action-card",
+  ).length;
+  if (forbiddenCount) errors.push(`found ${forbiddenCount} duplicate status or Gate regions`);
+
+  const gateQuestions = Array.from(
+    root.querySelectorAll('.planner-clarification-overlay[aria-label="Intent Gate questions"] .planner-bubble > span'),
+  ).filter(visible);
+  const gateQuestionCount = gateQuestions.length;
+  if (gateQuestionCount > 1) errors.push(`expected at most one visible Gate question, found ${gateQuestionCount}`);
+
+  const creative = root.querySelector(".ai-behavior-float .creative-controls-disclosure");
+  if (!(creative instanceof HTMLDetailsElement)) errors.push("More Creative disclosure is missing");
+
+  return { ok: errors.length === 0, errors, gateQuestionCount, narrativeCount };
+}
 ```
 
-- [ ] **Step 2: Run the hierarchy test and verify RED**
+- [ ] **Step 2: Import the contract in the current Vite page and verify RED**
 
-Run:
+With the existing local frontend open at `http://127.0.0.1:5173`, evaluate:
 
-```bash
-node --experimental-strip-types --test frontend/tests/panelVisualHierarchy.test.ts
+```js
+const contract = await import(`/tests/workspaceBrowserContract.ts?red=${Date.now()}`);
+contract.inspectWorkspaceHierarchy(document);
 ```
 
-Expected: FAIL because the panel still contains the duplicated stage, Gate, and next-action blocks.
+Expected: `ok === false`; errors include the missing single narrative and duplicate status/Gate regions.
 
 - [ ] **Step 3: Narrow AIBehaviorPanel props and static shell**
 
@@ -361,13 +394,21 @@ const aiBehaviorPresentation = buildAiBehaviorPresentation({
 
 Pass `presentation={aiBehaviorPresentation}` and remove the deleted AI Behavior props. Keep divergence inputs/actions unchanged.
 
-- [ ] **Step 5: Run hierarchy, Gate contract, and TypeScript build**
+- [ ] **Step 5: Re-run the real hierarchy contract, Gate unit tests, and build**
 
-Run:
+Evaluate in the same Vite page:
+
+```js
+const contract = await import(`/tests/workspaceBrowserContract.ts?green=${Date.now()}`);
+contract.inspectWorkspaceHierarchy(document);
+```
+
+Expected: `ok === true`.
+
+Then run:
 
 ```bash
 node --experimental-strip-types --test \
-  frontend/tests/panelVisualHierarchy.test.ts \
   frontend/tests/gateContract.test.ts \
   frontend/tests/workspacePresentation.test.ts
 npm --prefix frontend run build
@@ -381,6 +422,7 @@ Expected: PASS; the build emits `frontend/dist` without duplicate-prop or type e
 git add \
   frontend/src/components/panels/AIBehaviorPanel.tsx \
   frontend/src/main.tsx \
+  frontend/tests/workspaceBrowserContract.ts \
   frontend/tests/panelVisualHierarchy.test.ts
 git commit -m "refactor: simplify AI behavior hierarchy"
 ```
@@ -390,58 +432,82 @@ git commit -m "refactor: simplify AI behavior hierarchy"
 ### Task 4: Implement the two-state Figure 4 workspace layout
 
 **Files:**
-- Create: `frontend/tests/workspaceLayout.test.ts`
 - Create: `frontend/src/workspaceLayout.css`
+- Modify: `frontend/tests/workspaceBrowserContract.ts`
 - Modify: `frontend/src/components/panels/SolutionSpaceRail.tsx:1-150`
 - Modify: `frontend/src/main.tsx:508-509,687-730`
 - Modify: `frontend/src/styles.css:3196-3317,4275-4292,4301-4339`
-- Modify: `frontend/tests/accessibility.test.ts`
 
 **Interfaces:**
 - Consumes: existing `liveSolutionSpaceVisible` boolean.
 - Produces: root class `has-solution-space`, a static `.solution-space-rail`, and CSS variables used by Active Editor, AI Behavior, Perception, Composer, and rail layout.
 
-- [ ] **Step 1: Write the failing layout contract test**
+- [ ] **Step 1: Extend the real-browser contract with viewport geometry**
 
-Create `frontend/tests/workspaceLayout.test.ts`:
+Append to `frontend/tests/workspaceBrowserContract.ts`:
 
 ```ts
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import test from "node:test";
+type Rectangle = { top: number; right: number; bottom: number; left: number; width: number; height: number };
 
-const read = (path: string) => readFile(new URL(path, import.meta.url), "utf8");
+export type WorkspaceLayoutResult = {
+  ok: boolean;
+  errors: string[];
+  hasSolutionSpace: boolean;
+  rects: Record<string, Rectangle | null>;
+};
 
-test("workspace has one explicit Solution Space layout state", async () => {
-  const main = await read("../src/main.tsx");
-  const css = await read("../src/workspaceLayout.css");
+function rectangle(element: Element | null): Rectangle | null {
+  if (!element || !visible(element)) return null;
+  const value = element.getBoundingClientRect();
+  return {
+    top: value.top,
+    right: value.right,
+    bottom: value.bottom,
+    left: value.left,
+    width: value.width,
+    height: value.height,
+  };
+}
 
-  assert.match(main, /liveSolutionSpaceVisible \? " has-solution-space" : ""/);
-  assert.match(css, /\.studio-shell\.has-solution-space/);
-  assert.match(css, /--ai-behavior-top:/);
-  assert.match(css, /--solution-space-height:/);
-  assert.doesNotMatch(css, /!important/);
-  assert.doesNotMatch(css, /transition:\s*all/);
-});
-
-test("layout-owned surfaces do not write React inline dimensions", async () => {
-  const ai = await read("../src/components/panels/AIBehaviorPanel.tsx");
-  const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
-
-  assert.doesNotMatch(ai, /ResizableShell|defaultWidth|defaultHeight/);
-  assert.doesNotMatch(rail, /ResizableShell|defaultWidth|defaultHeight|window\.innerWidth/);
-});
+export function inspectWorkspaceLayout(root: Document = document): WorkspaceLayoutResult {
+  const viewport = { width: window.innerWidth, height: window.innerHeight };
+  const rects = {
+    perception: rectangle(root.querySelector(".perception-float")),
+    solution: rectangle(root.querySelector(".solution-space-rail")),
+    behavior: rectangle(root.querySelector(".ai-behavior-float")),
+    composer: rectangle(root.querySelector(".canvas-composer-shell")),
+  };
+  const errors: string[] = [];
+  for (const [name, rect] of Object.entries(rects)) {
+    if (!rect && name !== "solution") errors.push(`${name} is missing`);
+    if (rect && (rect.left < 0 || rect.top < 0 || rect.right > viewport.width || rect.bottom > viewport.height)) {
+      errors.push(`${name} leaves the viewport`);
+    }
+  }
+  if (root.documentElement.scrollWidth !== root.documentElement.clientWidth) errors.push("horizontal page overflow");
+  if (root.documentElement.scrollHeight !== root.documentElement.clientHeight) errors.push("vertical page overflow");
+  if (rects.solution && rects.behavior && rects.behavior.top < rects.solution.bottom + 15) {
+    errors.push("AI Behavior does not move below Solution Space");
+  }
+  return {
+    ok: errors.length === 0,
+    errors,
+    hasSolutionSpace: Boolean(rects.solution),
+    rects,
+  };
+}
 ```
 
-- [ ] **Step 2: Run the layout test and verify RED**
+- [ ] **Step 2: Run the geometry contract on the current page and verify RED**
 
-Run:
+At viewport `1280×720`, evaluate:
 
-```bash
-node --experimental-strip-types --test frontend/tests/workspaceLayout.test.ts
+```js
+const contract = await import(`/tests/workspaceBrowserContract.ts?layoutRed=${Date.now()}`);
+contract.inspectWorkspaceLayout(document);
 ```
 
-Expected: FAIL because `workspaceLayout.css` and the root state class do not exist and Solution Space still uses `ResizableShell`.
+Expected: `ok === false`; the current page reports Composer/panel overflow or AI Behavior overlapping the Solution Space vertical region.
 
 - [ ] **Step 3: Make Solution Space a static semantic rail**
 
@@ -717,29 +783,24 @@ Delete the fixed/full-height AI Behavior blocks beginning at these comments/sele
 
 Do not delete shared More Creative token, slider, keyword, focus, or reduced-motion styles.
 
-- [ ] **Step 7: Update accessibility coverage for semantic panel shells**
+- [ ] **Step 7: Re-run hierarchy and geometry contracts, then build checks**
 
-Add to `frontend/tests/accessibility.test.ts`:
+At `1280×720`, evaluate:
 
-```ts
-test("workspace panels retain semantic names without resize handles", async () => {
-  const ai = await read("../src/components/panels/AIBehaviorPanel.tsx");
-  const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
-
-  assert.match(ai, /<aside[\s\S]*aria-label="AI Behavior"/);
-  assert.match(rail, /<section[\s\S]*aria-label="Solution Space"/);
-  assert.match(ai, /aria-expanded=\{mobileOpen\}/);
+```js
+const contract = await import(`/tests/workspaceBrowserContract.ts?layoutGreen=${Date.now()}`);
+({
+  hierarchy: contract.inspectWorkspaceHierarchy(document),
+  layout: contract.inspectWorkspaceLayout(document),
 });
 ```
 
-- [ ] **Step 8: Run layout, accessibility, and build checks**
+Expected: both results have `ok === true`.
 
-Run:
+Then run:
 
 ```bash
 node --experimental-strip-types --test \
-  frontend/tests/workspaceLayout.test.ts \
-  frontend/tests/panelVisualHierarchy.test.ts \
   frontend/tests/accessibility.test.ts \
   frontend/tests/viewportPresentation.test.ts \
   frontend/tests/viewportResolution.test.ts
@@ -748,7 +809,7 @@ npm --prefix frontend run build
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit the Figure 4 spatial contract**
+- [ ] **Step 8: Commit the Figure 4 spatial contract**
 
 ```bash
 git add \
@@ -756,8 +817,7 @@ git add \
   frontend/src/main.tsx \
   frontend/src/styles.css \
   frontend/src/workspaceLayout.css \
-  frontend/tests/workspaceLayout.test.ts \
-  frontend/tests/accessibility.test.ts
+  frontend/tests/workspaceBrowserContract.ts
 git commit -m "feat: converge workspace on Figure 4 layout"
 ```
 
