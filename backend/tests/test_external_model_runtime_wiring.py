@@ -285,3 +285,18 @@ def test_application_default_wiring_uses_the_external_runtime() -> None:
         main.interaction_service.predictor,
         ExternalInteractionIntentPredictor,
     )
+
+
+def test_health_reports_active_external_model_profile() -> None:
+    from fastapi.testclient import TestClient
+    from app import main
+
+    body = TestClient(main.app).get("/health").json()
+    model_runtime = body["model_runtime"]
+
+    assert model_runtime["configured"] is bool(main.external_model_runtime.profile.api_key)
+    assert model_runtime["fast_text"] == "gemini-3.6-flash"
+    assert model_runtime["reasoning_text"] == "gpt-5.5"
+    assert model_runtime["image"] == "gpt-image-2"
+    assert model_runtime["legacy_local_models"] is False
+    assert model_runtime["3d_generation"] is False

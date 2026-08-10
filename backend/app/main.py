@@ -1419,12 +1419,29 @@ def create_app() -> FastAPI:
             "remote_creativeflow_pipeline": remote_health.get("creativeflow_pipeline")
             if remote_health
             else None,
+            "model_runtime": {
+                "configured": bool(external_model_runtime.profile.api_key),
+                "api_base": external_model_runtime.profile.api_base,
+                "fast_text": external_model_runtime.profile.fast_text_model,
+                "reasoning_text": external_model_runtime.profile.reasoning_text_model,
+                "image": external_model_runtime.profile.image_model,
+                "legacy_local_models": (
+                    external_model_runtime.profile.enable_legacy_local_models
+                ),
+                "3d_generation": external_model_runtime.profile.enable_3d_generation,
+            },
             "interaction_understanding": {
                 "predictor": interaction_service.predictor.name,
                 "predictor_version": interaction_service.predictor.version,
-                "vlm_configured": bool(settings.iul_vlm_intent_url),
-                "vlm_intent_url": settings.iul_vlm_intent_url,
-                "planner_model": settings.iul_vlm_model,
+                "vlm_configured": interaction_service.vlm_configured(),
+                "vlm_intent_url": getattr(
+                    interaction_service.predictor, "endpoint_url", None
+                ),
+                "planner_model": getattr(
+                    interaction_service.predictor,
+                    "model_name",
+                    external_model_runtime.profile.fast_text_model,
+                ),
                 "fallback_endpoint_count": len(
                     [
                         item.strip()
