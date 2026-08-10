@@ -23,6 +23,7 @@
 
 **Files:**
 - Modify: `backend/app/models/semantic_divergence.py`
+- Modify: `backend/app/config.py`
 - Modify: `backend/app/services/divergence/semantic_model_clients.py`
 - Modify: `backend/app/services/divergence/semantic_validator.py`
 - Test: `backend/tests/test_semantic_divergence_models.py`
@@ -57,7 +58,7 @@ Expected: failures because `per_group_count` and `group_quotas` are absent and t
 
 - [ ] **Step 3: Implement quota derivation and payload contract**
 
-Add the bounded `per_group_count`, derive total count, and build the response schema from `request.params` instead of a literal 9. Require exactly the requested number in every canonical group.
+Add the bounded `per_group_count`, derive total count, and build the response schema from `request.params` instead of a literal 9. Require exactly the requested number in every canonical group. Expand the global compatibility ceiling to 32, and make response parsing validate the current request's exact count so legacy persisted 9–15 candidate requests remain readable.
 
 - [ ] **Step 4: Add and verify the validator group-quota test**
 
@@ -232,4 +233,3 @@ git diff --check
 - [ ] **Step 4: Browser acceptance on `http://127.0.0.1:5184/`**
 
 Verify rapid multi-chip selection remains selected across at least two 2-second polls, content amount reads `5 / 维`, every group shows at least five chips after a fresh API run, and active metadata shows only `V1`, `Snowman`, and the icon action.
-
