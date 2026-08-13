@@ -1,0 +1,9 @@
+{
+  "stage": "low_fidelity",
+  "object_type": "lantern",
+  "source_id": "low_noun_lantern_v1",
+  "source_image_path": "",
+  "source_description": "A portable lantern with an upright body, protective frame, central light chamber, top cap, base, and handle. Preserve the identity cues of lantern: light chamber, frame, handle, top and base. Only change the overall silhouette and massing.",
+  "user_prompt": "只改变整体轮廓形状，保持物体概念不变。",
+  "candidate_count": 8
+}

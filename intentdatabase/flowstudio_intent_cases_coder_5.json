@@ -1,0 +1,4186 @@
+[
+  {
+    "case_id": "nomad_sculpt_low_poly_sword_03",
+    "video_id": "Nomad Sculpt Low Poly Sword",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=Rorv0vA8mD0&t=170s",
+    "start_time": "02:50",
+    "end_time": "03:52",
+    "episode_summary": "Two symmetrical, low-poly decorative spheres are joined on the left and right ends of the handguard.",
+    "raw_signals": [
+      "Add a 'Sphere' primitive from the scene menu",
+      "In the Primitive properties panel, adjust Radius to 7.5 and Division X to 18",
+      "Drag the sphere outward along the horizontal axis, rotating it 90 degrees",
+      "Apply a Mirror repeater along the Z-axis (indicated by the mirror tool header)",
+      "Tap the 'Validate' button at the top menu and confirm the 'Join children' prompt"
+    ],
+    "retrieval_text": "Early Exploration\n局部放大\n生成突破性的参考变体\nTwo symmetrical, low-poly decorative spheres are joined on the left and right ends of the handguard.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "original_label": "workflow transition"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap"
+  },
+  {
+    "case_id": "nomad_sculpt_low_poly_sword_04",
+    "video_id": "Nomad Sculpt Low Poly Sword",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=Rorv0vA8mD0&t=240s",
+    "start_time": "04:00",
+    "end_time": "05:16",
+    "episode_summary": "An asymmetrical, slanted guard block is sculpted by masking and shifting corner vertices on a low-poly box.",
+    "raw_signals": [
+      "Add a 'Box' primitive and change its Division X, Y, and Z values to 1",
+      "In the Box Geometry menu, set Size X to 20.0, Size Y to 10.0, and Size Z to 25.0",
+      "Move the box to the top of the hilt assembly using the Gizmo",
+      "Select the 'Mask' tool from the toolbar and use the 'Rectangle' option to drag-select one corner",
+      "Open the SelMask settings and tap 'Invert'",
+      "Use the Gizmo to translate the unmasked corner vertices upward by 5 units"
+    ],
+    "retrieval_text": "Local Refinement\n选择局部；小范围笔刷/遮罩\n生成局部变体\nAn asymmetrical, slanted guard block is sculpted by masking and shifting corner vertices on a low-poly box.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement",
+      "original_label": "local refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap"
+  },
+  {
+    "case_id": "nomad_sculpt_low_poly_sword_05",
+    "video_id": "Rorv0vA8mD0",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=Rorv0vA8mD0&t=544s",
+    "start_time": "09:04",
+    "end_time": "09:47",
+    "episode_summary": "The top of the box-shaped blade is tapered from both sides to form a sharp, symmetrical point in the center.",
+    "raw_signals": [
+      "Switch viewport to the Top view and lock the camera orientation",
+      "Select the 'Mask' tool with 'Rectangle' selection active",
+      "Select the right-upper corner vertices of the blade, then invert the mask",
+      "Use the Gizmo to drag the unmasked point downward, then clear the mask",
+      "Repeat the rectangle masking and inversion process on the left-upper corner vertices, dragging them downward to the center"
+    ],
+    "retrieval_text": "Local Refinement\n全局旋转；选择局部；小范围笔刷/遮罩\n生成局部变体\nThe top of the box-shaped blade is tapered from both sides to form a sharp, symmetrical point in the center.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_01",
+    "video_id": "ymoIXvR0Aek",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=13s",
+    "start_time": "00:13",
+    "end_time": "00:56",
+    "episode_summary": "A clean 4-sided tetrahedron is generated in the viewport to serve as the initial base block of the rock.",
+    "raw_signals": [
+      "Select the Platonic Solid primitive icon on the Poly Modeling shelf",
+      "Open the Attribute Editor on the right panel",
+      "Change 'Primitive' to 'Tetrahedron' under the polyPlatonicHistory node",
+      "Keep 'Subdivisions' at 1.0"
+    ],
+    "retrieval_text": "Coarse Forming\n停留/悬停；频繁切换工具；局部放大；选择局部；保留现有结构\n生成轮廓变体\nA clean 4-sided tetrahedron is generated in the viewport to serve as the initial base block of the rock.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "pause_hover",
+        "label": "停留/悬停",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "preserve_structure",
+        "label": "保留现有结构",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-23T14:00:46.935Z"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_02",
+    "video_id": "Maya Low Poly Rocks",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=57s",
+    "start_time": "00:57",
+    "end_time": "02:22",
+    "episode_summary": "The symmetrical tetrahedron is warped into an irregular, asymmetrical, blocky rock shape.",
+    "raw_signals": [
+      "Switch to Vertex Selection Mode (selection method: unknown)",
+      "Select a vertex on the tetrahedron",
+      "Activate Soft Selection, causing a colored gradient falloff to overlay on the mesh vertices",
+      "Drag and rotate vertex regions using the viewport move/rotate gizmos",
+      "Deactivate Soft Selection"
+    ],
+    "retrieval_text": "Coarse Forming\n全局旋转；选择局部\n生成轮廓变体\nThe symmetrical tetrahedron is warped into an irregular, asymmetrical, blocky rock shape.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming",
+      "original_label": "coarse forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_03",
+    "video_id": "ymoIXvR0Aek",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=178s",
+    "start_time": "02:58",
+    "end_time": "03:32",
+    "episode_summary": "The irregular mesh is reconstructed into a dense, evenly distributed quad-based grid to prepare for detail sculpting.",
+    "raw_signals": [
+      "Select the warped mesh in Object Mode",
+      "Click 'Mesh' -> 'Retopologize' from the top menu and open its options dialog",
+      "Set 'Target face count' to 5000 and 'Face uniformity' to 1.0",
+      "Click the 'Retopologize' button to execute"
+    ],
+    "retrieval_text": "Early Exploration\n频繁切换工具；局部放大；缩小看整体；选择局部；多视角检查；形态变化\n生成突破性的参考变体\nThe irregular mesh is reconstructed into a dense, evenly distributed quad-based grid to prepare for detail sculpting.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-23T14:03:08.860Z"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_06",
+    "video_id": "ymoIXvR0Aek",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=373s",
+    "start_time": "06:13",
+    "end_time": "06:55",
+    "episode_summary": "The mesh is decimated into a low-poly structure, creating clean, simplified facets.",
+    "raw_signals": [
+      "Delete history (interaction method: unknown)",
+      "Click 'Mesh' -> 'Reduce' from the top menu to open the reduce options",
+      "Drag the 'Percentage' slider dynamically up to 100%, then slide it back to reduce face count"
+    ],
+    "retrieval_text": "Coarse Forming\n停留/悬停；局部放大；缩小看整体；选择局部；小范围笔刷/遮罩；形态变化\n生成轮廓变体\nThe mesh is decimated into a low-poly structure, creating clean, simplified facets.\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "pause_hover",
+        "label": "停留/悬停",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T00:54:45.013Z"
+  },
+  {
+    "case_id": "stylized_character_sculpt_01",
+    "video_id": "hkdc7_csF9E",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=hkdc7_csF9E&t=18s",
+    "start_time": "00:18",
+    "end_time": "01:13",
+    "episode_summary": "搭建出包含头、颈、肩以及耳朵低模轮廓的基础比例大体块。",
+    "raw_signals": [
+      "导入基础球体和圆柱体等初始几何体",
+      "使用大尺寸Move笔刷对形体进行大范围拉伸",
+      "使用Gizmo工具调整脖颈等辅助部件的比例关系"
+    ],
+    "retrieval_text": "Coarse Forming\n小范围笔刷/遮罩\n生成轮廓变体\n搭建出包含头、颈、肩以及耳朵低模轮廓的基础比例大体块。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T00:56:06.214Z"
+  },
+  {
+    "case_id": "stylized_character_sculpt_02",
+    "video_id": "Stylized Character Sculpt",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=hkdc7_csF9E&t=119s",
+    "start_time": "01:59",
+    "end_time": "02:18",
+    "episode_summary": "修复了由于前期拉伸造成的网格拓扑畸变，并将不合理位置的部件移至正确比例点。",
+    "raw_signals": [
+      "执行Voxel Remesh操作重建网格拓扑结构",
+      "使用Gizmo在各视图中移动已偏离解剖位置的耳部模型",
+      "应用全局平滑（Smooth）操作均化不平整的过渡带"
+    ],
+    "retrieval_text": "Relationship Adjustment\n全局旋转\n生成局部变体\n修复了由于前期拉伸造成的网格拓扑畸变，并将不合理位置的部件移至正确比例点。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment",
+      "original_label": "repair"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:01:06.375Z"
+  },
+  {
+    "case_id": "stylized_character_sculpt_03",
+    "video_id": "Stylized Character Sculpt",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=hkdc7_csF9E&t=139s",
+    "start_time": "02:19",
+    "end_time": "03:20",
+    "episode_summary": "使原本模糊的头部主要受光区域呈现出更精细写实的面部体块转折。",
+    "raw_signals": [
+      "视角向面部高度拉近并聚焦特定五官区域",
+      "使用小尺寸Crease和Flatten笔刷刻画更精准的轮廓线与体块边界",
+      "高频切换视图确认面部转折部位的三维体量变化"
+    ],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；小范围笔刷/遮罩\n生成局部变体\n使原本模糊的头部主要受光区域呈现出更精细写实的面部体块转折。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement",
+      "original_label": "local refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:01:38.546Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_18",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=18&t=0",
+    "start_time": "00:00",
+    "end_time": "04:32",
+    "episode_summary": "17基本体案例—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n17基本体案例—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": false
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_19",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=19&t=0",
+    "start_time": "00:00",
+    "end_time": "24:06",
+    "episode_summary": "18基本体案例—大型构建1_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n频繁切换工具；缩小看整体；选择整体；多视角检查；形态变化\n生成轮廓变体\n18基本体案例—大型构建1_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:03:18.450Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_20",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=20&t=0",
+    "start_time": "00:00",
+    "end_time": "24:27",
+    "episode_summary": "19基本体案例—大型构建2_bilibili (1)",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n反复微调；频繁切换工具；局部放大；缩小看整体；选择整体；多视角检查；形态变化\n生成轮廓变体\n19基本体案例—大型构建2_bilibili (1)\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:04:27.918Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_21",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=21&t=0",
+    "start_time": "00:00",
+    "end_time": "12:53",
+    "episode_summary": "20基本体案例—细节处理_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n反复微调；频繁切换工具；全局旋转；局部放大；缩小看整体；选择整体；选择局部；小范围笔刷/遮罩；形态变化\n生成局部变体\n20基本体案例—细节处理_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:05:16.555Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_22",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=22&t=0",
+    "start_time": "00:00",
+    "end_time": "08:19",
+    "episode_summary": "21基本体案例—手持胶带【福利案例】_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n21基本体案例—手持胶带【福利案例】_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:06:04.110Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_23",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=23&t=0",
+    "start_time": "00:00",
+    "end_time": "02:54",
+    "episode_summary": "22奶瓶建模—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n22奶瓶建模—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:06:30.231Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_24",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=24&t=0",
+    "start_time": "00:00",
+    "end_time": "08:01",
+    "episode_summary": "23奶瓶建模—参考图导入_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n23奶瓶建模—参考图导入_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:06:49.024Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_25",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=25&t=0",
+    "start_time": "00:00",
+    "end_time": "27:07",
+    "episode_summary": "24奶瓶建模—模型构建_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n24奶瓶建模—模型构建_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:07:17.694Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_26",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=26&t=0",
+    "start_time": "00:00",
+    "end_time": "25:36",
+    "episode_summary": "25奶瓶建模—细节处理_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n25奶瓶建模—细节处理_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:07:42.174Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_27",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=27&t=0",
+    "start_time": "00:00",
+    "end_time": "01:45",
+    "episode_summary": "26吹风机建模—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n26吹风机建模—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:08:05.378Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_28",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=28&t=0",
+    "start_time": "00:00",
+    "end_time": "37:33",
+    "episode_summary": "27吹风机建模—模型构建_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；频繁切换工具；全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n27吹风机建模—模型构建_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:08:23.910Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_29",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=29&t=0",
+    "start_time": "00:00",
+    "end_time": "06:36",
+    "episode_summary": "28吹风机建模—细节处理_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化；贴合参考\n生成轮廓变体\n28吹风机建模—细节处理_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:08:42.002Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_30",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=30&t=0",
+    "start_time": "00:00",
+    "end_time": "01:24",
+    "episode_summary": "29麦克风建模—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n29麦克风建模—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:08:49.925Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_31",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=31&t=0",
+    "start_time": "00:00",
+    "end_time": "46:20",
+    "episode_summary": "30麦克风建模—模型构建_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n30麦克风建模—模型构建_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": false
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_32",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=32&t=0",
+    "start_time": "00:00",
+    "end_time": "09:38",
+    "episode_summary": "31麦克风建模—细节处理_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n31麦克风建模—细节处理_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:09:31.379Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_33",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=33&t=0",
+    "start_time": "00:00",
+    "end_time": "01:11",
+    "episode_summary": "32榨汁机建模—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n32榨汁机建模—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:09:51.233Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_34",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=34&t=0",
+    "start_time": "00:00",
+    "end_time": "31:00",
+    "episode_summary": "33榨汁机建模—模型构建（1）_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化；贴合参考\n生成轮廓变体\n33榨汁机建模—模型构建（1）_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:10:03.740Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_35",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=35&t=0",
+    "start_time": "00:00",
+    "end_time": "15:50",
+    "episode_summary": "34榨汁机建模—模型构建（2）_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n34榨汁机建模—模型构建（2）_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:10:15.975Z"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_05",
+    "video_id": "Maya Low Poly Rocks",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=355s",
+    "start_time": "05:55",
+    "end_time": "06:12",
+    "episode_summary": "The high-density sculpted quad mesh is converted into triangles and hard-shaded to show sharp, faceted planes.",
+    "raw_signals": [
+      "Select the sculpted mesh in Object Mode",
+      "Click 'Mesh' -> 'Triangulate' from the top menu",
+      "Click 'Mesh Display' -> 'Harden Edge' to force flat, hard-edge shading"
+    ],
+    "retrieval_text": "Local Refinement\n选择局部；表面/材质变化\n生成局部变体\nThe high-density sculpted quad mesh is converted into triangles and hard-shaded to show sharp, faceted planes.\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": true,
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement",
+      "original_label": "local refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:10:31.530Z"
+  },
+  {
+    "case_id": "blender_bros_scifi_sensor_01",
+    "video_id": "UMO9r4W9Xm0",
+    "software": "Blender",
+    "source_url": "https://www.youtube.com/watch?v=UMO9r4W9Xm0&t=5s",
+    "start_time": "00:05",
+    "end_time": "00:18",
+    "episode_summary": "The top face of the rectangular block is bent into a smooth curve using a control lattice.",
+    "raw_signals": [
+      "Select the default cube mesh",
+      "Switch viewport view to Right Orthographic",
+      "Invoke a deformation tool (tool name: unknown)",
+      "Select and drag control points in the lattice viewport grid to warp the top profile of the mesh"
+    ],
+    "retrieval_text": "Coarse Forming\n全局旋转；选择局部；形态变化\n生成轮廓变体\nThe top face of the rectangular block is bent into a smooth curve using a control lattice.\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": true,
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:10:44.171Z"
+  },
+  {
+    "case_id": "blender_bros_scifi_sensor_05",
+    "video_id": "Blender Bros Sci-Fi Sensor",
+    "software": "Blender",
+    "source_url": "https://www.youtube.com/watch?v=UMO9r4W9Xm0&t=442s",
+    "start_time": "07:22",
+    "end_time": "07:34",
+    "episode_summary": "A series of clean parallel vent slots are modeled on the curved rear face.",
+    "raw_signals": [
+      "Activate an unknown hard-surface cutting tool",
+      "Draw several parallel vertical slicing templates across the back curved face of the body",
+      "Apply the cuts to carve slots (indicated by 'Csharp (apply)' on-screen text)"
+    ],
+    "retrieval_text": "Local Refinement\n局部放大\n生成局部变体\nA series of clean parallel vent slots are modeled on the curved rear face.\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": true,
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement",
+      "original_label": "local refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap"
+  },
+  {
+    "case_id": "stylized_male_character_sculpt_06",
+    "video_id": "ohWEfz4NFco",
+    "software": "ZBrush",
+    "source_url": "https://www.youtube.com/watch?v=ohWEfz4NFco&t=820s",
+    "start_time": "13:40",
+    "end_time": "15:13",
+    "episode_summary": "将偏向圆润粗糙的发股体积提炼为硬朗、片状转折明显的硬表面风格化发型效果。",
+    "raw_signals": [
+      "使用DamStandard笔刷沿发束交界处划出极深且干净的凹槽分割线",
+      "应用HPolish或TrimDynamic等硬表面笔刷切出规整、平滑的发丝片状平面",
+      "高频旋转视角以清除面片转折处多余的粘土凹凸感"
+    ],
+    "retrieval_text": "Local Refinement\n全局旋转；小范围笔刷/遮罩；表面/材质变化；贴合参考\n生成局部变体\n将偏向圆润粗糙的发股体积提炼为硬朗、片状转折明显的硬表面风格化发型效果。\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": true,
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:12:34.970Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_01",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=0",
+    "start_time": "00:00",
+    "end_time": "08:00",
+    "episode_summary": "参考与硬表面建模目标确认",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化；贴合参考\n生成局部变体\n参考与硬表面建模目标确认\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:15:05.789Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_02",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=480",
+    "start_time": "08:00",
+    "end_time": "18:00",
+    "episode_summary": "头盔主体大轮廓搭建",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成轮廓变体\n头盔主体大轮廓搭建\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:15:35.352Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_03",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=1080",
+    "start_time": "18:00",
+    "end_time": "28:00",
+    "episode_summary": "面罩/侧面大结构切分",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择局部；多视角检查；形态变化\n生成局部变体\n面罩/侧面大结构切分\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:15:56.356Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_04",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=1680",
+    "start_time": "28:00",
+    "end_time": "38:00",
+    "episode_summary": "硬表面板块局部细化",
+    "raw_signals": [],
+    "retrieval_text": "Material Refinement\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；表面/材质变化\n生成材质变体\n硬表面板块局部细化\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "material_refinement",
+      "label": "Material Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_material_variants",
+      "label": "生成材质变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:16:06.377Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_05",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=2280",
+    "start_time": "38:00",
+    "end_time": "48:00",
+    "episode_summary": "边线、倒角和支撑线处理",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成局部变体\n边线、倒角和支撑线处理\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:16:23.314Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_06",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=2880",
+    "start_time": "48:00",
+    "end_time": "58:00",
+    "episode_summary": "多部件比例与结构关系调整",
+    "raw_signals": [],
+    "retrieval_text": "Relationship Adjustment\n缩小看整体；反复微调\n生成局部变体\n多部件比例与结构关系调整\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:16:33.756Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_07",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=3480",
+    "start_time": "58:00",
+    "end_time": "68:00",
+    "episode_summary": "细节件、孔洞和装饰结构添加",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n局部放大；表面/材质变化\n生成局部变体\n细节件、孔洞和装饰结构添加\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:16:44.957Z"
+  },
+  {
+    "case_id": "bilibili_maya_mecha_helmet_08",
+    "video_id": "BV1wfh1z8EVE",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1wfh1z8EVE/?t=4080",
+    "start_time": "68:00",
+    "end_time": "78:00",
+    "episode_summary": "布线检查与局部修正",
+    "raw_signals": [],
+    "retrieval_text": "Relationship Adjustment\n反复微调；全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成局部变体\n布线检查与局部修正\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "【Maya建模】超帅机甲头盔模型制作，次世代硬表面布线基础教学",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:18:37.241Z"
+  },
+  {
+    "case_id": "nomad_sculpt_low_poly_sword_06",
+    "video_id": "Rorv0vA8mD0",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=Rorv0vA8mD0&t=820s",
+    "start_time": "13:40",
+    "end_time": "14:53",
+    "episode_summary": "Metallic and non-metallic PBR shaders are assigned to the different components of the sword, with smooth shading enabled on the organic handle segments.",
+    "raw_signals": [
+      "Select the blade mesh and open the 'Painting' panel on the right",
+      "Adjust 'Roughness' (approx. 0.453) and 'Metalness' (approx. 0.993) sliders, choosing a light-gray color",
+      "Tap 'Force paint all' to apply the material",
+      "Repeat the material coloring process for the hilt and guard elements using orange/gold and brown colors",
+      "Open the 'Material' panel (indicated by the spheres icon) and toggle 'Smooth shading' on for the handle and pommel"
+    ],
+    "retrieval_text": "Evaluation\n选择局部；表面/材质变化\n生成局部变体\nMetallic and non-metallic PBR shaders are assigned to the different components of the sword, with smooth shading enabled on the organic handle segments.\nTask 4 · Material / Rendering / Evaluation",
+    "human_verified": true,
+    "task_group": "Task 4 · Material / Rendering / Evaluation",
+    "Cognitive_Status": {
+      "code": "evaluation",
+      "label": "Evaluation"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:19:10.458Z"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_04",
+    "video_id": "ymoIXvR0Aek",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=213s",
+    "start_time": "03:33",
+    "end_time": "05:14",
+    "episode_summary": "The rock surface receives uneven organic lump details while harsh edges are softened.",
+    "raw_signals": [
+      "Select the Sculpting tab on the shelf and click the first sculpting brush (brush type: unknown)",
+      "Adjust brush size and strength (interaction shortcuts: unknown)",
+      "Apply strokes across the surface to build up irregular organic bumps",
+      "Hold down a modifier key (unknown) to smooth out sharp corners"
+    ],
+    "retrieval_text": "Local Refinement\n局部放大；选择局部；小范围笔刷/遮罩；形态变化\n生成局部变体\nThe rock surface receives uneven organic lump details while harsh edges are softened.\nTask 4 · Material / Rendering / Evaluation",
+    "human_verified": true,
+    "task_group": "Task 4 · Material / Rendering / Evaluation",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:19:55.529Z"
+  },
+  {
+    "case_id": "maya_low_poly_rocks_07",
+    "video_id": "ymoIXvR0Aek",
+    "software": "Maya",
+    "source_url": "https://www.youtube.com/watch?v=ymoIXvR0Aek&t=421s",
+    "start_time": "07:01",
+    "end_time": "07:31",
+    "episode_summary": "The model is shaded with a brown Lambert material to evaluate flat-shading silhouette consistency.",
+    "raw_signals": [
+      "Open the right-click marking menu on the rock mesh",
+      "Select 'Assign Existing Material' -> 'lambert2' (or unknown material name)",
+      "Toggle 'Wireframe on Shaded' in the viewport header (selection method: unknown)",
+      "Orbit the camera around the rock model to review the faceted shading"
+    ],
+    "retrieval_text": "Evaluation\n长时间比较；全局旋转；局部放大；选择局部；表面/材质变化\n生成材质变体\nThe model is shaded with a brown Lambert material to evaluate flat-shading silhouette consistency.\nTask 4 · Material / Rendering / Evaluation",
+    "human_verified": true,
+    "task_group": "Task 4 · Material / Rendering / Evaluation",
+    "Cognitive_Status": {
+      "code": "evaluation",
+      "label": "Evaluation"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "long_compare",
+        "label": "长时间比较",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_material_variants",
+      "label": "生成材质变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "overlap",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:20:16.558Z"
+  },
+  {
+    "case_id": "stylized_character_sculpt_07",
+    "video_id": "hkdc7_csF9E",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=hkdc7_csF9E&t=788s",
+    "start_time": "13:08",
+    "end_time": "14:58",
+    "episode_summary": "在纯色雕塑上绘制出包含肤色冷暖过渡、妆容起伏和皮肤细节的写实色彩。",
+    "raw_signals": [
+      "从三维雕刻界面切换至具有色谱选择与色彩图层的Paint工具界面",
+      "在脸颊、鼻尖与嘴唇等部位使用柔和边缘刷喷涂大面积色块",
+      "使用吸管工具频繁吸色并运用羽化（Blend）操作过渡冷暖色界限"
+    ],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成局部变体\n在纯色雕塑上绘制出包含肤色冷暖过渡、妆容起伏和皮肤细节的写实色彩。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:20:52.563Z"
+  },
+  {
+    "case_id": "chibi_character_modeling_05",
+    "video_id": "I_r5L9Zp9fA",
+    "software": "Blender",
+    "source_url": "https://www.youtube.com/watch?v=I_r5L9Zp9fA&t=543s",
+    "start_time": "09:03",
+    "end_time": "09:59",
+    "episode_summary": "在肢体末端细微区域完成了低面数手指的建模以及与手掌的一体化合并。",
+    "raw_signals": [
+      "挤出肢体末端平面作为手掌过渡，并分离出独立的低密度手指管状体",
+      "在空间中复制并分别排布各手指部件的角度和比例",
+      "删除接触面并用缝合或桥接工具将手指和手掌网格缝合"
+    ],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择局部；形态变化\n生成局部变体\n在肢体末端细微区域完成了低面数手指的建模以及与手掌的一体化合并。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:23:35.856Z"
+  },
+  {
+    "case_id": "stylized_male_character_sculpt_03",
+    "video_id": "ohWEfz4NFco",
+    "software": "ZBrush",
+    "source_url": "https://www.youtube.com/watch?v=ohWEfz4NFco&t=126s",
+    "start_time": "02:06",
+    "end_time": "02:46",
+    "episode_summary": "三维几何轮廓与原画二维剪影完成精准对齐与校正。",
+    "raw_signals": [
+      "将当前三维模型视角对齐至Spotlight半透明参考图的侧面与正面",
+      "使用Move笔刷微调下巴高度、颌角弧度以及额骨倾斜度",
+      "通过调整笔刷轮廓使三维形体各侧边完美重合于概念图边缘"
+    ],
+    "retrieval_text": "Relationship Adjustment\n全局旋转；小范围笔刷/遮罩；形态变化；贴合参考\n生成局部变体\n三维几何轮廓与原画二维剪影完成精准对齐与校正。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:24:21.206Z"
+  },
+  {
+    "case_id": "snowman_modeling_02",
+    "video_id": "709xKqO9A18",
+    "software": "Blender",
+    "source_url": "https://www.youtube.com/watch?v=709xKqO9A18&t=130s",
+    "start_time": "02:10",
+    "end_time": "03:00",
+    "episode_summary": "完成了对称眼部结构及眼窝凹陷细节的精细建模。",
+    "raw_signals": [
+      "添加小球体并为其分配镜像修改器（Mirror）",
+      "将眼睛定位到面部，并微调间距",
+      "进入面部网格的编辑模式，向内拉伸特定顶点以生成眼窝陷落结构"
+    ],
+    "retrieval_text": "Local Refinement\n局部放大；缩小看整体；选择局部；形态变化\n生成局部变体\n完成了对称眼部结构及眼窝凹陷细节的精细建模。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:24:49.531Z"
+  },
+  {
+    "case_id": "snowman_modeling_07",
+    "video_id": "709xKqO9A18",
+    "software": "Blender",
+    "source_url": "https://www.youtube.com/watch?v=709xKqO9A18&t=1207s",
+    "start_time": "20:07",
+    "end_time": "20:34",
+    "episode_summary": "确定了最终场景各物体之间的遮挡关系与画面构图。",
+    "raw_signals": [
+      "向场景中引入摄像机（Camera）物体",
+      "将视口视角对齐为当前相机画面",
+      "将相机投影类型修改为正交投影（Orthographic）",
+      "调整正交缩放参数，使雪人、冰面、背景版形成干净的等距视角构图"
+    ],
+    "retrieval_text": "Relationship Adjustment\n全局旋转；局部放大；缩小看整体；贴合参考\n生成局部变体\n确定了最终场景各物体之间的遮挡关系与画面构图。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:25:29.379Z"
+  },
+  {
+    "case_id": "nomad_char_04",
+    "video_id": "wzk9p7ORCf8",
+    "software": "Nomad Sculpt",
+    "source_url": "https://www.youtube.com/watch?v=wzk9p7ORCf8&t=413s",
+    "start_time": "06:53",
+    "end_time": "07:22",
+    "episode_summary": "利用截断投影工具快速完成了鞋底平面的局部塑形。",
+    "raw_signals": [
+      "新建用于制作鞋底的球体几何体",
+      "切换至投影截断工具（Project Tool）并将投影轮廓设定为线段（Line）",
+      "在球体底部划定切线，直接截断并压平球体底部的网格结构"
+    ],
+    "retrieval_text": "Coarse Forming\n频繁切换工具；选择局部；贴合参考\n生成轮廓变体\n利用截断投影工具快速完成了鞋底平面的局部塑形。\nTask 1 · Character / Organic Modeling",
+    "human_verified": true,
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "rapid_tool_switch",
+        "label": "频繁切换工具",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:26:19.778Z"
+  },
+  {
+    "case_id": "bilibili_3dsmax_cartoon_robot_01",
+    "video_id": "BV17JYYzsEPG",
+    "software": "3ds Max",
+    "source_url": "https://www.bilibili.com/video/BV17JYYzsEPG/?t=0",
+    "start_time": "00:00",
+    "end_time": "08:00",
+    "episode_summary": "开场与参考/建模目标确认",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n选择局部；形态变化；贴合参考\n生成局部变体\n开场与参考/建模目标确认\nTask 1 · Character / Organic Modeling",
+    "human_verified": false,
+    "source_title": "【3dmax角色建模】简单的卡通机器人建模全流程制作，适合初学者的3dmax入门案例！",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:27:54.051Z"
+  },
+  {
+    "case_id": "bilibili_3dsmax_cartoon_robot_06",
+    "video_id": "BV17JYYzsEPG",
+    "software": "3ds Max",
+    "source_url": "https://www.bilibili.com/video/BV17JYYzsEPG/?t=2880",
+    "start_time": "48:00",
+    "end_time": "58:00",
+    "episode_summary": "整体比例与部件关系调整",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n反复微调；缩小看整体；选择局部；形态变化\n生成局部变体\n整体比例与部件关系调整\nTask 1 · Character / Organic Modeling",
+    "human_verified": false,
+    "source_title": "【3dmax角色建模】简单的卡通机器人建模全流程制作，适合初学者的3dmax入门案例！",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:28:38.354Z"
+  },
+  {
+    "case_id": "bilibili_3dsmax_cartoon_robot_11",
+    "video_id": "BV17JYYzsEPG",
+    "software": "3ds Max",
+    "source_url": "https://www.bilibili.com/video/BV17JYYzsEPG/?t=5880",
+    "start_time": "98:00",
+    "end_time": "108:00",
+    "episode_summary": "渲染/展示准备",
+    "raw_signals": [],
+    "retrieval_text": "Material Refinement\n小范围笔刷/遮罩；表面/材质变化\n生成材质变体\n渲染/展示准备\nTask 4 · Material / Rendering / Evaluation",
+    "human_verified": false,
+    "source_title": "【3dmax角色建模】简单的卡通机器人建模全流程制作，适合初学者的3dmax入门案例！",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 4 · Material / Rendering / Evaluation",
+    "Cognitive_Status": {
+      "code": "material_refinement",
+      "label": "Material Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "small_brush",
+        "label": "小范围笔刷/遮罩",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_material_variants",
+      "label": "生成材质变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:29:15.243Z"
+  },
+  {
+    "case_id": "bilibili_zbrush_luguo_figure_04",
+    "video_id": "BV1zZsjevEtK",
+    "software": "ZBrush",
+    "source_url": "https://www.bilibili.com/video/BV1zZsjevEtK/?t=630",
+    "start_time": "10:30",
+    "end_time": "14:00",
+    "episode_summary": "配件与角色部件关系调整",
+    "raw_signals": [],
+    "retrieval_text": "Relationship Adjustment\n反复微调；局部放大；表面/材质变化\n生成局部变体\n配件与角色部件关系调整\nTask 1 · Character / Organic Modeling",
+    "human_verified": false,
+    "source_title": "【zbrush手办建模】20分钟建模一个价值498的手办外包《果宝特工》陆小果，ZB手办模型雕刻教程！",
+    "note": "Bilibili long-video candidate window; please open the segment and revise labels.",
+    "task_group": "Task 1 · Character / Organic Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:30:44.709Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_36",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=36&t=0",
+    "start_time": "00:00",
+    "end_time": "37:32",
+    "episode_summary": "35榨汁机建模—细节处理_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化；贴合参考\n生成局部变体\n35榨汁机建模—细节处理_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:31:41.343Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_41",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=41&t=0",
+    "start_time": "00:00",
+    "end_time": "02:53",
+    "episode_summary": "40智能扫地机建模—前期分析_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n40智能扫地机建模—前期分析_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "status": "candidate_needs_human_check"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体",
+      "status": "candidate_needs_human_check"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:32:06.468Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_46",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=46&t=0",
+    "start_time": "00:00",
+    "end_time": "25:55",
+    "episode_summary": "45手部烘干机建模—主体建模（1）_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成轮廓变体\n45手部烘干机建模—主体建模（1）_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:32:36.214Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_51",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=51&t=0",
+    "start_time": "00:00",
+    "end_time": "24:53",
+    "episode_summary": "50一点收敛建模_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；贴合参考\n生成轮廓变体\n50一点收敛建模_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:33:28.024Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_56",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=56&t=0",
+    "start_time": "00:00",
+    "end_time": "25:11",
+    "episode_summary": "55风扇建模—大型构建_bilibili",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成轮廓变体\n55风扇建模—大型构建_bilibili\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:34:02.061Z"
+  },
+  {
+    "case_id": "bilibili_rhino85_industrial_product_61",
+    "video_id": "BV1vf421S7rF",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1vf421S7rF/?p=61&t=0",
+    "start_time": "00:00",
+    "end_time": "05:53",
+    "episode_summary": "60XNurbs万能补面插件",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；多视角检查；形态变化\n生成局部变体\n60XNurbs万能补面插件\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【全网最高效Rhino建模教学】工业产品设计犀牛Rhino8.5建模系统教程零基础入门到进阶综合案例全方位讲解",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:34:40.379Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_09",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=9&t=0",
+    "start_time": "00:00",
+    "end_time": "17:49",
+    "episode_summary": "557167-09 - Toaster Buttons - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Relationship Adjustment\n全局旋转；选择局部；多视角检查；形态变化\n生成局部变体\n557167-09 - Toaster Buttons - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:46:59.242Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_14",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=14&t=0",
+    "start_time": "00:00",
+    "end_time": "13:20",
+    "episode_summary": "557167-14 - Toaster Logo - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化；贴合参考\n生成局部变体\n557167-14 - Toaster Logo - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T01:47:40.263Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_19",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=19&t=0",
+    "start_time": "00:00",
+    "end_time": "11:37",
+    "episode_summary": "557167-19 - GC Main Stick - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Relationship Adjustment\n反复微调；缩小看整体；选择局部；多视角检查；形态变化；贴合参考\n生成局部变体\n557167-19 - GC Main Stick - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:09:26.548Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_24",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=24&t=0",
+    "start_time": "00:00",
+    "end_time": "19:21",
+    "episode_summary": "557167-24 - GC Back Triggers - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n停留/悬停；反复微调；缩小看整体；多视角检查；形态变化\n生成局部变体\n557167-24 - GC Back Triggers - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "pause_hover",
+        "label": "停留/悬停",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:10:20.716Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_29",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=29&t=0",
+    "start_time": "00:00",
+    "end_time": "18:30",
+    "episode_summary": "557167-29 - Camera Option Knob - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化\n生成局部变体\n557167-29 - Camera Option Knob - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:12:42.484Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_34",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=34&t=0",
+    "start_time": "00:00",
+    "end_time": "10:45",
+    "episode_summary": "557167-34 - Camera Lens Focus - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n反复微调；局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化；贴合参考\n生成局部变体\n557167-34 - Camera Lens Focus - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:13:19.192Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_39",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=39&t=0",
+    "start_time": "00:00",
+    "end_time": "18:46",
+    "episode_summary": "557167-39 - Camera Body Knob Section - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n局部放大；缩小看整体；选择整体；选择局部；多视角检查；形态变化；贴合参考\n生成局部变体\n557167-39 - Camera Body Knob Section - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:13:50.864Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_44",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=44&t=0",
+    "start_time": "00:00",
+    "end_time": "22:51",
+    "episode_summary": "557167-44 - Camera Screen - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；选择局部；形态变化；贴合参考\n生成局部变体\n557167-44 - Camera Screen - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:14:20.859Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_49",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=49&t=0",
+    "start_time": "00:00",
+    "end_time": "15:48",
+    "episode_summary": "557167-49 - Chainsaw Cover - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；缩小看整体；选择局部；形态变化；贴合参考\n生成局部变体\n557167-49 - Chainsaw Cover - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:16:19.540Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_54",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=54&t=0",
+    "start_time": "00:00",
+    "end_time": "20:07",
+    "episode_summary": "557167-54 - Chainsaw Exhaust Base - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择局部；多视角检查；形态变化；贴合参考\n生成局部变体\n557167-54 - Chainsaw Exhaust Base - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:16:49.823Z"
+  },
+  {
+    "case_id": "bilibili_maya_hardsurface_core_59",
+    "video_id": "BV1234y1s7gp",
+    "software": "Maya",
+    "source_url": "https://www.bilibili.com/video/BV1234y1s7gp/?p=59&t=0",
+    "start_time": "00:00",
+    "end_time": "18:05",
+    "episode_summary": "557167-59 - Chainswa Engine - Hard Surface Modelling in Maya 2022",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n全局旋转；局部放大；缩小看整体；选择局部；形态变化；贴合参考\n生成局部变体\n557167-59 - Chainswa Engine - Hard Surface Modelling in Maya 2022\nTask 3 · Hard-surface / Mechanical Modeling",
+    "human_verified": false,
+    "source_title": "Maya 2022硬表面建模核心技术训练视频教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 3 · Hard-surface / Mechanical Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:17:27.491Z"
+  },
+  {
+    "case_id": "bilibili_rhino8_surface_product_14",
+    "video_id": "BV1bjeBzRE7a",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1bjeBzRE7a/?p=14&t=0",
+    "start_time": "00:00",
+    "end_time": "31:22",
+    "episode_summary": "14.14- 曲面与实体",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；缩小看整体；选择整体；形态变化；贴合参考\n生成轮廓变体\n14.14- 曲面与实体\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【2025最新版犀牛教程】Rhino建模零基础入门到精通保姆级教程 犀牛8.0曲面建模 参数化建筑产品工业设计动画角色建模商业实战课程（附安装包+全套资料包）",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:18:24.148Z"
+  },
+  {
+    "case_id": "bilibili_rhino8_surface_product_19",
+    "video_id": "BV1bjeBzRE7a",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1bjeBzRE7a/?p=19&t=0",
+    "start_time": "00:00",
+    "end_time": "22:30",
+    "episode_summary": "19.19- 点数与阶数",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调\n生成轮廓变体\n19.19- 点数与阶数\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【2025最新版犀牛教程】Rhino建模零基础入门到精通保姆级教程 犀牛8.0曲面建模 参数化建筑产品工业设计动画角色建模商业实战课程（附安装包+全套资料包）",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:19:00.982Z"
+  },
+  {
+    "case_id": "bilibili_rhino8_surface_product_24",
+    "video_id": "BV1bjeBzRE7a",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1bjeBzRE7a/?p=24&t=0",
+    "start_time": "00:00",
+    "end_time": "09:43",
+    "episode_summary": "24.22-3 产品混合建模案例03",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；局部放大；缩小看整体；选择整体；选择局部；形态变化\n生成局部变体\n24.22-3 产品混合建模案例03\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【2025最新版犀牛教程】Rhino建模零基础入门到精通保姆级教程 犀牛8.0曲面建模 参数化建筑产品工业设计动画角色建模商业实战课程（附安装包+全套资料包）",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "zoom_out",
+        "label": "缩小看整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:19:31.503Z"
+  },
+  {
+    "case_id": "bilibili_rhino8_surface_product_29",
+    "video_id": "BV1bjeBzRE7a",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1bjeBzRE7a/?p=29&t=0",
+    "start_time": "00:00",
+    "end_time": "09:37",
+    "episode_summary": "29.27-流动纹理案例运用",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n局部放大；形态变化\n生成轮廓变体\n29.27-流动纹理案例运用\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【2025最新版犀牛教程】Rhino建模零基础入门到精通保姆级教程 犀牛8.0曲面建模 参数化建筑产品工业设计动画角色建模商业实战课程（附安装包+全套资料包）",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:20:13.733Z"
+  },
+  {
+    "case_id": "bilibili_rhino8_surface_product_34",
+    "video_id": "BV1bjeBzRE7a",
+    "software": "Rhino",
+    "source_url": "https://www.bilibili.com/video/BV1bjeBzRE7a/?p=34&t=0",
+    "start_time": "00:00",
+    "end_time": "37:01",
+    "episode_summary": "34.32-吹风机混接建模技巧",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n局部放大；选择整体；选择局部；形态变化\n生成轮廓变体\n34.32-吹风机混接建模技巧\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【2025最新版犀牛教程】Rhino建模零基础入门到精通保姆级教程 犀牛8.0曲面建模 参数化建筑产品工业设计动画角色建模商业实战课程（附安装包+全套资料包）",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_object",
+        "label": "选择整体",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:20:45.533Z"
+  },
+  {
+    "case_id": "bilibili_c4d_product_rendering_05",
+    "video_id": "BV1fs421c7eF",
+    "software": "Cinema 4D",
+    "source_url": "https://www.bilibili.com/video/BV1fs421c7eF/?t=1200",
+    "start_time": "20:00",
+    "end_time": "27:00",
+    "episode_summary": "灯光渲染与最终效果评估",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n全局旋转；选择局部；多视角检查；形态变化\n生成局部变体\n灯光渲染与最终效果评估\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "【莫深C4D】零基础产品建模渲染教程 有手就会",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "global_orbit",
+        "label": "全局旋转",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "select_part",
+        "label": "选择局部",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:21:18.700Z"
+  },
+  {
+    "case_id": "bilibili_blender_product_rendering_04",
+    "video_id": "BV1pP12YdEyu",
+    "software": "Blender",
+    "source_url": "https://www.bilibili.com/video/BV1pP12YdEyu/?t=1080",
+    "start_time": "18:00",
+    "end_time": "24:00",
+    "episode_summary": "倒角、布线和表面质量调整",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n反复微调；局部放大；多视角检查；表面/材质变化\n生成材质变体\n倒角、布线和表面质量调整\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "Blender产品建模渲染教程-零基础入门必学！",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "repeated_micro_edit",
+        "label": "反复微调",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "local_zoom",
+        "label": "局部放大",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "surface_change",
+        "label": "表面/材质变化",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_material_variants",
+      "label": "生成材质变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:22:10.275Z"
+  },
+  {
+    "case_id": "bilibili_c4d_industrial_design_01",
+    "video_id": "BV1eN411d79r",
+    "software": "Cinema 4D",
+    "source_url": "https://www.bilibili.com/video/BV1eN411d79r/?t=0",
+    "start_time": "00:00",
+    "end_time": "05:00",
+    "episode_summary": "工业设计造型参考与建模目标",
+    "raw_signals": [],
+    "retrieval_text": "Early Exploration\n贴合参考\n生成突破性的参考变体\n工业设计造型参考与建模目标\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "C4D——工业设计与产品建模教程演示",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "early_exploration",
+      "label": "Early Exploration"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:22:34.334Z"
+  },
+  {
+    "case_id": "bilibili_c4d_industrial_design_06",
+    "video_id": "BV1eN411d79r",
+    "software": "Cinema 4D",
+    "source_url": "https://www.bilibili.com/video/BV1eN411d79r/?t=1620",
+    "start_time": "27:00",
+    "end_time": "33:00",
+    "episode_summary": "最终效果评估",
+    "raw_signals": [],
+    "retrieval_text": "Local Refinement\n长时间比较；多视角检查；形态变化；贴合参考\n生成局部变体\n最终效果评估\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "C4D——工业设计与产品建模教程演示",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "local_refinement",
+      "label": "Local Refinement"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "long_compare",
+        "label": "长时间比较",
+        "group": "行为与时间信号"
+      },
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      },
+      {
+        "code": "form_change",
+        "label": "形态变化",
+        "group": "语义与认知信号"
+      },
+      {
+        "code": "match_reference",
+        "label": "贴合参考",
+        "group": "语义与认知信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:22:58.218Z"
+  },
+  {
+    "case_id": "bilibili_blender_hexnut_industrial_05",
+    "video_id": "BV1Pq4y1P74o",
+    "software": "Blender",
+    "source_url": "https://www.bilibili.com/video/BV1Pq4y1P74o/?t=870",
+    "start_time": "14:30",
+    "end_time": "17:30",
+    "episode_summary": "细分表面质量检查",
+    "raw_signals": [],
+    "retrieval_text": "Coarse Forming\n多视角检查\n生成局部变体\n细分表面质量检查\nTask 2 · Product / Industrial Modeling",
+    "human_verified": false,
+    "source_title": "Blender工业模型建模基础教程",
+    "note": "Auto-sampled candidate behavior episode; human coders should open the segment and revise labels.",
+    "task_group": "Task 2 · Product / Industrial Modeling",
+    "Cognitive_Status": {
+      "code": "coarse_forming",
+      "label": "Coarse Forming"
+    },
+    "Intuitive_Signals": [
+      {
+        "code": "multi_view_check",
+        "label": "多视角检查",
+        "group": "空间与视口信号"
+      }
+    ],
+    "Creativeflow_route": {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    "annotator": "coder_5",
+    "assignment_type": "individual",
+    "annotation_done": true,
+    "completed_at": "2026-07-24T02:25:46.506Z"
+  }
+]

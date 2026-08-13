@@ -1,0 +1,37 @@
+{
+  "stage": "texture",
+  "object_type": "teapot",
+  "source_id": "teapot_texture_kg_20260723",
+  "source_image_path": "/root/autodl-tmp/creativeflow_variations_20260718/part_teapot_spout_v4_probe2/source_teapot.png",
+  "source_mesh_path": "/root/autodl-tmp/creativeflow_variations_20260718/teapot_source_sam3d/mesh_root/teapot_source_sam3d.glb",
+  "user_prompt": "Preserve the teapot geometry, lid, knob, spout, handle, base, proportions and camera; vary only its integrated PBR material through source-attribute-led knowledge-graph analogical transfer.",
+  "source_elements": {
+    "source_noun": "teapot",
+    "identity_cues": [
+      "rounded vessel body",
+      "fitted lid with a small top knob",
+      "curved pouring spout",
+      "loop handle",
+      "circular footed base"
+    ],
+    "editable_material_region": "the complete connected teapot surface without changing geometry",
+    "current_materials": [
+      {
+        "region": "teapot body, lid, spout and handle",
+        "material": "brown glazed ceramic",
+        "visible_attributes": [
+          "warm opaque earthen color",
+          "smooth continuous fired surface",
+          "moderate glossy glaze",
+          "hard rigid vessel shell",
+          "subtle specular reflection"
+        ]
+      }
+    ],
+    "locked_geometry": [
+      "same rounded vessel silhouette and proportions",
+      "same lid, knob, spout, handle and base geometry",
+      "same camera angle and single-object composition"
+    ]
+  }
+}

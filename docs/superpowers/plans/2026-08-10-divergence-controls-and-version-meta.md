@@ -207,7 +207,65 @@ Run the same tests and `./node_modules/.bin/tsc -p tsconfig.json --noEmit`; expe
 
 ---
 
-### Task 5: End-to-end local verification
+### Task 5: Restore the approved full AI Behavior hierarchy
+
+**Files:**
+- Modify: `frontend/src/components/panels/AIBehaviorPanel.tsx`
+- Modify: `frontend/src/styles.css`
+- Modify: `frontend/src/workspaceLayout.css`
+- Test: `frontend/tests/aiBehaviorPanelContract.test.ts`
+
+**Interfaces:**
+- Preserves all existing `AIBehaviorPanel` props and callbacks.
+- Produces an outer `AI BEHAVIOR` panel with phenomenon, next action, model details, and a nested `More Creative?` card.
+- Exposes four semantic groups with accessible headings and one full-width Generate action.
+
+- [ ] **Step 1: Write the failing panel contract test**
+
+The test must render the real `AIBehaviorPanel` with a quota-complete four-group fixture and assert:
+
+```ts
+assert.match(html, /More Creative\?/);
+assert.match(html, /AI BEHAVIOR/);
+assert.match(html, /CURRENT PHENOMENON/);
+assert.match(html, /NEXT ACTION/);
+assert.match(html, /MODEL DETAILS/);
+assert.match(html, /DIVERGENCE/);
+assert.match(html, /CONTENT/);
+assert.match(html, /SHAPE/);
+assert.match(html, /CONNECTION/);
+assert.match(html, /SURFACE/);
+assert.match(html, /SEMANTIC TRANSFER/);
+assert.equal((html.match(/>Generate</g) ?? []).length, 1);
+assert.match(css, /\.more-creative-card[\s\S]*?\.more-creative-title\s*\{[^}]*font-size:\s*26px/);
+```
+
+- [ ] **Step 2: Run the test and verify RED**
+
+Run: `node --experimental-strip-types --test tests/aiBehaviorPanelContract.test.ts`
+
+Expected: FAIL because the flattened component omits the approved outer AI Behavior hierarchy and styles More Creative as a larger primary title.
+
+- [ ] **Step 3: Implement the approved structure**
+
+Restore the outer header, status dots, current-phenomenon card, next-action card, and model-details label. Put the current divergence controls in a nested More Creative card, keep the mobile toggle available, use the dynamic accepted scope when present, and retain the current loading/error/persistence behavior. Move Generate below the child card without changing its enablement logic.
+
+- [ ] **Step 4: Implement the approved styling**
+
+Match the supplied reference with a translucent light-grey outer shell, compact uppercase AI Behavior header, two large insight cards, a bordered More Creative child card, two equal-width parameter cards, segmented content indicator, outlined wrap-friendly chips, blue selected pills, a scrollable semantic-section body, and a full-width blue Generate button below the child card. Keep the More Creative title at `26px`, below the `30px` Flow Studio wordmark. Preserve visible focus rings and the existing small-screen collapse behavior.
+
+- [ ] **Step 5: Run focused verification**
+
+```bash
+node --experimental-strip-types --test tests/aiBehaviorPanelContract.test.ts tests/workspacePresentation.test.ts tests/selectionReconciliation.test.ts
+./node_modules/.bin/tsc -p tsconfig.json --noEmit
+```
+
+Expected: PASS and exit 0.
+
+---
+
+### Task 6: End-to-end local verification
 
 **Files:**
 - Verify only; no new production files.

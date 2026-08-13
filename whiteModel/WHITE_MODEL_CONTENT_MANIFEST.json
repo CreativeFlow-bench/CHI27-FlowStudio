@@ -1,0 +1,290 @@
+{
+  "schema_version": "flowstudio.white_model_content_manifest.v1",
+  "face_threshold_for_quarantine": 500000,
+  "assets": [
+    {
+      "path": "whiteModel/extracted/toy_animals_toy_animal_collection_07/toy_animal_collection_07_preview.jpg",
+      "category": "toy_animals_toy_animal_collection_07",
+      "name": "toy_animal_collection_07_preview",
+      "file_size_bytes": 269728,
+      "status": "active_reference"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Croissant.obj",
+      "category": "bakery",
+      "name": "Croissant",
+      "file_size_bytes": 709607,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Roller Bake.obj",
+      "category": "bakery",
+      "name": "Roller Bake",
+      "file_size_bytes": 1112196,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Whole Wheat Bread.obj",
+      "category": "bakery",
+      "name": "Whole Wheat Bread",
+      "file_size_bytes": 7893778,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Bread.obj",
+      "category": "bakery",
+      "name": "Bread",
+      "file_size_bytes": 1658011,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Wheat.obj",
+      "category": "bakery",
+      "name": "Wheat",
+      "file_size_bytes": 591810,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Cookies 1.obj",
+      "category": "bakery",
+      "name": "Cookies 1",
+      "file_size_bytes": 1420326,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/French Breads.obj",
+      "category": "bakery",
+      "name": "French Breads",
+      "file_size_bytes": 9912289,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Macaron.obj",
+      "category": "bakery",
+      "name": "Macaron",
+      "file_size_bytes": 2005893,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Breads 2.obj",
+      "category": "bakery",
+      "name": "Breads 2",
+      "file_size_bytes": 14005824,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Pretzel.obj",
+      "category": "bakery",
+      "name": "Pretzel",
+      "file_size_bytes": 6291642,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Cookies 2.obj",
+      "category": "bakery",
+      "name": "Cookies 2",
+      "file_size_bytes": 6973122,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Breads 1.obj",
+      "category": "bakery",
+      "name": "Breads 1",
+      "file_size_bytes": 2046005,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Roller Cake.obj",
+      "category": "bakery",
+      "name": "Roller Cake",
+      "file_size_bytes": 5576084,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Cup Cake.obj",
+      "category": "bakery",
+      "name": "Cup Cake",
+      "file_size_bytes": 3067974,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/bakery/Whole Wheat Donut.obj",
+      "category": "bakery",
+      "name": "Whole Wheat Donut",
+      "file_size_bytes": 4817659,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Fireplace.obj",
+      "category": "christmas",
+      "name": "Fireplace",
+      "file_size_bytes": 4133089,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Snowy.obj",
+      "category": "christmas",
+      "name": "Snowy",
+      "file_size_bytes": 2548117,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Candle.obj",
+      "category": "christmas",
+      "name": "Candle",
+      "file_size_bytes": 24572097,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Church.obj",
+      "category": "christmas",
+      "name": "Church",
+      "file_size_bytes": 6930547,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Gift Bag.obj",
+      "category": "christmas",
+      "name": "Gift Bag",
+      "file_size_bytes": 28981167,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Snow Globe.obj",
+      "category": "christmas",
+      "name": "Snow Globe",
+      "file_size_bytes": 11242212,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Candy Cane.obj",
+      "category": "christmas",
+      "name": "Candy Cane",
+      "file_size_bytes": 10535468,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Sled.obj",
+      "category": "christmas",
+      "name": "Sled",
+      "file_size_bytes": 31272345,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Santa Head.obj",
+      "category": "christmas",
+      "name": "Santa Head",
+      "file_size_bytes": 13731409,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Mistletoe.obj",
+      "category": "christmas",
+      "name": "Mistletoe",
+      "file_size_bytes": 15884950,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Bell.obj",
+      "category": "christmas",
+      "name": "Bell",
+      "file_size_bytes": 12729240,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Sock.obj",
+      "category": "christmas",
+      "name": "Sock",
+      "file_size_bytes": 1153303,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Gingerbread.obj",
+      "category": "christmas",
+      "name": "Gingerbread",
+      "file_size_bytes": 3025467,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Snowman.obj",
+      "category": "christmas",
+      "name": "Snowman",
+      "file_size_bytes": 3027375,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Shopping Gift.obj",
+      "category": "christmas",
+      "name": "Shopping Gift",
+      "file_size_bytes": 21467402,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Greeting.obj",
+      "category": "christmas",
+      "name": "Greeting",
+      "file_size_bytes": 9400395,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Tree.obj",
+      "category": "christmas",
+      "name": "Tree",
+      "file_size_bytes": 12717034,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Calendar.obj",
+      "category": "christmas",
+      "name": "Calendar",
+      "file_size_bytes": 16296887,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/christmas/Wreath.obj",
+      "category": "christmas",
+      "name": "Wreath",
+      "file_size_bytes": 4757550,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals_toy_animal_collection_07/07/风传设计素材馆-加入会员终身免费.url",
+      "category": "07",
+      "name": "风传设计素材馆-加入会员终身免费",
+      "file_size_bytes": 156,
+      "status": "active_model"
+    },
+    {
+      "path": "whiteModel/_quarantine_highpoly/toy_animals_toy_animal_collection_07/toy_animal_collection_07.c4d",
+      "category": "toy_animals_toy_animal_collection_07",
+      "name": "toy_animal_collection_07",
+      "file_size_bytes": 53031529,
+      "status": "quarantined_highpoly"
+    },
+    {
+      "path": "whiteModel/_quarantine_highpoly/toy_animals_toy_animal_collection_07/toy_animal_collection_07.fbx",
+      "category": "toy_animals_toy_animal_collection_07",
+      "name": "toy_animal_collection_07",
+      "file_size_bytes": 38155616,
+      "status": "quarantined_highpoly"
+    },
+    {
+      "path": "whiteModel/_quarantine_highpoly/toy_animals_toy_animal_collection_07/toy_animal_collection_07.obj",
+      "category": "toy_animals_toy_animal_collection_07",
+      "name": "toy_animal_collection_07",
+      "file_size_bytes": 126230242,
+      "status": "quarantined_highpoly",
+      "vertices": 677488,
+      "faces": 725020
+    },
+    {
+      "path": "whiteModel/_quarantine_highpoly/christmas/Chimney.obj",
+      "category": "christmas",
+      "name": "Chimney",
+      "file_size_bytes": 148752638,
+      "status": "quarantined_highpoly",
+      "vertices": 1013528,
+      "faces": 1013740
+    }
+  ]
+}

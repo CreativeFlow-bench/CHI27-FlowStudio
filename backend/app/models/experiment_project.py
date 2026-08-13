@@ -124,6 +124,16 @@ class ProjectEventBatchRequest(BaseModel):
     events: list[ProjectEventCreate] = Field(min_length=1, max_length=100)
 
 
+class ProjectRunCreateRequest(BaseModel):
+    session_id: str
+    baseline_mode: BaselineMode = BaselineMode.blank
+    baseline_snapshot: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProjectEventExclusionRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class ProjectDetail(BaseModel):
     project: ProjectFile
     active_run: ExperimentRun | None = None
@@ -167,9 +177,11 @@ __all__ = [
     "ProjectDetail",
     "ProjectEventBatchRequest",
     "ProjectEventCreate",
+    "ProjectEventExclusionRequest",
     "ProjectEventPage",
     "ProjectExportRecord",
     "ProjectFile",
+    "ProjectRunCreateRequest",
     "ProjectStatus",
     "ProjectUpdateRequest",
     "RecordingStatus",

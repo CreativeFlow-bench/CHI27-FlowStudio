@@ -1,0 +1,636 @@
+{
+  "adapter": "sam3d",
+  "status": "completed",
+  "granularity": "medium",
+  "max_parts": 8,
+  "preflight": {
+    "ready": true,
+    "python": "/root/autodl-tmp/data/flowstudio/envs/sam3d/bin/python",
+    "paths": {
+      "sam3d_root": "/root/autodl-tmp/data/flowstudio/opt-flowstudio/models/SAMPart3D",
+      "sam3d_root_exists": true,
+      "train_script_exists": true,
+      "eval_script_exists": true,
+      "render_script_exists": true,
+      "config_exists": true,
+      "model_root": "/root/autodl-tmp/data/flowstudio/sam3d/checkpoints",
+      "model_root_exists": true,
+      "checkpoint": "/root/autodl-tmp/data/flowstudio/sam3d/checkpoints/ptv3-object.pth",
+      "checkpoint_exists": true,
+      "blender_bin": "/root/autodl-tmp/data/flowstudio/blender/blender-5.0.0-linux-x64/blender",
+      "blender_exists": true
+    },
+    "imports": {
+      "torch": true,
+      "numpy": true,
+      "trimesh": true,
+      "open3d": true,
+      "pointcept": true,
+      "pointops": true,
+      "spconv": true,
+      "torch_scatter": true,
+      "tinycudann": true,
+      "tensorboardX": true,
+      "segment_anything": true,
+      "OpenEXR": true
+    },
+    "torch": {
+      "version": "2.11.0+cu128",
+      "cuda": "12.8",
+      "cuda_available": true,
+      "device_count": 1
+    },
+    "missing_imports": []
+  },
+  "layout": {
+    "oid": "sam3d_stack_20260730",
+    "data_root": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root",
+    "data_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730",
+    "mesh_root": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/mesh_root",
+    "mesh_glb": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/mesh_root/sam3d_stack_20260730.glb",
+    "exp_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp",
+    "runtime_config": "/root/autodl-tmp/data/flowstudio/opt-flowstudio/models/SAMPart3D/configs/sampart3d/flowstudio_sam3d_stack_20260730.py",
+    "epochs": 3,
+    "sample_num": 3000,
+    "pixels_per_image": 64,
+    "mask_batch_size": 16
+  },
+  "render": {
+    "ok": true,
+    "render_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730",
+    "file_count": 33,
+    "render_file_count": 16,
+    "depth_file_count": 16,
+    "meta_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/meta.json",
+    "files": [
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0000.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0001.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0002.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0003.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0004.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0005.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0006.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0007.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0008.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0009.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0010.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0011.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0012.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0013.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0014.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/depth_0015.exr",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/meta.json",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0000.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0001.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0002.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0003.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0004.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0005.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0006.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0007.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0008.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0009.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0010.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0011.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0012.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0013.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0014.webp",
+      "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/data_root/sam3d_stack_20260730/render_0015.webp"
+    ]
+  },
+  "train": {
+    "ok": true,
+    "cmd": [
+      "/root/autodl-tmp/data/flowstudio/envs/sam3d/bin/python",
+      "/root/autodl-tmp/data/flowstudio/opt-flowstudio/models/SAMPart3D/launch/train.py",
+      "--config-file",
+      "/root/autodl-tmp/data/flowstudio/opt-flowstudio/models/SAMPart3D/configs/sampart3d/flowstudio_sam3d_stack_20260730.py",
+      "--num-gpus",
+      "1",
+      "--options",
+      "save_path=/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp",
+      "oid=sam3d_stack_20260730",
+      "label=medium"
+    ],
+    "returncode": 0,
+    "exp_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp",
+    "results_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last",
+    "vis_dir": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/vis_pcd/last",
+    "stdout_tail": "",
+    "stderr_tail": "    'face_index'),\n                hash_type='fnv',\n                mode='train',\n                return_grid_coord=True,\n                return_inverse=True),\n            dict(type='CenterShift', apply_z=False),\n            dict(type='NormalizeColor'),\n            dict(type='ToTensor'),\n            dict(\n                type='Collect',\n                keys=('coord', 'grid_coord', 'inverse', 'origin_coord',\n                      'face_index'),\n                feat_keys=('coord', 'normal', 'color'))\n        ],\n        loop=1))\noid = 'sam3d_stack_20260730'\nlabel = 'medium'\nnum_worker_per_gpu = 1\nbatch_size_per_gpu = 1\nbatch_size_val_per_gpu = 1\nbatch_size_test_per_gpu = 1\n\n[2026-07-30 17:27:17,568 INFO train.py line 139 18212] => Building model ...\n[2026-07-30 17:27:18,222 INFO train.py line 427 18212] Num params: 1634304\n[2026-07-30 17:27:18,318 INFO train.py line 141 18212] => Building writer ...\n[2026-07-30 17:27:18,321 INFO train.py line 437 18212] Tensorboard writer logging dir: /root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp\n[2026-07-30 17:27:18,321 INFO train.py line 143 18212] => Building train dataset & dataloader ...\n[2026-07-30 17:27:18,387 INFO dataset_render_16views.py line 52 18212] Using local Segment Anything checkpoint: /root/autodl-tmp/data/flowstudio/sam3d/checkpoints/sam_vit_h_4b8939.pth\n[2026-07-30 17:27:23,219 INFO dataset_render_16views.py line 213 18212] Processing frame_0\n/root/autodl-tmp/data/flowstudio/opt-flowstudio/models/SAMPart3D/pointcept/datasets/dataset_render_16views.py:257: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)\n  pixel_level_keys, scale, mask_cdf = self._calculate_3d_groups(torch.from_numpy(depth), mapping_valid, masks_filtered, points_tensor[mask_dis])\n[2026-07-30 17:27:25,179 INFO dataset_render_16views.py line 213 18212] Processing frame_1\n[2026-07-30 17:27:26,351 INFO dataset_render_16views.py line 213 18212] Processing frame_2\n[2026-07-30 17:27:27,477 INFO dataset_render_16views.py line 213 18212] Processing frame_3\n[2026-07-30 17:27:28,666 INFO dataset_render_16views.py line 213 18212] Processing frame_4\n[2026-07-30 17:27:29,890 INFO dataset_render_16views.py line 213 18212] Processing frame_5\n[2026-07-30 17:27:31,095 INFO dataset_render_16views.py line 213 18212] Processing frame_6\n[2026-07-30 17:27:32,257 INFO dataset_render_16views.py line 213 18212] Processing frame_7\n[2026-07-30 17:27:33,424 INFO dataset_render_16views.py line 213 18212] Processing frame_8\n[2026-07-30 17:27:34,748 INFO dataset_render_16views.py line 213 18212] Processing frame_9\n[2026-07-30 17:27:35,960 INFO dataset_render_16views.py line 213 18212] Processing frame_10\n[2026-07-30 17:27:37,080 INFO dataset_render_16views.py line 213 18212] Processing frame_11\n[2026-07-30 17:27:38,251 INFO dataset_render_16views.py line 213 18212] Processing frame_12\n[2026-07-30 17:27:39,535 INFO dataset_render_16views.py line 213 18212] Processing frame_13\n[2026-07-30 17:27:40,740 INFO dataset_render_16views.py line 213 18212] Processing frame_14\n[2026-07-30 17:27:41,813 INFO dataset_render_16views.py line 213 18212] Processing frame_15\n/root/autodl-tmp/data/flowstudio/envs/sam3d/lib/python3.10/site-packages/torch/nested/__init__.py:256: UserWarning: The PyTorch API of nested tensors is in prototype stage and will change in the near future. We recommend specifying layout=torch.jagged when constructing a nested tensor, as this layout receives active development, has better operator coverage, and works with torch.compile. (Triggered internally at /pytorch/aten/src/ATen/NestedTensorImpl.cpp:178.)\n  return _nested.nested_tensor(\n[2026-07-30 17:27:43,076 INFO dataset_render_16views.py line 137 18212] Totally 16 x 1 samples in train set.\n[2026-07-30 17:27:43,076 INFO train.py line 147 18212] => Building optimize, scheduler, scaler(amp) ...\n[2026-07-30 17:27:43,078 INFO optimizer.py line 64 18212] Params Group 1 - lr: 0.0001; Params: ['instance_net.params', 'pos_net.params'].\n[2026-07-30 17:27:43,079 INFO train.py line 151 18212] => Building hooks ...\n/root/autodl-tmp/data/flowstudio/envs/sam3d/lib/python3.10/site-packages/sklearn/preprocessing/_data.py:2846: UserWarning: n_quantiles (1000) is greater than the total number of samples (249). n_quantiles is set to n_samples.\n  warnings.warn(\n[2026-07-30 17:27:43,081 INFO train.py line 168 18212] >>>>>>>>>>>>>>>> Start Training >>>>>>>>>>>>>>>>\n[2026-07-30 17:27:43,081 INFO train.py line 173 18212] => Loading checkpoint & weight ...\n[2026-07-30 17:27:43,389 INFO train.py line 194 18212] Missing keys: ['scale_statistics', 'instance_net.params', 'pos_net.params']\nW0730 17:27:43.417000 18212 site-packages/torch/fx/_symbolic_trace.py:53] is_fx_tracing will return true for both fx.symbolic_trace and torch.export. Please use is_fx_tracing_symbolic_tracing() for specifically fx.symbolic_trace or torch.compiler.is_compiling() for specifically torch.export/compile.\n[2026-07-30 17:28:00,050 INFO train.py line 213 18212] iter: 0, total_loss: 0.3462069034576416, loss_1: 0.398681640625, loss_2: 0.345703125, loss_3: 0.266357421875\n[2026-07-30 17:28:00,255 INFO train.py line 250 18212] => Loading checkpoint & weight ...\n[2026-07-30 17:28:00,256 INFO train.py line 259 18212] No weight found at: None\n[2026-07-30 17:28:03,136 INFO train.py line 326 18212] scale_0.0 has 7 groups\n[2026-07-30 17:28:06,135 INFO train.py line 326 18212] scale_0.5 has 7 groups\n[2026-07-30 17:28:09,273 INFO train.py line 326 18212] scale_1.0 has 7 groups\n[2026-07-30 17:28:12,460 INFO train.py line 326 18212] scale_1.5 has 7 groups\n[2026-07-30 17:28:15,571 INFO train.py line 326 18212] scale_2.0 has 7 groups\n",
+    "epochs": 3
+  },
+  "parts": [
+    {
+      "part_id": "sam3d_0",
+      "label": "part 0",
+      "source_part_id": 0,
+      "cluster_id": 0,
+      "face_count": 20941,
+      "bbox3d": {
+        "min": [
+          -0.5313169360160828,
+          -0.9090695977210999,
+          -1.0003180503845215
+        ],
+        "max": [
+          0.6189661026000977,
+          0.5356614589691162,
+          0.9895471334457397
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_1",
+      "label": "part 1",
+      "source_part_id": 1,
+      "cluster_id": 1,
+      "face_count": 2671,
+      "bbox3d": {
+        "min": [
+          -0.2920348346233368,
+          0.4268217980861664,
+          -0.01201059203594923
+        ],
+        "max": [
+          0.4258924424648285,
+          0.7025583982467651,
+          0.7433480024337769
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_2",
+      "label": "part 2",
+      "source_part_id": 2,
+      "cluster_id": 2,
+      "face_count": 1537,
+      "bbox3d": {
+        "min": [
+          -0.21627597510814667,
+          0.34403371810913086,
+          -0.5458229184150696
+        ],
+        "max": [
+          0.38870230317115784,
+          0.5948801040649414,
+          0.08896373212337494
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_3",
+      "label": "part 3",
+      "source_part_id": 3,
+      "cluster_id": 3,
+      "face_count": 9121,
+      "bbox3d": {
+        "min": [
+          -0.6104185581207275,
+          -0.5278081893920898,
+          -0.8360756039619446
+        ],
+        "max": [
+          0.4866977334022522,
+          0.5394477844238281,
+          0.675861656665802
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_4",
+      "label": "part 4",
+      "source_part_id": 4,
+      "cluster_id": 4,
+      "face_count": 1861,
+      "bbox3d": {
+        "min": [
+          -0.21429821848869324,
+          0.563731849193573,
+          0.11504489183425903
+        ],
+        "max": [
+          0.33678945899009705,
+          0.9158878326416016,
+          0.6662858128547668
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_5",
+      "label": "part 5",
+      "source_part_id": 5,
+      "cluster_id": 5,
+      "face_count": 2845,
+      "bbox3d": {
+        "min": [
+          -0.28945595026016235,
+          0.4867287874221802,
+          0.05675049126148224
+        ],
+        "max": [
+          0.4258924424648285,
+          0.7303454279899597,
+          0.7432416677474976
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_15.png"
+      ]
+    },
+    {
+      "part_id": "sam3d_6",
+      "label": "part 6",
+      "source_part_id": 6,
+      "cluster_id": 6,
+      "face_count": 1024,
+      "bbox3d": {
+        "min": [
+          -0.21203580498695374,
+          0.7910429239273071,
+          0.11493164300918579
+        ],
+        "max": [
+          0.33678945899009705,
+          0.9175058007240295,
+          0.6662858128547668
+        ]
+      },
+      "metadata": {
+        "source": "sam3d",
+        "labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+        "projection_view_count": 16
+      },
+      "projection_masks": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_15.png"
+      ]
+    }
+  ],
+  "part_projection_masks": {
+    "status": "completed",
+    "image_size": 512,
+    "view_count": 16,
+    "views": [
+      {
+        "view_index": 0,
+        "azimuth_deg": 0.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 1,
+        "azimuth_deg": 22.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 2,
+        "azimuth_deg": 45.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 3,
+        "azimuth_deg": 67.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 4,
+        "azimuth_deg": 90.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 5,
+        "azimuth_deg": 112.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 6,
+        "azimuth_deg": 135.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 7,
+        "azimuth_deg": 157.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 8,
+        "azimuth_deg": 180.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 9,
+        "azimuth_deg": 202.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 10,
+        "azimuth_deg": 225.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 11,
+        "azimuth_deg": 247.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 12,
+        "azimuth_deg": 270.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 13,
+        "azimuth_deg": 292.5,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 14,
+        "azimuth_deg": 315.0,
+        "elevation_deg": 8.0
+      },
+      {
+        "view_index": 15,
+        "azimuth_deg": 337.5,
+        "elevation_deg": 8.0
+      }
+    ],
+    "parts": {
+      "sam3d_0": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_0/view_15.png"
+      ],
+      "sam3d_1": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_1/view_15.png"
+      ],
+      "sam3d_2": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_2/view_15.png"
+      ],
+      "sam3d_3": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_3/view_15.png"
+      ],
+      "sam3d_4": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_4/view_15.png"
+      ],
+      "sam3d_5": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_5/view_15.png"
+      ],
+      "sam3d_6": [
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_00.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_01.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_02.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_03.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_04.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_05.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_06.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_07.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_08.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_09.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_10.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_11.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_12.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_13.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_14.png",
+        "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/part_projection_masks/sam3d_6/view_15.png"
+      ]
+    }
+  },
+  "face_labels_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/results/last/mesh_1.0.npy",
+  "segmented_mesh_path": "/root/autodl-tmp/flowstudio_smoke/sam3d_stack_20260730/exp/vis_pcd/last/mesh_1.0.ply"
+}

@@ -1,0 +1,12 @@
+{
+  "account": "coder_1",
+  "saved_at": "2026-07-23T09:16:03.453669+00:00",
+  "case_count": 1,
+  "done_count": 1,
+  "cases": [
+    {
+      "case_id": "test",
+      "annotation_done": true
+    }
+  ]
+}

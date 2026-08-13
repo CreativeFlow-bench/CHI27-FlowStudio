@@ -1,0 +1,104 @@
+{
+  "behavior_states": [
+    {
+      "code": "early_exploration",
+      "label": "Early Exploration",
+      "description": "Broad directions, loose ideation"
+    },
+    {
+      "code": "coarse_forming",
+      "label": "Coarse Forming",
+      "description": "Global shape, divergent ideation"
+    },
+    {
+      "code": "local_refinement",
+      "label": "Local Refinement",
+      "description": "Part edits, fine adjustments"
+    },
+    {
+      "code": "relationship_adjustment",
+      "label": "Relationship Adjustment",
+      "description": "Repeated micro-edits, stuck in details"
+    },
+    {
+      "code": "material_refinement",
+      "label": "Material Refinement",
+      "description": "Texture, finish, surface quality"
+    },
+    {
+      "code": "evaluation",
+      "label": "Evaluation",
+      "description": "Browse, compare, and select"
+    }
+  ],
+  "creativeflow_routes": [
+    {
+      "code": "generate_contour_variants",
+      "label": "生成轮廓变体"
+    },
+    {
+      "code": "generate_breakthrough_reference_variants",
+      "label": "生成突破性的参考变体"
+    },
+    {
+      "code": "generate_local_variants",
+      "label": "生成局部变体"
+    },
+    {
+      "code": "generate_material_variants",
+      "label": "生成材质变体"
+    },
+    {
+      "code": "no_intervention",
+      "label": "不介入"
+    }
+  ],
+  "signal_groups": [
+    {
+      "code": "temporal_behavior",
+      "label": "行为与时间信号",
+      "signals": [
+        { "code": "pause_hover", "label": "停留/悬停" },
+        { "code": "repeated_micro_edit", "label": "反复微调" },
+        { "code": "undo_redo_loop", "label": "撤销/重做循环" },
+        { "code": "rapid_tool_switch", "label": "频繁切换工具" },
+        { "code": "accept_or_reject_candidate", "label": "接受/拒绝候选" },
+        { "code": "long_compare_before_action", "label": "长时间比较后操作" },
+        { "code": "new_case_opened", "label": "打开新 case/参考" },
+        { "code": "operation_commit", "label": "保存/应用/确认" }
+      ]
+    },
+    {
+      "code": "spatial_viewport",
+      "label": "空间与视口信号",
+      "signals": [
+        { "code": "global_orbit", "label": "全局旋转观察" },
+        { "code": "local_zoom_in", "label": "局部放大" },
+        { "code": "zoom_out_overview", "label": "缩小看整体" },
+        { "code": "target_select_object", "label": "选中整体对象" },
+        { "code": "target_select_part", "label": "选中局部部件" },
+        { "code": "brush_large_area", "label": "大面积笔刷/遮罩" },
+        { "code": "brush_small_area", "label": "小面积笔刷/遮罩" },
+        { "code": "symmetry_or_mirror", "label": "对称/镜像操作" },
+        { "code": "reference_alignment", "label": "对齐参考图/参考物" },
+        { "code": "multi_view_check", "label": "多视角来回检查" }
+      ]
+    },
+    {
+      "code": "semantic_cognitive",
+      "label": "语义与认知信号",
+      "signals": [
+        { "code": "form_keyword_change", "label": "形态词变化" },
+        { "code": "surface_keyword_change", "label": "材质/表面词变化" },
+        { "code": "concept_keyword_change", "label": "概念词变化" },
+        { "code": "semantic_drift_high", "label": "语义漂移明显" },
+        { "code": "search_for_alternative", "label": "寻找替代方向" },
+        { "code": "preserve_existing_structure", "label": "保留现有结构" },
+        { "code": "match_reference", "label": "贴合参考" },
+        { "code": "silhouette_readability", "label": "检查轮廓可读性" },
+        { "code": "surface_quality_check", "label": "检查表面质量" },
+        { "code": "uncertainty_or_stuck", "label": "犹豫/卡住" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Click Test</title></head>
+<body style="font-family:sans-serif;padding:40px;background:#111;color:#fff">
+<h2>按钮测试</h2>
+<button id="btn1" style="padding:16px 32px;font-size:18px;cursor:pointer">点击我 → 应该变绿</button>
+<button id="btn2" style="padding:16px 32px;font-size:18px;cursor:pointer;margin-top:12px">点击我 → 应该变蓝</button>
+<div id="log" style="margin-top:20px;font-size:14px;color:#aaa"></div>
+<script>
+document.getElementById('btn1').addEventListener('click', function() {
+  this.style.background = '#22c55e';
+  document.getElementById('log').textContent = '按钮1被点击了！JS工作正常';
+});
+document.getElementById('btn2').onclick = function() {
+  this.style.background = '#3b82f6';
+  document.getElementById('log').textContent = '按钮2被点击了！JS工作正常';
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+openapi: 3.1.0
+info:
+  title: Flow Studio API
+  version: 0.1.0
+servers:
+  - url: /api/v1
+paths:
+  /projects:
+    post:
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                locale: { type: string, enum: [en, zh-CN], default: en }
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Project" }
+  /projects/{projectId}:
+    get:
+      summary: Load complete project workspace
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project with versions and intents
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectState" }
+    patch:
+      summary: Update project metadata or active state
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                locale: { type: string, enum: [en, zh-CN] }
+                activeVersionId: { type: string }
+      responses:
+        "200": { description: Updated }
+  /projects/{projectId}/assets:
+    post:
+      summary: Upload source 3D model
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "202":
+          description: Processing started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+  /projects/{projectId}/versions:
+    post:
+      summary: Create root or child version
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentVersionId: { type: [string, "null"] }
+                assetId: { type: string }
+                directionId: { type: [string, "null"] }
+      responses:
+        "201":
+          description: Version created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Version" }
+  /projects/{projectId}/events:
+    post:
+      summary: Append operation and camera events
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  items: { $ref: "#/components/schemas/OperationEvent" }
+      responses:
+        "202": { description: Events accepted }
+  /projects/{projectId}/intents/infer:
+    post:
+      summary: Infer intent from selected evidence
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versionId, eventIds]
+              properties:
+                versionId: { type: string }
+                eventIds: { type: array, items: { type: string } }
+                note: { type: string }
+                referencedVersionIds: { type: array, items: { type: string } }
+      responses:
+        "202":
+          description: Inference job started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+  /projects/{projectId}/intents/{intentId}:
+    patch:
+      summary: Edit, confirm or dismiss intent
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: intentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text: { type: string }
+                status:
+                  type: string
+                  enum: [STATED, CONFIRMED, DISMISSED]
+      responses:
+        "200":
+          description: Intent updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Intent" }
+  /projects/{projectId}/diverge:
+    post:
+      summary: Combine confirmed intents and propose direction terms
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intentIds]
+              properties:
+                intentIds: { type: array, items: { type: string } }
+                supplement: { type: string }
+      responses:
+        "202":
+          description: Divergence job started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+  /projects/{projectId}/directions:
+    post:
+      summary: Generate direction references
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [combinedIntentId, aestheticTerms, structuralTerms]
+              properties:
+                combinedIntentId: { type: string }
+                aestheticTerms: { type: array, items: { type: string } }
+                structuralTerms: { type: array, items: { type: string } }
+      responses:
+        "202":
+          description: Direction generation started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+  /jobs/{jobId}:
+    get:
+      summary: Poll asynchronous task
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Current task status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Project:
+      type: object
+      required: [id, name, locale, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        locale: { type: string, enum: [en, zh-CN] }
+        activeVersionId: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Version:
+      type: object
+      properties:
+        id: { type: string }
+        parentVersionId: { type: [string, "null"] }
+        number: { type: integer }
+        assetId: { type: string }
+        directionId: { type: [string, "null"] }
+    OperationEvent:
+      type: object
+      required: [id, versionId, tool, createdAt]
+      properties:
+        id: { type: string }
+        versionId: { type: string }
+        tool: { type: string, enum: [SELECT, BRUSH, SKETCH, PULL, SMOOTH, ADD] }
+        target: { type: object, additionalProperties: true }
+        modelSpaceData: { type: object, additionalProperties: true }
+        strength: { type: number }
+        note: { type: string }
+        createdAt: { type: string, format: date-time }
+    Intent:
+      type: object
+      properties:
+        id: { type: string }
+        versionId: { type: string }
+        status: { type: string, enum: [INFERRING, STATED, CONFIRMED, DISMISSED] }
+        primary: { type: string }
+        text: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidenceEventIds: { type: array, items: { type: string } }
+    Job:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        status: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED] }
+        progress: { type: number, minimum: 0, maximum: 1 }
+        output: { type: object, additionalProperties: true }
+        error: { type: [object, "null"], additionalProperties: true }
+    ProjectState:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          properties:
+            versions:
+              type: array
+              items: { $ref: "#/components/schemas/Version" }
+            intents:
+              type: array
+              items: { $ref: "#/components/schemas/Intent" }
+

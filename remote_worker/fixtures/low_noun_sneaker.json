@@ -1,0 +1,9 @@
+{
+  "stage": "low_fidelity",
+  "object_type": "sneaker",
+  "source_id": "low_noun_sneaker_v1",
+  "source_image_path": "",
+  "source_description": "A sneaker with a low elongated body, thick sole, rounded toe box, raised heel, opening collar, and lace area. Preserve the identity cues of sneaker: sole, toe, heel, collar, and lace region. Only change the overall silhouette and massing.",
+  "user_prompt": "只改变整体轮廓形状，保持物体概念不变。",
+  "candidate_count": 8
+}

@@ -1,0 +1,108 @@
+{
+  "schema_version": "creativeflow.controlled-analogy-library.v2",
+  "policy": {
+    "knowledge_graph": "network_first",
+    "fallback": "analogy_path_library",
+    "note": "The library supplies graph targets and relation paths only when external KG retrieval is unavailable or empty. Every variation changes one facet family and locks the others."
+  },
+  "objects": {
+    "snowman": {
+      "source_prompt": "A single friendly snowman made from three stacked snow spheres, centered on a neutral studio background, coal eyes and buttons, carrot nose, twig arms, black top hat and red scarf, full object visible.",
+      "variations": {
+        "original": {
+          "label": "CreativeFlow Original",
+          "prompt": "Preserve snowman identity while applying a holistic analogy selected from the knowledge graph.",
+          "axes": [
+            "relation",
+            "semantic_motif",
+            "composition",
+            "character"
+          ],
+          "jump_facets": [
+            "holistic_semantics",
+            "composition",
+            "character"
+          ],
+          "locked_facets": [
+            "object_identity"
+          ],
+          "fallback_graph_labels": [],
+          "analogy_paths": []
+        },
+        "low_fidelity": {
+          "label": "CreativeFlow Low Fidelity",
+          "prompt": "Change only the outer contour, proportions and mass distribution through analogy; preserve snowman identity, parts, accessories and materials.",
+          "axes": [
+            "outer_contour",
+            "proportion",
+            "mass_distribution",
+            "tactile_form_impression"
+          ],
+          "jump_facets": [
+            "outer_contour",
+            "proportion",
+            "mass_distribution"
+          ],
+          "locked_facets": [
+            "object_identity",
+            "part_inventory",
+            "accessory_semantics",
+            "material_texture"
+          ],
+          "fallback_graph_labels": [],
+          "analogy_paths": []
+        },
+        "part": {
+          "label": "CreativeFlow Part",
+          "prompt": "Replace only the snowman's nose inside the supplied brush mask; preserve all content outside the mask.",
+          "axes": [
+            "masked_part_identity",
+            "masked_part_shape",
+            "masked_part_semantics"
+          ],
+          "jump_facets": [
+            "local_parts",
+            "accessories",
+            "facial_grammar",
+            "ornament"
+          ],
+          "locked_facets": [
+            "object_identity",
+            "outer_contour",
+            "proportion",
+            "base_material"
+          ],
+          "fallback_graph_labels": [],
+          "analogy_paths": []
+        },
+        "texture": {
+          "label": "CreativeFlow Texture",
+          "prompt": "Change only material, surface microstructure and finish through analogy; preserve snowman identity, geometry, silhouette and part layout exactly.",
+          "axes": [
+            "material",
+            "color",
+            "surface_microstructure",
+            "finish",
+            "weathering",
+            "coating"
+          ],
+          "jump_facets": [
+            "material",
+            "surface_microstructure",
+            "finish",
+            "fabric_weave"
+          ],
+          "locked_facets": [
+            "object_identity",
+            "geometry",
+            "outer_contour",
+            "proportion",
+            "part_layout"
+          ],
+          "fallback_graph_labels": [],
+          "analogy_paths": []
+        }
+      }
+    }
+  }
+}

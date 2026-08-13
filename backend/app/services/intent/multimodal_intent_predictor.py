@@ -316,6 +316,24 @@ class RuleBasedMultimodalIntentPredictor:
         ]
 
 
+DEFAULT_PLANNER_SYSTEM_PROMPT = (
+    "You are FlowStudio's interaction-understanding planner. "
+    "Consume live interaction signals, retrieved design-state IR, current 3D context, "
+    "and optional visual evidence. Return compact JSON only that matches the requested schema. "
+    "Target priority (strict): "
+    "(1) If the user text/image language clearly names a part or region "
+    "(e.g. 鼻子/帽子/head/scarf, or a registered part label), treat that semantic target as primary "
+    "— even if a different part is hovered or last-selected. "
+    "(2) If language does NOT name a part/region, prefer stable interaction evidence: "
+    "brush_end / drag_end / smooth_end / part_select with repeated edits on the same part. "
+    "(3) Never treat hover-only or a single brief hover as proof of a part-change intent. "
+    "(4) If semantic target and interaction target conflict, lower confidence, set "
+    "needs_clarification=true, and ask a short clarification between the two targets. "
+    "(5) Prefer concrete operation + scope (part|region|whole|material) over vague explore "
+    "when evidence is sufficient; otherwise keep ambiguity explicit in hypotheses."
+)
+
+
 class VLMIntentPredictor:
     """HTTP VLM intent predictor with rule-based fallback.
 
@@ -335,6 +353,7 @@ class VLMIntentPredictor:
         fallback_to_rules: bool = True,
         fallback_endpoint_urls: list[str] | None = None,
         model_name: str = "qwen3-planner",
+        system_prompt: str | None = None,
     ) -> None:
         self.endpoint_url = endpoint_url.rstrip("/")
         self.timeout_sec = timeout_sec
@@ -346,6 +365,8 @@ class VLMIntentPredictor:
             if isinstance(value, str) and value.strip()
         ]
         self.model_name = model_name or "qwen3-planner"
+        self.system_prompt = system_prompt or DEFAULT_PLANNER_SYSTEM_PROMPT
+        self.system_prompt_override: str | None = None
 
     def predict_rules_only(self, event: UserEvent, features: dict[str, object]) -> IntentPrediction:
         prior = self.fallback.predict(event, features)
@@ -367,9 +388,24 @@ class VLMIntentPredictor:
             },
         )
 
-    def predict(self, event: UserEvent, features: dict[str, object]) -> IntentPrediction:
-        prior = self.fallback.predict(event, features)
-        request_payload = {
+    def effective_system_prompt(self) -> str:
+        override = getattr(self, "system_prompt_override", None)
+        if isinstance(override, str) and override.strip():
+            return override.strip()
+        configured = getattr(self, "system_prompt", None)
+        if isinstance(configured, str) and configured.strip():
+            return configured.strip()
+        return DEFAULT_PLANNER_SYSTEM_PROMPT
+
+    def build_request_payload(
+        self,
+        event: UserEvent,
+        features: dict[str, object],
+        *,
+        prior: IntentPrediction | None = None,
+    ) -> dict[str, object]:
+        prior = prior or self.fallback.predict(event, features)
+        return {
             "task": "intent_predict",
             "event": event.model_dump(mode="json"),
             "features": features,
@@ -390,6 +426,34 @@ class VLMIntentPredictor:
                 ]
             },
         }
+
+    def build_prompt_bundle(
+        self,
+        event: UserEvent,
+        features: dict[str, object],
+        *,
+        system_prompt: str | None = None,
+        prior: IntentPrediction | None = None,
+    ) -> dict[str, object]:
+        prior = prior or self.fallback.predict(event, features)
+        payload = self.build_request_payload(event, features, prior=prior)
+        system = (system_prompt or self.effective_system_prompt()).strip()
+        user = json.dumps(payload, ensure_ascii=False, indent=2)
+        return {
+            "system": system,
+            "user": user,
+            "user_payload": payload,
+            "model": self.model_name,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "rule_based_prior": payload["rule_based_prior"],
+        }
+
+    def predict(self, event: UserEvent, features: dict[str, object]) -> IntentPrediction:
+        prior = self.fallback.predict(event, features)
+        request_payload = self.build_request_payload(event, features, prior=prior)
         errors: list[str] = []
         try:
             response = self._post_json(request_payload)
@@ -522,13 +586,7 @@ class VLMIntentPredictor:
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "You are FlowStudio's interaction-understanding planner. "
-                        "Observe live interaction signals, retrieved design-state IR, "
-                        "current 3D context, and optional visual evidence. "
-                        "Return compact JSON only, matching the requested schema. "
-                        "Never treat a hovered part alone as proof of a part-change intent."
-                    ),
+                    "content": self.effective_system_prompt(),
                 },
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],

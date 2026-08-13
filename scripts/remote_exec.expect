@@ -1,0 +1,10 @@
+#!/usr/bin/env expect
+set timeout [expr {[info exists env(REMOTE_TIMEOUT)] ? $env(REMOTE_TIMEOUT) : 60}]
+spawn env -u http_proxy -u https_proxy -u all_proxy ssh -F /dev/null -o ProxyCommand=none -o StrictHostKeyChecking=no -p $env(REMOTE_PORT) $env(REMOTE_USER)@$env(REMOTE_HOST) "echo $env(REMOTE_PAYLOAD_B64) | base64 -d | bash"
+expect {
+  -re "(?i).*password:.*" { send -- "$env(REMOTE_PASSWORD)\r"; exp_continue }
+  timeout { exit 124 }
+  eof
+}
+catch wait result
+exit [lindex $result 3]

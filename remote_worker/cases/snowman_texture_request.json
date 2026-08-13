@@ -1,0 +1,61 @@
+{
+  "stage": "texture",
+  "object_type": "snowman",
+  "source_id": "snowman_shared_source_v1",
+  "source_image_path": "/root/autodl-tmp/flowstudio_worker_runs/snowman_inputs/source.png",
+  "source_mesh_path": "/root/autodl-tmp/creativeflow_variations_20260716/hunyuan3d/source/snowman_source/mesh.glb",
+  "user_prompt": "Use relation-first CreativeFlow knowledge-graph expansion from the current packed-snow surface. Diverge only material family, base color, roughness, metalness, coating, weathering and visible microstructure while keeping the exact geometry, silhouette, pose, part count, part layout, attachment points, camera and background. Generate distinct near and far material analogies rather than fixed example materials.",
+  "candidate_count": 4,
+  "source_elements": {
+    "object_identity": "snowman",
+    "geometry_signature": "two rounded lobes with a broad lower body, smaller head, centered top hat, closed neck scarf, lateral twig arms and forward nose",
+    "global_silhouette": "compact upright two-lobed figure",
+    "part_layout": [
+      "head above body",
+      "hat centered above head",
+      "closed scarf around neck",
+      "nose centered on face",
+      "coal face pieces and body buttons",
+      "twig arms attached laterally"
+    ],
+    "surface_regions": [
+      {
+        "region_id": "snow_body_and_head",
+        "material_identity": "packed snow",
+        "base_color": "white with cool blue shading",
+        "roughness_class": "matte diffuse",
+        "microstructure": [
+          "fine compacted snow granules",
+          "subtle frost sparkle"
+        ],
+        "mask_path": "/root/autodl-tmp/creativeflow_variations_20260716/texture_body_mask.png"
+      }
+    ],
+    "part_inventory": [
+      "black top hat with one red band",
+      "orange carrot nose",
+      "closed red neck scarf without a hanging tail",
+      "two brown twig arms",
+      "two black coal eyes",
+      "six black coal mouth pieces",
+      "two black coal body buttons"
+    ],
+    "materials": [
+      "white packed snow",
+      "black felt hat",
+      "red woven fabric",
+      "orange carrot",
+      "brown wood",
+      "black coal"
+    ],
+    "colors": [
+      "white",
+      "black",
+      "red",
+      "orange",
+      "brown"
+    ],
+    "locked_geometry": true,
+    "confidence": 1.0
+  }
+}

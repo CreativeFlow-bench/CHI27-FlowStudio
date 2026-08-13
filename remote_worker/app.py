@@ -40,10 +40,22 @@ from mesh_utils import (
     transform_obj,
 )
 
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
+from job_orchestration import (
+    PersistentJobStore,
+    WorkerJob,
+    _clean_log_text,
+    _create_job,
+    _find_result,
+    _normalize_transfer_result_for_hy3d,
+    _read_env_exports,
+    _read_json_result,
+    _run_job,
+    _sanitize_for_json,
+    _v1_job_response,
+    jobs,
+    now_iso,
+    processes,
+)
 
 WORKER_ROOT = Path(__file__).resolve().parent
 PIPELINE_ROOT = Path(os.getenv("CF_PIPELINE_ROOT", "/root/creativeflow_pipeline"))
@@ -63,6 +75,14 @@ QWEN_IMAGE_URL = os.getenv("CF_QWEN_IMAGE_URL", "http://127.0.0.1:18082/generate
 QWEN_CONDITIONED_URL = os.getenv(
     "CF_QWEN_CONDITIONED_URL", "http://127.0.0.1:18082/generate-conditioned"
 )
+# Live qwen3-planner (GPU2 tunnel).  Local 18084 is the legacy dead endpoint;
+# keep it only as a last-resort fallback when CF_PLANNER_API_BASE is unset.
+PLANNER_API_BASE = os.getenv(
+    "CF_PLANNER_API_BASE", "http://127.0.0.1:18085/v1"
+).rstrip("/")
+LEGACY_PLANNER_API_BASE = os.getenv(
+    "CF_LEGACY_PLANNER_API_BASE", "http://127.0.0.1:18084/v1"
+).rstrip("/")
 MODEL_PHASE_SCRIPT = Path(
     os.getenv("CF_MODEL_PHASE_SCRIPT", str(WORKER_ROOT / "model_phase.sh"))
 )
@@ -89,6 +109,7 @@ SAM3D_ROOT = Path(os.getenv("SAM3D_ROOT", "/root/SAMPart3D"))
 SAM3D_PYTHON = Path(
     os.getenv("SAM3D_PYTHON", "/root/autodl-tmp/data/flowstudio/envs/sam3d/bin/python")
 )
+
 
 
 def _run_model_phase_sync(phase_name: str, timeout: int = 480) -> str:
@@ -381,58 +402,6 @@ class RenderJobResponse(BaseModel):
     updated_at: str = Field(default_factory=now_iso)
 
 
-class WorkerJob(BaseModel):
-    job_id: str
-    flowstudio_job_id: str
-    kind: str
-    status: str = "queued"
-    stage: str = "queued"
-    progress: float = 0
-    message: str | None = None
-    request: dict[str, Any] = Field(default_factory=dict)
-    result: dict[str, Any] = Field(default_factory=dict)
-    error: str | None = None
-    created_at: str = Field(default_factory=now_iso)
-    updated_at: str = Field(default_factory=now_iso)
-    work_dir: str
-    pid: int | None = None
-
-
-class PersistentJobStore(dict[str, WorkerJob]):
-    """Small restart-safe store; GPU subprocess recovery remains explicit."""
-
-    def __init__(self, run_root: Path) -> None:
-        super().__init__()
-        self.run_root = run_root
-        if not run_root.is_dir():
-            return
-        for state_path in run_root.glob("rw_*/job_state.json"):
-            try:
-                job = WorkerJob.model_validate_json(state_path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                continue
-            if job.status in {"queued", "running"}:
-                job.status = "failed"
-                job.stage = "worker_restarted"
-                job.error = "Worker API restarted while this job was active"
-                job.message = "Job could not be reattached after worker restart"
-                job.updated_at = now_iso()
-            super().__setitem__(job.job_id, job)
-            self._persist(job)
-
-    def _persist(self, job: WorkerJob) -> None:
-        work_dir = Path(job.work_dir)
-        work_dir.mkdir(parents=True, exist_ok=True)
-        target = work_dir / "job_state.json"
-        temporary = target.with_suffix(".json.tmp")
-        temporary.write_text(job.model_dump_json(indent=2), encoding="utf-8")
-        temporary.replace(target)
-
-    def __setitem__(self, key: str, value: WorkerJob) -> None:
-        super().__setitem__(key, value)
-        self._persist(value)
-
-
 app = FastAPI(
     title="FlowStudio Remote CreativeFlow Worker",
     version="1.0.0",
@@ -451,8 +420,6 @@ if _cors_origins:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-CreativeFlow-Key"],
     )
-jobs: PersistentJobStore = PersistentJobStore(RUN_ROOT)
-processes: dict[str, asyncio.subprocess.Process] = {}
 
 
 def _require_v1_api_key(
@@ -804,9 +771,23 @@ def _read_geometry_labels(req: GeometryJobRequest) -> list[int]:
     return parse_npy_ints(_read_allowed_worker_file(str(labels_path)))
 
 
+def _worker_allowed_roots() -> list[Path]:
+    extra_roots = [
+        Path(os.getenv("FLOWSTUDIO_EXTRA_ARTIFACT_ROOT", "/root/autodl-tmp/creativeflow_variations_20260716")),
+        Path("/root/autodl-tmp/creativeflow_variations_20260718"),
+        Path("/root/autodl-tmp/data/flowstudio"),
+    ]
+    return [
+        RUN_ROOT.resolve(),
+        ASSET_ROOT.resolve(),
+        BENCHMARK_INPUT_ROOT.resolve(),
+        *(root.resolve() for root in extra_roots),
+    ]
+
+
 def _read_allowed_worker_file(path: str) -> bytes:
     requested = Path(path).resolve()
-    allowed_roots = [RUN_ROOT.resolve(), ASSET_ROOT.resolve(), BENCHMARK_INPUT_ROOT.resolve()]
+    allowed_roots = _worker_allowed_roots()
     if not any(requested == root or root in requested.parents for root in allowed_roots):
         raise ValueError(f"Path is outside allowed worker roots: {requested}")
     if not requested.exists() or not requested.is_file():
@@ -962,7 +943,7 @@ def _readable_worker_path(path: str | None, label: str) -> Path:
     if not path:
         raise ValueError(f"{label} path is required")
     requested = Path(path).resolve()
-    allowed_roots = [RUN_ROOT.resolve(), ASSET_ROOT.resolve(), BENCHMARK_INPUT_ROOT.resolve()]
+    allowed_roots = _worker_allowed_roots()
     if not any(requested == root or root in requested.parents for root in allowed_roots):
         raise ValueError(f"{label} is outside allowed worker roots: {requested}")
     if not requested.exists() or not requested.is_file():
@@ -1487,49 +1468,6 @@ async def upload_asset(
     return result
 
 
-def _v1_job_response(job: WorkerJob) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "job_id": job.job_id,
-        "client_job_id": job.flowstudio_job_id,
-        "variation": job.kind.removeprefix("creativeflow_"),
-        "status": job.status,
-        "stage": job.stage,
-        "progress": job.progress,
-        "message": job.message,
-        "error": job.error,
-        "created_at": job.created_at,
-        "updated_at": job.updated_at,
-    }
-    result_json = job.result.get("result_json") if isinstance(job.result, dict) else {}
-    candidates: list[dict[str, Any]] = []
-    if isinstance(result_json, dict):
-        for direction in result_json.get("directions") or []:
-            if not isinstance(direction, dict):
-                continue
-            candidates.append(
-                {
-                    "candidate_id": direction.get("direction_id"),
-                    "label": direction.get("label"),
-                    "prompt": direction.get("execution_prompt"),
-                    "image_url": _artifact_url(direction.get("preview_image_path")),
-                    "mesh_glb_url": _artifact_url(direction.get("mesh_glb")),
-                    "mesh_obj_url": _artifact_url(direction.get("mesh_obj")),
-                    "multiview_url": _artifact_url(direction.get("multiview_grid")),
-                    "graph_anchor": (direction.get("transfer_spec") or {}).get("graph_anchor"),
-                    "mapping": direction.get("transfer_spec"),
-                }
-            )
-    payload["candidates"] = candidates
-    payload["result_manifest_url"] = _artifact_url(
-        job.result.get("result_path") if isinstance(job.result, dict) else None
-    )
-    return payload
-
-
-@app.get(
-    "/api/v1/variations/capabilities",
-    dependencies=[Depends(_require_v1_api_key)],
-)
 def variation_capabilities_v1() -> dict[str, Any]:
     return {
         "api_version": "v1",
@@ -1785,11 +1723,12 @@ def _creativeflow_staged_job(stage: str, req: CreativeFlowPartJobRequest) -> Wor
     # Image should still generate text-only visual candidates instead of
     # rejecting the job.  If a source image is present we use the conditioned
     # path below; otherwise this becomes an unconditioned image generation.
-    if stage == "part" and not req.dry_run:
-        if not req.source_image_path or not req.source_mesh_path or not req.brush_mask_path:
+    conditioned = bool(req.source_image_path)
+    if stage == "part" and not req.dry_run and conditioned:
+        if not req.source_mesh_path or not req.brush_mask_path:
             raise HTTPException(
                 status_code=400,
-                detail="CreativeFlow Part requires source_image_path, source_mesh_path and brush_mask_path",
+                detail="Conditioned CreativeFlow Part requires source_mesh_path and brush_mask_path",
             )
         if not req.sam3d_manifest_path or not req.part_semantics_path:
             raise HTTPException(
@@ -1804,8 +1743,12 @@ def _creativeflow_staged_job(stage: str, req: CreativeFlowPartJobRequest) -> Wor
     out_dir = Path(job.work_dir) / kind
     out_dir.mkdir(parents=True, exist_ok=True)
     result_path = out_dir / f"{kind}_result.json"
-    part_semantics = _load_json_object(req.part_semantics_path, "SAM3D part semantics")
-    source_elements = _load_json_object(req.source_elements_path, "source elements")
+    part_semantics = _load_json_object(
+        req.part_semantics_path, "SAM3D part semantics"
+    ) if req.part_semantics_path else {}
+    source_elements = _load_json_object(
+        req.source_elements_path, "source elements"
+    ) if req.source_elements_path else {}
     stage_profile = _stage_profile(stage, req.fidelity)
     image_options = dict(req.image_options)
     mesh_options = dict(req.mesh_options)
@@ -1854,6 +1797,8 @@ def _creativeflow_staged_job(stage: str, req: CreativeFlowPartJobRequest) -> Wor
         "variation": f"creativeflow-{stage.replace('_', '-')}",
         "variation_label": stage_profile["label"],
         "stage": stage,
+        "conditioned": conditioned,
+        "image_mode": "conditioned" if conditioned else "text_only",
         "fidelity": req.fidelity,
         "fidelity_profile": stage_profile,
         "target_part": req.target_part,
@@ -1968,11 +1913,16 @@ async def _run_staged_image_generation(
             out_path = image_dir / f"{direction.get('direction_id') or f'dir_{index + 1:02d}'}.png"
             generator = _generate_qwen_image_sync
             generator_args: tuple[Any, ...] = ()
-            if result_json.get("stage") in {"low_fidelity", "part", "texture"} and source_image_path:
+            conditioned = bool(source_image_path) and result_json.get(
+                "stage"
+            ) in {"low_fidelity", "part", "texture"}
+            if conditioned:
                 generator = _generate_qwen_conditioned_sync
                 generator_args = (
                     str(result_json.get("stage")), source_image_path,
                 )
+            else:
+                prompt = _text_only_execution_prompt(result_json, direction, prompt)
             image_score: dict[str, Any] = {}
             generation_attempts: list[dict[str, Any]] = []
             for attempt in range(attempts_per_candidate):
@@ -2034,9 +1984,16 @@ async def _run_staged_image_generation(
             raise RuntimeError("generated directions failed pairwise image diversity QA")
         result_json["generated_previews"] = generated
         if stage_profile.get("run_hy3d"):
-            hy3d_summary = await _run_staged_hy3d(job_id, result_path.parent, result_json, stage_profile)
-            result_json["hy3d_summary"] = hy3d_summary
-            _attach_staged_meshes(result_json, hy3d_summary)
+            try:
+                hy3d_summary = await _run_staged_hy3d(
+                    job_id, result_path.parent, result_json, stage_profile
+                )
+                result_json["hy3d_summary"] = hy3d_summary
+                _attach_staged_meshes(result_json, hy3d_summary)
+            except Exception as exc:
+                # Images are the primary deliverable; a mesh-stage failure must
+                # not discard valid visual candidates from the frontend.
+                result_json["hy3d_error"] = str(exc)
         result_path.write_text(json.dumps(result_json, ensure_ascii=False, indent=2), encoding="utf-8")
         job.status = "completed"
         job.stage = "completed"
@@ -2074,9 +2031,12 @@ def _expand_variation_directions_sync(
             )
     request_path = out_dir / "variation_direction_request.json"
     output_path = out_dir / "variation_direction_result.json"
+    inferred_object_type = _infer_object_type(result_json)
+    if not inferred_object_type:
+        inferred_object_type = "object"
     payload = {
         "stage": result_json["stage"],
-        "object_type": result_json.get("object_type") or "object",
+        "object_type": result_json.get("object_type") or inferred_object_type,
         "source_id": f"flowstudio_{result_json.get('stage')}",
         "source_image_path": result_json.get("source_image_path"),
         "source_mesh_path": result_json.get("source_mesh_path"),
@@ -2089,7 +2049,14 @@ def _expand_variation_directions_sync(
         "user_prompt": result_json.get("user_prompt"),
         "candidate_count": result_json.get("candidate_count", 4),
     }
-    if payload["object_type"] == "object":
+    if str(result_json.get("object_type") or "").strip() in {"", "object"}:
+        fallback = _directions_from_request_fallback(
+            result_json,
+            reason="object_type_unspecified",
+        )
+        if fallback:
+            result_json["object_type"] = inferred_object_type
+            return fallback
         raise RuntimeError("variation graph expansion requires a concrete object_type")
     request_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     env = os.environ.copy()
@@ -2106,9 +2073,9 @@ def _expand_variation_directions_sync(
         top_k, int(kg_options.get("candidate_pool_size") or payload["candidate_count"])
     )
     env["CF_TRANSFER_PIPELINE_ROOT"] = str(PIPELINE_ROOT)
-    env.setdefault("CF_VISION_LLM_API_BASE", "http://127.0.0.1:18084/v1")
+    env.setdefault("CF_VISION_LLM_API_BASE", PLANNER_API_BASE)
     env.setdefault("CF_VISION_LLM_MODEL", "qwen3-planner")
-    env.setdefault("CF_TEXT_LLM_API_BASE", "http://127.0.0.1:18084/v1")
+    env.setdefault("CF_TEXT_LLM_API_BASE", PLANNER_API_BASE)
     env.setdefault("CF_TEXT_LLM_MODEL", "qwen3-planner")
     proxy = _kg_proxy_url()
     use_proxy = bool(kg_options.get("use_proxy", False)) or bool(proxy)
@@ -2125,11 +2092,11 @@ def _expand_variation_directions_sync(
         env.pop("all_proxy", None)
         env.pop("ALL_PROXY", None)
     env["CF_KB_CACHE_MODE"] = str(kg_options.get("cache_mode") or "cache_first")
-    if bool(kg_options.get("allow_partial_graph", False)):
+    if bool(kg_options.get("allow_partial_graph", True)):
         env["CF_KG_ALLOW_PARTIAL"] = "1"
     env.setdefault("CF_KB_CACHE_TTL_SEC", "0")
     env["CF_KB_HTTP_TIMEOUT_SEC"] = str(
-        max(1, int(kg_options.get("request_timeout_sec") or 5))
+        max(1, int(kg_options.get("request_timeout_sec") or 25))
     )
     env.setdefault("CF_KB_HTTP_RETRIES", "0")
     env.setdefault("CF_GRAPH_AAT_SEARCH_LIMIT", "0")
@@ -2246,11 +2213,12 @@ def _directions_from_request_fallback(
     reason: str,
 ) -> list[dict[str, Any]]:
     kg_options = result_json.get("kg_options") or {}
-    if not bool(kg_options.get("allow_rule_fallback", False)):
+    if not bool(kg_options.get("allow_rule_fallback", True)):
         return []
     object_type = str(result_json.get("object_type") or "").strip()
     if not object_type or object_type == "object":
-        return []
+        object_type = _infer_object_type(result_json) or "设计对象"
+        result_json["object_type"] = object_type
     stage = str(result_json["stage"])
     part_label = str(result_json.get("part_label") or "selected part")
     axes = result_json.get("divergence_axes") or result_json.get("jump_facets") or ["silhouette"]
@@ -2306,6 +2274,25 @@ def _directions_from_request_fallback(
         "axes": axes,
     }
     return [direction]
+
+
+def _infer_object_type(result_json: dict[str, Any]) -> str:
+    """Best-effort object label from the user prompt for generic assets."""
+    object_type = str(result_json.get("object_type") or "").strip().lower()
+    if object_type and object_type != "object":
+        return object_type
+    prompt = str(result_json.get("user_prompt") or "").strip()
+    lowered = prompt.lower()
+    for marker in ("this ", "the ", "a ", "an ", "这个", "那个", "把"):
+        idx = lowered.find(marker)
+        if idx < 0:
+            continue
+        chunk = prompt[idx + len(marker):]
+        word = re.split(r"[^A-Za-z0-9\u4e00-\u9fff]+", chunk, maxsplit=1)[0]
+        word = word.strip("的")
+        if word and len(word) <= 24:
+            return word
+    return ""
 
 
 def _coerce_analogy_prompt_package(value: Any) -> dict[str, Any]:
@@ -2420,7 +2407,7 @@ def _directions_from_partial_graph_result(
     reason: str,
 ) -> list[dict[str, Any]]:
     kg_options = result_json.get("kg_options") or {}
-    if not bool(kg_options.get("allow_partial_graph", False)):
+    if not bool(kg_options.get("allow_partial_graph", True)):
         return []
     graph_candidates = [
         item for item in (graph_result.get("graph_candidates") or []) if isinstance(item, dict)
@@ -2574,8 +2561,16 @@ async def _run_staged_hy3d(
     hy3d_out = out_root / "hy3d"
     transfer_result = _staged_transfer_result(result_json)
     transfer_path.write_text(json.dumps(transfer_result, ensure_ascii=False, indent=2), encoding="utf-8")
+    pbr_wrapper = Path(
+        os.getenv(
+            "CF_PBR_WRAPPER",
+            "/root/flowstudio_app/remote_worker/run_hy3d_with_pbr.py",
+        )
+    )
     cmd = [
         str(PYTHON_BIN),
+        str(pbr_wrapper),
+        "--hy3d-script",
         str(HY3D_SCRIPT),
         "--transfer-result",
         str(transfer_path),
@@ -2727,6 +2722,7 @@ def _stage_execution_prompt(
     object_type: str = "object",
     *,
     require_white_background: bool = True,
+    conditioned: bool = True,
 ) -> str:
     stage = _canonical_variation(stage)
     white_background = (
@@ -2741,10 +2737,44 @@ def _stage_execution_prompt(
     if stage == "rough_form":
         return raw_kg_target
     if stage == "texture":
+        if not conditioned:
+            return f"发挥你的创造力，畅想一个{raw_kg_target}材质的{object_type or '设计对象'}，{white_background}"
         return f"保留这张图中的{object_type}结构和元素不变，畅想一个{raw_kg_target}材质的{object_type}，{white_background}"
+    if not conditioned:
+        return (
+            f"发挥你的创造力，畅想一个{raw_kg_target}形态{part_label}的"
+            f"{object_type or '设计对象'}，{white_background}"
+        )
     return (
         f"保留这张图中的{object_type}其它结构和元素不变，"
         f"把其中的{part_label}替换为{raw_kg_target}形态的部件，{white_background}"
+    )
+
+
+def _text_only_execution_prompt(
+    result_json: dict[str, Any],
+    direction: dict[str, Any],
+    fallback_prompt: str,
+) -> str:
+    """Rebuild the prompt for unconditioned text-only generation."""
+    stage = _canonical_variation(str(result_json.get("stage") or "part"))
+    target = str(
+        (direction.get("transfer_spec") or {}).get("graph_anchor")
+        or direction.get("anchor")
+        or direction.get("label")
+        or fallback_prompt
+    ).strip()
+    part_label = str(result_json.get("part_label") or "设计部件")
+    object_type = str(result_json.get("object_type") or "").strip()
+    return _stage_execution_prompt(
+        stage,
+        target,
+        part_label,
+        object_type or "设计对象",
+        require_white_background=bool(
+            (result_json.get("image_options") or {}).get("require_white_background", True)
+        ),
+        conditioned=False,
     )
 
 
@@ -2834,8 +2864,16 @@ async def submit_hy3d_from_staged(req: Hy3DFromStagedJobRequest) -> WorkerJob:
     transfer_path = Path(job.work_dir) / "staged_transfer_for_hy3d.json"
     transfer_path.write_text(json.dumps(transfer_result, ensure_ascii=False, indent=2), encoding="utf-8")
     oss_prefix = f"{OSS_PREFIX_ROOT}/{job.job_id}"
+    pbr_wrapper = Path(
+        os.getenv(
+            "CF_PBR_WRAPPER",
+            "/root/flowstudio_app/remote_worker/run_hy3d_with_pbr.py",
+        )
+    )
     cmd = [
         str(PYTHON_BIN),
+        str(pbr_wrapper),
+        "--hy3d-script",
         str(HY3D_SCRIPT),
         "--transfer-result",
         str(transfer_path),
@@ -3104,7 +3142,7 @@ def get_artifact(artifact_id: str) -> dict[str, Any]:
 @app.get("/api/v1/artifact-file", dependencies=[Depends(_require_v1_api_key)])
 def get_artifact_file(path: str = Query(...)) -> FileResponse:
     requested = Path(path).resolve()
-    allowed_roots = [RUN_ROOT.resolve(), ASSET_ROOT.resolve(), BENCHMARK_INPUT_ROOT.resolve()]
+    allowed_roots = _worker_allowed_roots()
     if not any(requested == root or root in requested.parents for root in allowed_roots):
         raise HTTPException(status_code=403, detail="Artifact path is outside worker roots")
     if not requested.exists() or not requested.is_file():
@@ -3134,150 +3172,6 @@ def get_oss_file(key: str = Query(...)) -> Response:
         raise HTTPException(status_code=502, detail=f"OSS object read failed: {type(exc).__name__}") from exc
     content_type = guess_type(key)[0] or "application/octet-stream"
     return Response(content=content, media_type=content_type)
-
-
-def _create_job(kind: str, flowstudio_job_id: str, request: dict[str, Any]) -> WorkerJob:
-    RUN_ROOT.mkdir(parents=True, exist_ok=True)
-    job_id = f"rw_{kind}_{uuid4().hex[:10]}"
-    work_dir = RUN_ROOT / job_id
-    work_dir.mkdir(parents=True, exist_ok=True)
-    job = WorkerJob(
-        job_id=job_id,
-        flowstudio_job_id=flowstudio_job_id,
-        kind=kind,
-        request=request,
-        work_dir=str(work_dir),
-    )
-    jobs[job_id] = job
-    return job
-
-
-async def _run_job(job_id: str, cmd: list[str], env: dict[str, str], expected_result_name: str) -> None:
-    job = jobs[job_id]
-    job.status = "running"
-    job.stage = job.kind
-    job.progress = 0.2
-    job.message = "Process started"
-    job.updated_at = now_iso()
-    jobs[job_id] = job
-
-    stdout_path = Path(job.work_dir) / "stdout.log"
-    stderr_path = Path(job.work_dir) / "stderr.log"
-    with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-        proc = await asyncio.create_subprocess_exec(*cmd, stdout=stdout, stderr=stderr, env=env)
-        processes[job_id] = proc
-        job.pid = proc.pid
-        jobs[job_id] = job
-        return_code = await proc.wait()
-
-    job.updated_at = now_iso()
-    job.progress = 1
-    if return_code == 0:
-        job.status = "completed"
-        job.stage = "completed"
-        job.message = "Process completed"
-        result_path = _find_result(Path(job.work_dir), expected_result_name)
-        job.result = {
-            "return_code": return_code,
-            "stdout_log": str(stdout_path),
-            "stderr_log": str(stderr_path),
-            "result_path": str(result_path) if result_path else None,
-            "result_json": _read_json_result(result_path),
-        }
-    else:
-        job.status = "failed"
-        job.stage = "failed"
-        job.message = "Process failed"
-        job.error = _clean_log_text(stderr_path.read_text(encoding="utf-8", errors="replace"))[-4000:]
-        result_path = _find_result(Path(job.work_dir), expected_result_name)
-        job.result = {
-            "return_code": return_code,
-            "stdout_log": str(stdout_path),
-            "stderr_log": str(stderr_path),
-            "result_path": str(result_path) if result_path else None,
-            "result_json": _read_json_result(result_path),
-        }
-    jobs[job_id] = job
-    processes.pop(job_id, None)
-
-
-def _clean_log_text(text: str) -> str:
-    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
-    return "".join(ch for ch in text if ch in "\n\t" or ord(ch) >= 32)
-
-
-def _sanitize_for_json(value: Any) -> Any:
-    if isinstance(value, str):
-        return _clean_log_text(value)
-    if isinstance(value, list):
-        return [_sanitize_for_json(item) for item in value]
-    if isinstance(value, tuple):
-        return [_sanitize_for_json(item) for item in value]
-    if isinstance(value, dict):
-        return {
-            _sanitize_for_json(key): _sanitize_for_json(item)
-            for key, item in value.items()
-        }
-    return value
-
-
-def _find_result(work_dir: Path, name: str) -> Path | None:
-    direct = work_dir / name
-    if direct.exists():
-        return direct
-    matches = list(work_dir.glob(f"**/{name}"))
-    return matches[0] if matches else None
-
-
-def _read_json_result(path: Path | None) -> dict[str, Any] | list[Any] | None:
-    if path is None or not path.exists() or path.stat().st_size > 2_000_000:
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-
-
-def _normalize_transfer_result_for_hy3d(source_path: Path, target_path: Path) -> Path:
-    payload = json.loads(source_path.read_text(encoding="utf-8"))
-    changed = False
-    for index, item in enumerate(payload.get("generated_targets", []), start=1):
-        if not isinstance(item, dict):
-            continue
-        image = item.get("canonical_image") or item.get("image") or item.get("creative_image")
-        if image and not item.get("canonical_image"):
-            item["canonical_image"] = image
-            item.setdefault("reconstruction_input_image", image)
-            item.setdefault("creative_image", image)
-            changed = True
-        if not item.get("candidate_id"):
-            rationale_id = str(item.get("rationale_id") or f"rat_{index}")
-            item["candidate_id"] = f"{index:02d}_{rationale_id}"
-            changed = True
-    if not changed:
-        return source_path
-    target_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    return target_path
-
-
-def _read_env_exports(path: Path) -> dict[str, str]:
-    if not path.exists():
-        return {}
-    values: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line.removeprefix("export ").strip()
-        if "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("'").strip('"')
-        if key:
-            values[key] = value
-    return values
 
 
 def _preflight() -> None:

@@ -1,0 +1,40 @@
+{
+  "stage": "texture",
+  "object_type": "snowman",
+  "source_id": "snowman_texture_kg_20260722",
+  "source_image_path": "/root/autodl-tmp/flowstudio_worker_runs/snowman_inputs/source.png",
+  "source_mesh_path": "/root/autodl-tmp/creativeflow_variations_20260716/hunyuan3d/source/snowman_source/mesh.glb",
+  "user_prompt": "Material variation: preserve the snowman's geometry, silhouette, part layout, hat, scarf, arms, face and identity; only migrate the body material/surface/PBR appearance through attribute-based knowledge-graph analogical expansion.",
+  "source_elements": {
+    "source_noun": "snowman",
+    "identity_cues": [
+      "three-dimensional snowman figure",
+      "white rounded snow body",
+      "black top hat with red band",
+      "red scarf",
+      "twig arms",
+      "carrot nose",
+      "black coal eyes, mouth, and buttons"
+    ],
+    "editable_material_region": "main white snow body surface",
+    "current_materials": [
+      {
+        "region": "main body and head",
+        "material": "packed snow",
+        "visible_attributes": [
+          "white granular icy surface",
+          "soft matte scattering",
+          "slightly rough compacted particles",
+          "cold winter material",
+          "rounded hand-built snow texture"
+        ]
+      }
+    ],
+    "locked_geometry": [
+      "global rounded snowman silhouette",
+      "head and body proportion",
+      "hat, scarf, arms, face, carrot nose and buttons remain present",
+      "same camera/view and single object layout"
+    ]
+  }
+}

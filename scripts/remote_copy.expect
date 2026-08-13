@@ -1,0 +1,10 @@
+#!/usr/bin/env expect
+set timeout [expr {[info exists env(REMOTE_TIMEOUT)] ? $env(REMOTE_TIMEOUT) : 180}]
+spawn env -u http_proxy -u https_proxy -u all_proxy scp -F /dev/null -o ProxyCommand=none -o StrictHostKeyChecking=no -P $env(REMOTE_PORT) $env(LOCAL_SOURCE) $env(REMOTE_USER)@$env(REMOTE_HOST):$env(REMOTE_DEST)
+expect {
+  -re "(?i).*password:.*" { send -- "$env(REMOTE_PASSWORD)\r"; exp_continue }
+  timeout { exit 124 }
+  eof
+}
+catch wait result
+exit [lindex $result 3]

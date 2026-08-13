@@ -1,0 +1,2283 @@
+{
+  "schema_version": "flowstudio.planner-stability-test.v1",
+  "planner_api_base": "http://127.0.0.1:18085/v1",
+  "total_elapsed_sec": 802.38,
+  "models": [
+    {
+      "model": "white:christmas:santa-head",
+      "label": "Santa Head",
+      "object_type": "santa head",
+      "obj_path": "/files/white-models/christmas/santa-head.obj",
+      "intent": "让圣诞老人的胡子更蓬松饱满。",
+      "parts": [
+        {
+          "canonical_name": "santa hat",
+          "semantic_role": "headwear",
+          "shape": "soft conical cap with folded brim and pom-pom",
+          "attachment": "sits on top of the head and forehead",
+          "function": "head covering and festive marker",
+          "confidence": 0.93,
+          "evidence": [
+            "conical mass above the head",
+            "pom ball at the tip"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:christmas:candle",
+      "label": "Candle",
+      "object_type": "candle",
+      "obj_path": "/files/white-models/christmas/candle.obj",
+      "intent": "把烛火做成更华丽的形态。",
+      "parts": [
+        {
+          "canonical_name": "wick",
+          "semantic_role": "combustion core",
+          "shape": "thin vertical stalk inside the flame base",
+          "attachment": "embedded in the top center of the wax body",
+          "function": "conducts melted wax to the flame",
+          "confidence": 0.78,
+          "evidence": [
+            "thin vertical column between wax and flame"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:christmas:bell",
+      "label": "Bell",
+      "object_type": "bell",
+      "obj_path": "/files/white-models/christmas/bell.obj",
+      "intent": "把铃铛的钟体做成更有层次的花瓣形态。",
+      "parts": [
+        {
+          "canonical_name": "clapper",
+          "semantic_role": "striker",
+          "shape": "small sphere hanging inside the bell mouth",
+          "attachment": "suspended from the crown inside the body",
+          "function": "strikes the body to produce sound",
+          "confidence": 0.86,
+          "evidence": [
+            "small sphere visible inside the open mouth"
+          ]
+        },
+        {
+          "canonical_name": "handle",
+          "semantic_role": "grip",
+          "shape": "small loop or knob on top",
+          "attachment": "attached to the crown of the bell body",
+          "function": "holding and hanging point",
+          "confidence": 0.82,
+          "evidence": [
+            "loop/knob above the domed body"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:christmas:wreath",
+      "label": "Wreath",
+      "object_type": "wreath",
+      "obj_path": "/files/white-models/christmas/wreath.obj",
+      "intent": "把花环的松枝质感做得更茂密。",
+      "parts": [
+        {
+          "canonical_name": "foliage ring",
+          "semantic_role": "main body",
+          "shape": "torus-like ring of layered leaves",
+          "attachment": "continuous circular band forming the wreath",
+          "function": "structural ring and decorative body",
+          "confidence": 0.95,
+          "evidence": [
+            "dominant circular band",
+            "layered leaf texture around the loop"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:christmas:gift-bag",
+      "label": "Gift Bag",
+      "object_type": "gift bag",
+      "obj_path": "/files/white-models/christmas/gift-bag.obj",
+      "intent": "把礼物袋的提手做得更精致。",
+      "parts": [
+        {
+          "canonical_name": "handle",
+          "semantic_role": "grip loop",
+          "shape": "two ribbon loops rising from the top edges",
+          "attachment": "attached to the folded top of the bag",
+          "function": "carrying grip",
+          "confidence": 0.88,
+          "evidence": [
+            "two loops above the bag opening"
+          ]
+        },
+        {
+          "canonical_name": "bag body",
+          "semantic_role": "container",
+          "shape": "tall box-like body with tapered bottom",
+          "attachment": "the main volume between top fold and base",
+          "function": "holds contents",
+          "confidence": 0.95,
+          "evidence": [
+            "dominant vertical container volume"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:christmas:sock",
+      "label": "Sock",
+      "object_type": "sock",
+      "obj_path": "/files/white-models/christmas/sock.obj",
+      "intent": "把袜子的袜口罗纹做得更立体。",
+      "parts": [
+        {
+          "canonical_name": "heel",
+          "semantic_role": "foot section",
+          "shape": "rounded bend where leg meets foot",
+          "attachment": "rear corner of the foot tube",
+          "function": "wraps the heel",
+          "confidence": 0.84,
+          "evidence": [
+            "sharp rear bend in the foot tube"
+          ]
+        }
+      ]
+    },
+    {
+      "model": "white:bakery:pretzel",
+      "label": "Pretzel",
+      "object_type": "pretzel",
+      "obj_path": "/files/white-models/bakery/pretzel.obj",
+      "intent": "把椒盐卷饼的辫状扭结做得更清晰。",
+      "parts": [
+        {
+          "canonical_name": "loop segment",
+          "semantic_role": "body arm",
+          "shape": "thick rounded rope arms forming loops",
+          "attachment": "two symmetric loops flanking the knot",
+          "function": "defines the pretzel outline",
+          "confidence": 0.92,
+          "evidence": [
+            "two symmetric thick loops"
+          ]
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "model": "white:christmas:santa-head",
+      "label": "Santa Head",
+      "object_type": "santa head",
+      "part": "santa hat",
+      "intent": "让圣诞老人的胡子更蓬松饱满。",
+      "ok": true,
+      "elapsed_sec": 36.7,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "santa hat",
+        "source_noun": "santa head",
+        "selected_part_noun": "santa hat",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "soft conical cap with folded brim and pom-pom",
+            "evidence": "conical mass above the head, pom ball at the tip",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.93
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "head covering and festive marker",
+            "evidence": "conical mass above the head, pom ball at the tip",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.93
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "sits on top of the head and forehead",
+            "evidence": "conical mass above the head, pom ball at the tip",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.93
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "articulation",
+            "value": "non-articulated fixed structure",
+            "evidence": "conical mass above the head, pom ball at the tip",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.93
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "wikidata",
+          "term": "conical cap",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the conical shape and cap structure of the seed attribute."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "wikidata",
+          "term": "conical shape",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the conical geometry, which is a core attribute of the seed."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "getty_aat",
+          "term": "conical form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Maintains the conical form as a key aesthetic component."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "getty_aat",
+          "term": "folded brim",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the folded brim as a form element."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "asknature",
+          "term": "conical structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the conical shape as a structural feature."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "soft conical cap with folded brim and pom-pom",
+          "graph": "asknature",
+          "term": "pom-pom structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the pom-pom as a biological or mechanical structure."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "wikidata",
+          "term": "head covering",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function of covering the head."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "wikidata",
+          "term": "festive marker",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the festive function as a marker."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "getty_aat",
+          "term": "festive ornament",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Maintains the festive marker as an ornament."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "getty_aat",
+          "term": "head ornament",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the head ornament as a functional and decorative element."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "asknature",
+          "term": "festive display",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the festive function as a display."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "head covering and festive marker",
+          "graph": "asknature",
+          "term": "signal marker",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the marker function as a signaling mechanism."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "wikidata",
+          "term": "head attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment to the head."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "wikidata",
+          "term": "forehead attachment",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the forehead as a surface for attachment."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "getty_aat",
+          "term": "head placement",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Maintains the placement on the head."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "getty_aat",
+          "term": "surface attachment",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the surface-based attachment mechanism."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "asknature",
+          "term": "head placement",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the placement on the head."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "sits on top of the head and forehead",
+          "graph": "asknature",
+          "term": "surface contact",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the contact mechanism as a biological strategy."
+        },
+        {
+          "query_id": "query_019",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "wikidata",
+          "term": "fixed structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the fixed structure as a key attribute."
+        },
+        {
+          "query_id": "query_020",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "wikidata",
+          "term": "non-articulated form",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the non-articulated form as a structural feature."
+        },
+        {
+          "query_id": "query_021",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "getty_aat",
+          "term": "fixed form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Maintains the fixed form as a key aesthetic component."
+        },
+        {
+          "query_id": "query_022",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "getty_aat",
+          "term": "non-articulated structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the non-articulated structure as a craft element."
+        },
+        {
+          "query_id": "query_023",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "asknature",
+          "term": "fixed mechanism",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the fixed structure as a mechanical feature."
+        },
+        {
+          "query_id": "query_024",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated fixed structure",
+          "graph": "asknature",
+          "term": "non-articulated system",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the non-articulated system as a biological strategy."
+        }
+      ],
+      "query_count": 24,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 12,
+        "far": 12
+      }
+    },
+    {
+      "model": "white:christmas:candle",
+      "label": "Candle",
+      "object_type": "candle",
+      "part": "wick",
+      "intent": "把烛火做成更华丽的形态。",
+      "ok": true,
+      "elapsed_sec": 127.07,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "wick",
+        "source_noun": "candle",
+        "selected_part_noun": "wick",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "thin vertical stalk",
+            "evidence": "thin vertical column between wax and flame",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.78
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "conducts melted wax to the flame",
+            "evidence": "thin vertical column between wax and flame",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.78
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "embedded in the top center of the wax body",
+            "evidence": "embedded in the top center of the wax body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.78
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "vertical alignment",
+            "evidence": "thin vertical column between wax and flame",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.78
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "wikidata",
+          "term": "thin vertical column",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the shape attribute of thin vertical stalk by searching for similar physical entities."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "wikidata",
+          "term": "thin vertical rod",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for entities with a similar geometric property of thin vertical structure across different domains."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "getty_aat",
+          "term": "vertical form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on aesthetic/form vocabulary related to vertical shapes."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "getty_aat",
+          "term": "slender column",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for similar vertical forms in different domains using form vocabulary."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "asknature",
+          "term": "vertical support structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on biological mechanisms with vertical support properties."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "thin vertical stalk",
+          "graph": "asknature",
+          "term": "slender vertical stem",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for biological structures with slender vertical forms across different domains."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "wikidata",
+          "term": "conductive column",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function of conducting melted material by searching for similar physical entities."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "wikidata",
+          "term": "heat transfer rod",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for entities with similar conductive properties across different domains."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "getty_aat",
+          "term": "conductive form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on aesthetic/form vocabulary related to conductive structures."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "getty_aat",
+          "term": "heat transfer mechanism",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for similar conductive mechanisms in different domains using form vocabulary."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "asknature",
+          "term": "heat transfer conduit",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on biological mechanisms with heat transfer properties."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "conducts melted wax to the flame",
+          "graph": "asknature",
+          "term": "fluid transport structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for biological structures with fluid transport properties across different domains."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "wikidata",
+          "term": "central attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment logic of central embedding by searching for similar physical entities."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "wikidata",
+          "term": "central fitting",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for entities with similar central attachment properties across different domains."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "getty_aat",
+          "term": "central form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on aesthetic/form vocabulary related to central attachment."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "getty_aat",
+          "term": "central fitting mechanism",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for similar central attachment mechanisms in different domains using form vocabulary."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "asknature",
+          "term": "central support structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on biological mechanisms with central support properties."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "embedded in the top center of the wax body",
+          "graph": "asknature",
+          "term": "central attachment strategy",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for biological structures with central attachment properties across different domains."
+        },
+        {
+          "query_id": "query_019",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "wikidata",
+          "term": "vertical structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the orientation of vertical alignment by searching for similar physical entities."
+        },
+        {
+          "query_id": "query_020",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "wikidata",
+          "term": "upright form",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for entities with similar vertical orientation properties across different domains."
+        },
+        {
+          "query_id": "query_021",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "getty_aat",
+          "term": "vertical form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on aesthetic/form vocabulary related to vertical orientation."
+        },
+        {
+          "query_id": "query_022",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "getty_aat",
+          "term": "upright structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for similar vertical orientation structures in different domains using form vocabulary."
+        },
+        {
+          "query_id": "query_023",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "asknature",
+          "term": "vertical support",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Focuses on biological mechanisms with vertical orientation properties."
+        },
+        {
+          "query_id": "query_024",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "asknature",
+          "term": "upright mechanism",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Searches for biological structures with vertical orientation properties across different domains."
+        }
+      ],
+      "query_count": 24,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 12,
+        "far": 12
+      }
+    },
+    {
+      "model": "white:christmas:bell",
+      "label": "Bell",
+      "object_type": "bell",
+      "part": "clapper",
+      "intent": "把铃铛的钟体做成更有层次的花瓣形态。",
+      "ok": false,
+      "elapsed_sec": 180.42,
+      "error": "query items did not satisfy the schema or coverage requirements",
+      "error_type": "RuntimeError"
+    },
+    {
+      "model": "white:christmas:bell",
+      "label": "Bell",
+      "object_type": "bell",
+      "part": "handle",
+      "intent": "把铃铛的钟体做成更有层次的花瓣形态。",
+      "ok": true,
+      "elapsed_sec": 39.61,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "handle",
+        "source_noun": "bell",
+        "selected_part_noun": "handle",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "small loop or knob",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "holding and hanging point",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "attached to the crown of the bell body",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "vertically aligned",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          },
+          {
+            "attribute_id": "attr_05",
+            "dimension": "articulation",
+            "value": "fixed attachment",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          },
+          {
+            "attribute_id": "attr_06",
+            "dimension": "interface",
+            "value": "smooth surface",
+            "evidence": "loop/knob above the domed body",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.82
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "small loop or knob",
+          "graph": "wikidata",
+          "term": "loop",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a loop shape, preserving the selected part shape attribute."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "small loop or knob",
+          "graph": "wikidata",
+          "term": "knob",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a knob shape, preserving the selected part shape attribute."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "small loop or knob",
+          "graph": "wikidata",
+          "term": "handle",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a handle, which may exhibit a similar shape attribute in a different domain."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "small loop or knob",
+          "graph": "wikidata",
+          "term": "attachment",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with an attachment feature, which may exhibit a similar shape attribute in a different domain."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holding and hanging point",
+          "graph": "getty_aat",
+          "term": "hanging device",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a holding and hanging function, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holding and hanging point",
+          "graph": "getty_aat",
+          "term": "support mechanism",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a holding and hanging function, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holding and hanging point",
+          "graph": "getty_aat",
+          "term": "hanger",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a hanger function, which may exhibit a similar function attribute in a different domain."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holding and hanging point",
+          "graph": "getty_aat",
+          "term": "attachment point",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with an attachment point, which may exhibit a similar function attribute in a different domain."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the crown of the bell body",
+          "graph": "wikidata",
+          "term": "crown attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a crown attachment, preserving the attachment logic attribute."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the crown of the bell body",
+          "graph": "wikidata",
+          "term": "bell attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a bell attachment, preserving the attachment logic attribute."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the crown of the bell body",
+          "graph": "wikidata",
+          "term": "crown",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a crown feature, which may exhibit a similar attachment logic in a different domain."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the crown of the bell body",
+          "graph": "wikidata",
+          "term": "attachment",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with an attachment feature, which may exhibit a similar attachment logic in a different domain."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertically aligned",
+          "graph": "asknature",
+          "term": "vertical alignment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for biological mechanisms with vertical alignment, preserving the orientation attribute."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertically aligned",
+          "graph": "asknature",
+          "term": "symmetrical structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for biological mechanisms with symmetrical structure, preserving the orientation attribute."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertically aligned",
+          "graph": "asknature",
+          "term": "vertical orientation",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for biological mechanisms with vertical orientation, which may exhibit a similar orientation in a different domain."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertically aligned",
+          "graph": "asknature",
+          "term": "alignment strategy",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for biological mechanisms with alignment strategy, which may exhibit a similar orientation in a different domain."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "fixed attachment",
+          "graph": "getty_aat",
+          "term": "fixed attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a fixed attachment, preserving the articulation attribute."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "fixed attachment",
+          "graph": "getty_aat",
+          "term": "permanent attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a permanent attachment, preserving the articulation attribute."
+        },
+        {
+          "query_id": "query_019",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "fixed attachment",
+          "graph": "getty_aat",
+          "term": "attachment",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with an attachment feature, which may exhibit a similar articulation in a different domain."
+        },
+        {
+          "query_id": "query_020",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "fixed attachment",
+          "graph": "getty_aat",
+          "term": "fixed mechanism",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a fixed mechanism, which may exhibit a similar articulation in a different domain."
+        },
+        {
+          "query_id": "query_021",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "wikidata",
+          "term": "smooth surface",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a smooth surface, preserving the interface attribute."
+        },
+        {
+          "query_id": "query_022",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "wikidata",
+          "term": "polished surface",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for physical entities with a polished surface, preserving the interface attribute."
+        },
+        {
+          "query_id": "query_023",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "wikidata",
+          "term": "surface",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a surface feature, which may exhibit a similar interface in a different domain."
+        },
+        {
+          "query_id": "query_024",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "wikidata",
+          "term": "texture",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for physical entities with a texture feature, which may exhibit a similar interface in a different domain."
+        }
+      ],
+      "query_count": 24,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 12,
+        "far": 12
+      }
+    },
+    {
+      "model": "white:christmas:wreath",
+      "label": "Wreath",
+      "object_type": "wreath",
+      "part": "foliage ring",
+      "intent": "把花环的松枝质感做得更茂密。",
+      "ok": true,
+      "elapsed_sec": 129.07,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "foliage ring",
+        "source_noun": "wreath",
+        "selected_part_noun": "foliage ring",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "layered leaf texture around the loop",
+            "evidence": "layered leaf texture around the loop",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "structural ring and decorative body",
+            "evidence": "dominant circular band, layered leaf texture around the loop",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "continuous circular band forming the wreath",
+            "evidence": "continuous circular band forming the wreath",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "circular loop aligned with the wreath's perimeter",
+            "evidence": "dominant circular band",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_05",
+            "dimension": "articulation",
+            "value": "continuous and unbroken leaf layering",
+            "evidence": "layered leaf texture around the loop",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_06",
+            "dimension": "interface",
+            "value": "smooth and continuous surface with no gaps",
+            "evidence": "continuous circular band forming the wreath",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "layered leaf texture around the loop",
+          "graph": "wikidata",
+          "term": "layered leaf texture",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the layered leaf texture attribute within the same physical domain."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "layered leaf texture around the loop",
+          "graph": "wikidata",
+          "term": "circular leaf pattern",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the layered leaf texture attribute across a different physical domain."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "structural ring and decorative body",
+          "graph": "getty_aat",
+          "term": "circular band",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the structural ring attribute within the same aesthetic domain."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "structural ring and decorative body",
+          "graph": "getty_aat",
+          "term": "ornamental ring",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the structural ring attribute across a different aesthetic domain."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "continuous circular band forming the wreath",
+          "graph": "asknature",
+          "term": "continuous circular structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous circular band attribute within the same biological domain."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "continuous circular band forming the wreath",
+          "graph": "asknature",
+          "term": "circular growth pattern",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the continuous circular band attribute across a different biological domain."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "circular loop aligned with the wreath's perimeter",
+          "graph": "wikidata",
+          "term": "circular loop",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the circular loop attribute within the same physical domain."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "circular loop aligned with the wreath's perimeter",
+          "graph": "wikidata",
+          "term": "perimeter ring",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the circular loop attribute across a different physical domain."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "continuous and unbroken leaf layering",
+          "graph": "getty_aat",
+          "term": "continuous leaf layering",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous leaf layering attribute within the same aesthetic domain."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "continuous and unbroken leaf layering",
+          "graph": "getty_aat",
+          "term": "unbroken leaf pattern",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the continuous leaf layering attribute across a different aesthetic domain."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth and continuous surface with no gaps",
+          "graph": "asknature",
+          "term": "continuous surface",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous surface attribute within the same biological domain."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth and continuous surface with no gaps",
+          "graph": "asknature",
+          "term": "gapless surface",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the continuous surface attribute across a different biological domain."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "layered leaf texture around the loop",
+          "graph": "getty_aat",
+          "term": "layered leaf pattern",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the layered leaf texture attribute within the same aesthetic domain."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "layered leaf texture around the loop",
+          "graph": "asknature",
+          "term": "layered leaf structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the layered leaf texture attribute across a different biological domain."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "structural ring and decorative body",
+          "graph": "wikidata",
+          "term": "decorative ring",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the structural ring attribute within the same physical domain."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "structural ring and decorative body",
+          "graph": "asknature",
+          "term": "structural ring",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the structural ring attribute across a different biological domain."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "continuous circular band forming the wreath",
+          "graph": "getty_aat",
+          "term": "continuous circular band",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous circular band attribute within the same aesthetic domain."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "continuous circular band forming the wreath",
+          "graph": "wikidata",
+          "term": "circular band",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the continuous circular band attribute across a different physical domain."
+        },
+        {
+          "query_id": "query_019",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "circular loop aligned with the wreath's perimeter",
+          "graph": "getty_aat",
+          "term": "looped structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the circular loop attribute within the same aesthetic domain."
+        },
+        {
+          "query_id": "query_020",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "circular loop aligned with the wreath's perimeter",
+          "graph": "asknature",
+          "term": "looped growth",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the circular loop attribute across a different biological domain."
+        },
+        {
+          "query_id": "query_021",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "continuous and unbroken leaf layering",
+          "graph": "wikidata",
+          "term": "continuous leaf layering",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous leaf layering attribute within the same physical domain."
+        },
+        {
+          "query_id": "query_022",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth and continuous surface with no gaps",
+          "graph": "wikidata",
+          "term": "continuous surface",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the continuous surface attribute within the same physical domain."
+        },
+        {
+          "query_id": "query_023",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth and continuous surface with no gaps",
+          "graph": "getty_aat",
+          "term": "gapless surface",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the continuous surface attribute across a different aesthetic domain."
+        }
+      ],
+      "query_count": 23,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 12,
+        "far": 11
+      }
+    },
+    {
+      "model": "white:christmas:gift-bag",
+      "label": "Gift Bag",
+      "object_type": "gift bag",
+      "part": "handle",
+      "intent": "把礼物袋的提手做得更精致。",
+      "ok": true,
+      "elapsed_sec": 31.29,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "handle",
+        "source_noun": "gift bag",
+        "selected_part_noun": "handle",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "two ribbon loops rising from the top edges",
+            "evidence": "two loops above the bag opening",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "carrying grip",
+            "evidence": "attached to the folded top of the bag",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "attached to the folded top of the bag",
+            "evidence": "attached to the folded top of the bag",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "horizontal orientation",
+            "evidence": "two loops above the bag opening",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          },
+          {
+            "attribute_id": "attr_05",
+            "dimension": "articulation",
+            "value": "non-articulated",
+            "evidence": "two loops above the bag opening",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          },
+          {
+            "attribute_id": "attr_06",
+            "dimension": "interface",
+            "value": "loop interface",
+            "evidence": "two loops above the bag opening",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.88
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "two ribbon loops rising from the top edges",
+          "graph": "wikidata",
+          "term": "loop",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for entities with a loop shape, preserving the selected part shape attribute."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "carrying grip",
+          "graph": "getty_aat",
+          "term": "carrying handle",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a carrying function, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "carrying grip",
+          "graph": "getty_aat",
+          "term": "grip",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a gripping function across different domains, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the folded top of the bag",
+          "graph": "wikidata",
+          "term": "attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for entities with an attachment mechanism, preserving the attachment logic attribute."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the folded top of the bag",
+          "graph": "wikidata",
+          "term": "fastening",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a fastening mechanism across different domains, preserving the attachment logic attribute."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "horizontal orientation",
+          "graph": "getty_aat",
+          "term": "horizontal",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for entities with a horizontal orientation, preserving the orientation attribute."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "horizontal orientation",
+          "graph": "getty_aat",
+          "term": "horizontal arrangement",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a horizontal arrangement across different domains, preserving the orientation attribute."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated",
+          "graph": "asknature",
+          "term": "non-articulated structure",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for biological structures without articulation, preserving the articulation attribute."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated",
+          "graph": "asknature",
+          "term": "rigid structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for rigid biological structures across different domains, preserving the articulation attribute."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "loop interface",
+          "graph": "wikidata",
+          "term": "loop",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for entities with a loop interface, preserving the interface attribute."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "loop interface",
+          "graph": "wikidata",
+          "term": "loop mechanism",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a loop mechanism across different domains, preserving the interface attribute."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "two ribbon loops rising from the top edges",
+          "graph": "getty_aat",
+          "term": "loop",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for artifact components with a loop shape, preserving the selected part shape attribute."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "carrying grip",
+          "graph": "asknature",
+          "term": "grip",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for biological mechanisms with a gripping function, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "carrying grip",
+          "graph": "asknature",
+          "term": "claw",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a claw-like gripping function across different domains, preserving the selected part function attribute."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the folded top of the bag",
+          "graph": "asknature",
+          "term": "attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "searches for biological attachment mechanisms, preserving the attachment logic attribute."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "attached to the folded top of the bag",
+          "graph": "asknature",
+          "term": "fastening",
+          "distance_intent": "far",
+          "same_attribute_rationale": "searches for entities with a fastening mechanism across different domains, preserving the attachment logic attribute."
+        }
+      ],
+      "query_count": 16,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 9,
+        "far": 7
+      }
+    },
+    {
+      "model": "white:christmas:gift-bag",
+      "label": "Gift Bag",
+      "object_type": "gift bag",
+      "part": "bag body",
+      "intent": "把礼物袋的提手做得更精致。",
+      "ok": true,
+      "elapsed_sec": 29.9,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "bag body",
+        "source_noun": "gift bag",
+        "selected_part_noun": "bag body",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "tall box-like body with tapered bottom",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "holds contents",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "the main volume between top fold and base",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "vertical",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_05",
+            "dimension": "articulation",
+            "value": "non-articulated",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          },
+          {
+            "attribute_id": "attr_06",
+            "dimension": "interface",
+            "value": "smooth surface",
+            "evidence": "dominant vertical container volume",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.95
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "tall box-like body with tapered bottom",
+          "graph": "wikidata",
+          "term": "container with tapered base",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the shape attribute by focusing on a container with a tapered base."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "tall box-like body with tapered bottom",
+          "graph": "wikidata",
+          "term": "tapered container",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the tapered shape attribute across different domains."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holds contents",
+          "graph": "wikidata",
+          "term": "container",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function attribute by focusing on the primary function of holding contents."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holds contents",
+          "graph": "wikidata",
+          "term": "storage vessel",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the function of holding contents across different domains."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "the main volume between top fold and base",
+          "graph": "getty_aat",
+          "term": "main body",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment logic by focusing on the main body structure."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "the main volume between top fold and base",
+          "graph": "getty_aat",
+          "term": "central volume",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the central volume attribute across different domains."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical",
+          "graph": "getty_aat",
+          "term": "vertical form",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the orientation attribute by focusing on vertical form."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical",
+          "graph": "getty_aat",
+          "term": "upright structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the vertical orientation attribute across different domains."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated",
+          "graph": "asknature",
+          "term": "non-movable joint",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the articulation attribute by focusing on non-movable joints."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "non-articulated",
+          "graph": "asknature",
+          "term": "rigid structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the non-articulated structure attribute across different domains."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "asknature",
+          "term": "smooth surface",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the interface attribute by focusing on smooth surface."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "smooth surface",
+          "graph": "asknature",
+          "term": "continuous surface",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the smooth surface attribute across different domains."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "tall box-like body with tapered bottom",
+          "graph": "wikidata",
+          "term": "tapered box",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the shape attribute by focusing on a tapered box."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "tall box-like body with tapered bottom",
+          "graph": "wikidata",
+          "term": "tapered form",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the tapered form attribute across different domains."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holds contents",
+          "graph": "getty_aat",
+          "term": "storage function",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function attribute by focusing on the storage function."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "holds contents",
+          "graph": "getty_aat",
+          "term": "container function",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the container function attribute across different domains."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "the main volume between top fold and base",
+          "graph": "wikidata",
+          "term": "main body volume",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment logic by focusing on the main body volume."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "the main volume between top fold and base",
+          "graph": "wikidata",
+          "term": "central volume",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Focuses on the central volume attribute across different domains."
+        }
+      ],
+      "query_count": 18,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 9,
+        "far": 9
+      }
+    },
+    {
+      "model": "white:christmas:sock",
+      "label": "Sock",
+      "object_type": "sock",
+      "part": "heel",
+      "intent": "把袜子的袜口罗纹做得更立体。",
+      "ok": true,
+      "elapsed_sec": 37.68,
+      "attribute_plan": {
+        "schema_version": "creativeflow.attribute-plan.v1",
+        "planner_order": "source_plus_variation_facet_before_any_kg_query",
+        "source_anchor": "heel",
+        "source_noun": "sock",
+        "selected_part_noun": "heel",
+        "attributes": [
+          {
+            "attribute_id": "attr_01",
+            "dimension": "selected_part_shape",
+            "value": "rounded bend",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          },
+          {
+            "attribute_id": "attr_02",
+            "dimension": "selected_part_function",
+            "value": "wraps the heel",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          },
+          {
+            "attribute_id": "attr_03",
+            "dimension": "attachment_logic",
+            "value": "rear corner of the foot tube",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          },
+          {
+            "attribute_id": "attr_04",
+            "dimension": "orientation",
+            "value": "vertical alignment",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          },
+          {
+            "attribute_id": "attr_05",
+            "dimension": "articulation",
+            "value": "flexible bend",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          },
+          {
+            "attribute_id": "attr_06",
+            "dimension": "interface",
+            "value": "seamless connection",
+            "evidence": "sharp rear bend in the foot tube",
+            "transfer_question": "which concrete cross-domain entities exhibit this same relational property?",
+            "confidence": 0.84
+          }
+        ],
+        "locked_facets": [
+          "object_identity",
+          "global_shape",
+          "unselected_parts",
+          "material_layout"
+        ]
+      },
+      "queries": [
+        {
+          "query_id": "query_001",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "rounded bend",
+          "graph": "wikidata",
+          "term": "foot tube",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the shape attribute of the foot tube with a rounded bend."
+        },
+        {
+          "query_id": "query_002",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "rounded bend",
+          "graph": "wikidata",
+          "term": "pipe bend",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the shape attribute of a rounded bend in a different physical domain."
+        },
+        {
+          "query_id": "query_003",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "wraps the heel",
+          "graph": "wikidata",
+          "term": "footwear component",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function attribute of wrapping the heel in a footwear context."
+        },
+        {
+          "query_id": "query_004",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "wraps the heel",
+          "graph": "wikidata",
+          "term": "support structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the function attribute of wrapping in a different physical domain."
+        },
+        {
+          "query_id": "query_005",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "rear corner of the foot tube",
+          "graph": "wikidata",
+          "term": "footwear attachment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment logic attribute of the rear corner in a footwear context."
+        },
+        {
+          "query_id": "query_006",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "rear corner of the foot tube",
+          "graph": "wikidata",
+          "term": "structural corner",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the attachment logic attribute of a corner in a different physical domain."
+        },
+        {
+          "query_id": "query_007",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "wikidata",
+          "term": "footwear alignment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the orientation attribute of vertical alignment in a footwear context."
+        },
+        {
+          "query_id": "query_008",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "wikidata",
+          "term": "vertical structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the orientation attribute of vertical alignment in a different physical domain."
+        },
+        {
+          "query_id": "query_009",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "flexible bend",
+          "graph": "wikidata",
+          "term": "flexible pipe",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the articulation attribute of a flexible bend in a similar physical domain."
+        },
+        {
+          "query_id": "query_010",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "flexible bend",
+          "graph": "wikidata",
+          "term": "flexible joint",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the articulation attribute of a flexible bend in a different physical domain."
+        },
+        {
+          "query_id": "query_011",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "seamless connection",
+          "graph": "wikidata",
+          "term": "footwear seam",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the interface attribute of a seamless connection in a footwear context."
+        },
+        {
+          "query_id": "query_012",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "seamless connection",
+          "graph": "wikidata",
+          "term": "seamless joint",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the interface attribute of a seamless connection in a different physical domain."
+        },
+        {
+          "query_id": "query_013",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "rounded bend",
+          "graph": "getty_aat",
+          "term": "pipe bend",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the shape attribute of a rounded bend in an artifact context."
+        },
+        {
+          "query_id": "query_014",
+          "attribute_id": "attr_01",
+          "attribute_dimension": "selected_part_shape",
+          "attribute_value": "rounded bend",
+          "graph": "getty_aat",
+          "term": "curved joint",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the shape attribute of a rounded bend in a different artifact domain."
+        },
+        {
+          "query_id": "query_015",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "wraps the heel",
+          "graph": "getty_aat",
+          "term": "footwear wrap",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the function attribute of wrapping the heel in an artifact context."
+        },
+        {
+          "query_id": "query_016",
+          "attribute_id": "attr_02",
+          "attribute_dimension": "selected_part_function",
+          "attribute_value": "wraps the heel",
+          "graph": "getty_aat",
+          "term": "support wrap",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the function attribute of wrapping in a different artifact domain."
+        },
+        {
+          "query_id": "query_017",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "rear corner of the foot tube",
+          "graph": "getty_aat",
+          "term": "footwear corner",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the attachment logic attribute of a rear corner in an artifact context."
+        },
+        {
+          "query_id": "query_018",
+          "attribute_id": "attr_03",
+          "attribute_dimension": "attachment_logic",
+          "attribute_value": "rear corner of the foot tube",
+          "graph": "getty_aat",
+          "term": "structural corner",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the attachment logic attribute of a corner in a different artifact domain."
+        },
+        {
+          "query_id": "query_019",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "getty_aat",
+          "term": "vertical alignment",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the orientation attribute of vertical alignment in an artifact context."
+        },
+        {
+          "query_id": "query_020",
+          "attribute_id": "attr_04",
+          "attribute_dimension": "orientation",
+          "attribute_value": "vertical alignment",
+          "graph": "getty_aat",
+          "term": "vertical structure",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the orientation attribute of vertical alignment in a different artifact domain."
+        },
+        {
+          "query_id": "query_021",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "flexible bend",
+          "graph": "asknature",
+          "term": "flexible joint",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the articulation attribute of a flexible bend in a biological context."
+        },
+        {
+          "query_id": "query_022",
+          "attribute_id": "attr_05",
+          "attribute_dimension": "articulation",
+          "attribute_value": "flexible bend",
+          "graph": "asknature",
+          "term": "flexible connection",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the articulation attribute of a flexible bend in a different biological domain."
+        },
+        {
+          "query_id": "query_023",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "seamless connection",
+          "graph": "asknature",
+          "term": "seamless joint",
+          "distance_intent": "near",
+          "same_attribute_rationale": "Preserves the interface attribute of a seamless connection in a biological context."
+        },
+        {
+          "query_id": "query_024",
+          "attribute_id": "attr_06",
+          "attribute_dimension": "interface",
+          "attribute_value": "seamless connection",
+          "graph": "asknature",
+          "term": "seamless link",
+          "distance_intent": "far",
+          "same_attribute_rationale": "Preserves the interface attribute of a seamless connection in a different biological domain."
+        }
+      ],
+      "query_count": 24,
+      "query_graphs": [
+        "asknature",
+        "getty_aat",
+        "wikidata"
+      ],
+      "query_buckets": {
+        "near": 12,
+        "far": 12
+      }
+    },
+    {
+      "model": "white:bakery:pretzel",
+      "label": "Pretzel",
+      "object_type": "pretzel",
+      "part": "loop segment",
+      "intent": "把椒盐卷饼的辫状扭结做得更清晰。",
+      "ok": false,
+      "elapsed_sec": 190.65,
+      "error": "query items did not satisfy the schema or coverage requirements",
+      "error_type": "RuntimeError"
+    }
+  ],
+  "success_count": 7,
+  "fail_count": 2
+}

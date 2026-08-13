@@ -60,6 +60,8 @@ class OpenAICompatibleTransport:
         stage: ModelStage,
         temperature: float,
         max_tokens: int,
+        timeout_sec: float | None = None,
+        max_retries: int | None = None,
     ) -> dict[str, Any]:
         return await asyncio.to_thread(
             self._chat_json_sync,
@@ -68,6 +70,8 @@ class OpenAICompatibleTransport:
             stage=stage,
             temperature=temperature,
             max_tokens=max_tokens,
+            timeout_sec=timeout_sec,
+            max_retries=max_retries,
         )
 
     def _chat_json_sync(
@@ -78,6 +82,8 @@ class OpenAICompatibleTransport:
         stage: ModelStage,
         temperature: float,
         max_tokens: int,
+        timeout_sec: float | None = None,
+        max_retries: int | None = None,
     ) -> dict[str, Any]:
         request_id = uuid4().hex
         payload = {
@@ -87,14 +93,17 @@ class OpenAICompatibleTransport:
             "max_tokens": max_tokens,
             "response_format": {"type": "json_object"},
         }
+        attempts = self.max_retries if max_retries is None else max(0, max_retries)
+        request_timeout = self.timeout_sec if timeout_sec is None else timeout_sec
         last_error: ModelTransportUnavailable | None = None
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(attempts + 1):
             started = time.monotonic()
             try:
                 response = self._request_json(
                     f"{self.api_base}/chat/completions",
                     method="POST",
                     payload=payload,
+                    timeout_sec=request_timeout,
                 )
                 result = self.extract_json(response)
                 usage = response.get("usage") if isinstance(response, dict) else {}
@@ -122,7 +131,7 @@ class OpenAICompatibleTransport:
                     status="retryable_error",
                     error_type=type(exc).__name__,
                 )
-                if attempt < self.max_retries:
+                if attempt < attempts:
                     self._sleep(0.25 * (2**attempt))
         raise last_error or ModelTransportUnavailable("model transport unavailable")
 
@@ -148,6 +157,7 @@ class OpenAICompatibleTransport:
         *,
         method: str,
         payload: dict[str, Any] | None,
+        timeout_sec: float | None = None,
     ) -> dict[str, Any]:
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
         headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -155,7 +165,9 @@ class OpenAICompatibleTransport:
             headers["Content-Type"] = "application/json"
         request = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
-            with self._open_request(request, self.timeout_sec) as response:
+            with self._open_request(
+                request, self.timeout_sec if timeout_sec is None else timeout_sec
+            ) as response:
                 decoded = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")

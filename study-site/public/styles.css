@@ -1,0 +1,146 @@
+:root {
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: #20252c;
+  background: #f4f5f7;
+  font-synthesis: none;
+  --ink: #20252c;
+  --muted: #68717d;
+  --line: #d9dde3;
+  --panel: #ffffff;
+  --soft: #f0f3f6;
+  --blue: #2457c5;
+  --blue-dark: #19429c;
+  --green: #287755;
+  --danger: #b42318;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(36, 87, 197, .28); outline-offset: 2px; }
+
+.login-shell { min-height: 100vh; display: grid; grid-template-columns: minmax(280px, .9fr) minmax(400px, 1.1fr); background: var(--panel); }
+.login-context { padding: clamp(40px, 8vw, 120px); display: flex; flex-direction: column; justify-content: space-between; background: #20252c; color: white; }
+.brand { font-size: 18px; font-weight: 750; }
+.login-context h1 { font-size: clamp(38px, 5vw, 66px); line-height: 1.08; letter-spacing: 0; margin: 48px 0 20px; }
+.login-context p { max-width: 480px; color: #cbd0d7; font-size: 18px; line-height: 1.7; }
+.study-code { color: #969faa; font-size: 13px; }
+.login-panel { display: grid; place-items: center; padding: 40px; }
+.login-form { width: min(420px, 100%); }
+.login-form h2 { font-size: 30px; margin: 0 0 8px; }
+.login-form > p { color: var(--muted); margin: 0 0 30px; line-height: 1.6; }
+
+label { display: block; font-weight: 650; margin: 18px 0 8px; }
+input[type="text"], input[type="password"], textarea { width: 100%; border: 1px solid #bfc5cd; border-radius: 6px; padding: 13px 14px; color: var(--ink); background: white; }
+textarea { min-height: 92px; resize: vertical; line-height: 1.55; }
+.primary { border: 0; border-radius: 6px; background: var(--blue); color: white; min-height: 46px; padding: 0 20px; font-weight: 750; transition: background .18s ease; }
+.primary:hover { background: var(--blue-dark); }
+.primary:disabled { cursor: not-allowed; opacity: .5; }
+.login-form .primary { width: 100%; margin-top: 24px; }
+.error { color: var(--danger); font-size: 14px; margin-top: 12px; }
+
+.study-shell { min-height: 100vh; display: grid; grid-template-columns: 285px minmax(0, 1fr); }
+.sidebar { position: sticky; top: 0; height: 100vh; padding: 28px 24px; border-right: 1px solid var(--line); background: #fafbfc; display: flex; flex-direction: column; }
+.participant-meta { margin-top: 6px; color: var(--muted); font-size: 13px; }
+.progress-label { display: flex; justify-content: space-between; margin: 34px 0 8px; font-size: 13px; color: var(--muted); }
+.progress-track { height: 7px; background: #e3e6ea; border-radius: 4px; overflow: hidden; }
+.progress-track span { display: block; height: 100%; background: var(--blue); transition: width .25s ease; }
+.stage-list { list-style: none; padding: 0; margin: 28px 0; display: grid; gap: 6px; }
+.stage-list li { min-height: 42px; padding: 10px 11px; border-left: 3px solid transparent; color: #7c8591; font-size: 14px; }
+.stage-list li.current { border-left-color: var(--blue); background: #eef3ff; color: var(--ink); font-weight: 700; }
+.stage-list li.done { color: var(--green); }
+.logout { margin-top: auto; border: 0; background: transparent; padding: 10px 0; text-align: left; color: var(--muted); }
+
+.content { padding: 56px clamp(28px, 7vw, 100px) 90px; }
+.step { width: min(820px, 100%); margin: 0 auto; }
+.eyebrow { color: var(--blue); font-size: 13px; font-weight: 800; text-transform: uppercase; }
+.step h1 { margin: 8px 0 12px; font-size: clamp(30px, 4vw, 44px); line-height: 1.18; letter-spacing: 0; }
+.lead { color: var(--muted); font-size: 17px; line-height: 1.65; margin: 0 0 32px; }
+.task-brief { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; margin: 28px 0; }
+.task-brief h2 { font-size: 20px; margin: 0 0 12px; }
+.task-brief p { line-height: 1.7; color: #4e5762; }
+.placeholder { background: #f7f8fa; border: 1px dashed #adb5bf; border-radius: 6px; padding: 18px; color: #5b6470; }
+.question { padding: 17px 0 21px; border-bottom: 1px solid #e7e9ed; }
+.question legend { font-weight: 700; line-height: 1.55; margin-bottom: 12px; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.scale { display: grid; grid-template-columns: repeat(var(--count), minmax(38px, 1fr)); gap: 7px; }
+.scale label { margin: 0; position: relative; }
+.scale input { position: absolute; opacity: 0; }
+.scale span { min-height: 42px; border: 1px solid #cbd0d7; border-radius: 5px; display: grid; place-items: center; font-weight: 650; background: white; }
+.scale input:checked + span { color: white; background: var(--blue); border-color: var(--blue); }
+.scale input:focus-visible + span { outline: 3px solid rgba(36, 87, 197, .28); outline-offset: 2px; }
+.scale-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 7px; }
+.choice-list { display: grid; gap: 8px; }
+.choice-list label { margin: 0; display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border: 1px solid #d8dce2; border-radius: 5px; font-weight: 500; }
+.choice-list input { margin-top: 3px; }
+.actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding-top: 30px; }
+.save-note { color: var(--muted); font-size: 13px; }
+.break-panel { padding: 30px; border-left: 4px solid var(--green); background: #f1f7f4; }
+.complete-panel { padding: 32px 0; border-top: 1px solid var(--line); }
+.admin-shell { min-height: 100vh; background: #f4f5f7; }
+.admin-header { padding: 22px clamp(22px, 5vw, 72px); background: white; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.admin-actions { display: flex; gap: 10px; }
+.secondary { min-height: 42px; padding: 0 16px; border: 1px solid #bfc5cd; border-radius: 6px; background: white; color: var(--ink); font-weight: 700; }
+.admin-content { padding: 38px clamp(22px, 5vw, 72px) 80px; }
+.admin-content h1 { font-size: 34px; margin: 0 0 8px; }
+.admin-summary { color: var(--muted); margin-bottom: 26px; }
+.admin-table-wrap { overflow-x: auto; background: white; border: 1px solid var(--line); border-radius: 6px; }
+.admin-table { width: 100%; border-collapse: collapse; min-width: 820px; }
+.admin-table th, .admin-table td { padding: 14px 15px; text-align: left; border-bottom: 1px solid #e7e9ed; font-size: 14px; }
+.admin-table th { background: #f7f8fa; color: #4e5762; font-size: 12px; text-transform: uppercase; }
+.status { display: inline-flex; align-items: center; min-height: 28px; padding: 0 9px; border-radius: 4px; background: #edf1f5; color: #4e5762; font-size: 12px; font-weight: 750; }
+.status.complete { background: #e8f5ee; color: #236647; }
+.review-shell { min-height: 100vh; background: #f4f5f7; }
+.review-content { width: min(980px, calc(100% - 40px)); margin: 0 auto; padding: 42px 0 100px; }
+.review-intro { margin-bottom: 28px; }
+.review-intro h1 { font-size: 38px; margin: 8px 0 12px; }
+.review-nav { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; overflow-x: auto; padding: 12px clamp(20px, 5vw, 72px); background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); }
+.review-nav a { white-space: nowrap; color: #46505c; text-decoration: none; font-size: 13px; font-weight: 700; padding: 8px 10px; border-radius: 4px; }
+.review-nav a:hover { background: var(--soft); }
+.review-section { scroll-margin-top: 76px; background: white; border: 1px solid var(--line); border-radius: 6px; padding: 28px 30px; margin-bottom: 18px; }
+.review-section h2 { font-size: 24px; margin: 0 0 7px; }
+.review-section h3 { font-size: 17px; margin: 24px 0 8px; }
+.review-section ol { padding-left: 24px; }
+.review-section li { margin: 10px 0; line-height: 1.6; }
+.review-scale { color: var(--muted); font-size: 13px; margin-left: 7px; }
+.review-note { border-left: 3px solid var(--blue); padding: 10px 14px; background: #f2f5fb; color: #4e5762; line-height: 1.6; }
+.interview-guide-intro { margin: 22px 0 18px; padding: 16px 18px; border-left: 3px solid var(--blue); background: #f2f5fb; }
+.interview-guide-intro p { margin: 6px 0 0; color: #4e5762; line-height: 1.65; }
+.interview-dimension { padding: 22px 0; border-top: 1px solid var(--line); }
+.interview-dimension > header { display: flex; align-items: flex-start; gap: 12px; }
+.interview-number { flex: 0 0 30px; height: 30px; display: grid; place-items: center; border-radius: 4px; background: var(--ink); color: white; font-size: 13px; font-weight: 800; }
+.interview-dimension h3 { margin: 0 0 3px; font-size: 18px; }
+.interview-time { color: var(--muted); font-size: 13px; }
+.interview-dimension ol { margin: 12px 0 0 42px; padding-left: 21px; }
+.interview-dimension li { padding-left: 3px; margin: 18px 0; }
+.interview-probes { margin: 8px 0 0; padding: 10px 13px; border-left: 2px solid #cbd0d7; background: #f7f8fa; }
+.interview-probes > span { color: var(--muted); font-size: 12px; font-weight: 750; }
+.interview-probes p { margin: 5px 0; color: #4e5762; font-size: 14px; line-height: 1.55; }
+.interview-closing, .interview-recording { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 6px; }
+.interview-closing h3, .interview-recording h3 { margin: 0 0 8px; }
+.interview-closing p, .interview-recording p { line-height: 1.65; }
+.record-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0; }
+.record-tags span { padding: 5px 8px; border-radius: 4px; background: #edf1f5; color: #46505c; font-size: 12px; font-weight: 700; }
+.interview-recording .review-note { margin: 16px 0 0; }
+
+@media (max-width: 760px) {
+  .login-shell { grid-template-columns: 1fr; }
+  .login-context { min-height: 300px; padding: 34px 24px; }
+  .login-context h1 { margin-top: 36px; }
+  .login-panel { padding: 42px 24px; }
+  .study-shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 20px; }
+  .stage-list { display: none; }
+  .progress-label { margin-top: 20px; }
+  .logout { position: absolute; top: 16px; right: 20px; }
+  .content { padding: 34px 20px 70px; }
+  .admin-header { align-items: flex-start; }
+  .admin-actions { flex-direction: column; }
+  .review-section { padding: 22px 20px; }
+  .interview-dimension ol { margin-left: 4px; }
+  .scale { gap: 4px; }
+  .scale span { min-height: 40px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

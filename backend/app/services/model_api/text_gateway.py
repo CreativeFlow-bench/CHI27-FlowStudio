@@ -49,13 +49,20 @@ class TextModelGateway:
         repair_instruction: str | None = None,
         temperature: float = 0,
         max_tokens: int = 3600,
+        models: list[str] | None = None,
+        timeout_sec: float | None = None,
+        max_retries: int | None = None,
+        allow_repair: bool = True,
     ) -> StructuredModelResult[T]:
         route = self.profile.route_for(stage)
-        models = [route.primary_model]
-        if route.fallback_model:
-            models.append(route.fallback_model)
+        if models is not None:
+            ordered = [model for model in models if model]
+        else:
+            ordered = [route.primary_model]
+            if route.fallback_model:
+                ordered.append(route.fallback_model)
         last_transport_error: ModelTransportUnavailable | None = None
-        for index, model in enumerate(models):
+        for index, model in enumerate(ordered):
             try:
                 raw = await self.transport.chat_json(
                     model=model,
@@ -63,11 +70,13 @@ class TextModelGateway:
                     stage=stage,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    timeout_sec=timeout_sec,
+                    max_retries=max_retries,
                 )
                 try:
                     value = validator(raw)
                 except Exception as validation_error:
-                    if repair_instruction is None:
+                    if repair_instruction is None or not allow_repair:
                         raise
                     repair_messages = [
                         *messages,
@@ -89,6 +98,8 @@ class TextModelGateway:
                         stage=stage,
                         temperature=temperature,
                         max_tokens=max_tokens,
+                        timeout_sec=timeout_sec,
+                        max_retries=max_retries,
                     )
                     value = validator(repaired)
                 return StructuredModelResult(

@@ -1,0 +1,37 @@
+{
+  "stage": "texture",
+  "object_type": "toy water gun",
+  "source_id": "watergun_texture_kg_20260723",
+  "source_image_path": "/root/autodl-tmp/creativeflow_part_real_sam3d_20260718/watergun_sam3d/data_root/watergun_sam3d/render_0000.webp",
+  "source_mesh_path": "/root/autodl-tmp/creativeflow_part_real_sam3d_20260718/watergun_sam3d/mesh_root/watergun_sam3d.glb",
+  "user_prompt": "Preserve the toy water gun geometry, barrel, reservoir, grip, trigger, nozzle, proportions and camera; vary only its integrated PBR surface material through source-attribute-led knowledge-graph analogical transfer.",
+  "source_elements": {
+    "source_noun": "toy water gun",
+    "identity_cues": [
+      "horizontal blue toy gun body",
+      "front orange circular nozzle",
+      "green cylindrical reservoir",
+      "pistol grip and trigger guard",
+      "molded mechanical panels and ridges"
+    ],
+    "editable_material_region": "the complete connected toy water gun surface while retaining the existing region layout",
+    "current_materials": [
+      {
+        "region": "main blue body, orange nozzle and green reservoir",
+        "material": "injection-molded colored plastic",
+        "visible_attributes": [
+          "bright saturated blue orange and green color blocking",
+          "smooth hard polymer surface",
+          "semigloss molded finish",
+          "uniform opaque shell",
+          "fine molded ridges and recessed panels"
+        ]
+      }
+    ],
+    "locked_geometry": [
+      "same complete toy water gun silhouette",
+      "same barrel, reservoir, nozzle, trigger guard and grip geometry",
+      "same component layout, camera angle and single-object composition"
+    ]
+  }
+}

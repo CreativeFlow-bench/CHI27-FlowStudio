@@ -1,0 +1,10 @@
+{
+  "name": "flowstudio-study-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "node scripts/seed-accounts.js",
+    "start": "node src/server.js",
+    "test": "node --test"
+  }
+}

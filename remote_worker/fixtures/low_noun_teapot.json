@@ -1,0 +1,9 @@
+{
+  "stage": "low_fidelity",
+  "object_type": "teapot",
+  "source_id": "low_noun_teapot_v1",
+  "source_image_path": "",
+  "source_description": "A teapot with a squat rounded body, flat stable base, narrow neck, domed lid, side handle, and forward spout. Preserve the identity cues of teapot: body, lid, handle, spout, and opening relationship. Only change the overall silhouette and massing.",
+  "user_prompt": "只改变整体轮廓形状，保持物体概念不变。",
+  "candidate_count": 8
+}

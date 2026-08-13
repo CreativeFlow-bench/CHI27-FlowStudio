@@ -1,0 +1,12 @@
+# FlowStudio assembly preview: original OBJ plus fitted replacement part.
+# Target PartField cluster faces were removed before inserting the fitted part.
+v 10 20 30
+v 10 22 30
+v 14 20 30
+v 14 22 30
+f 2 4 3
+o flowstudio_fitted_replacement
+v 10 20 30
+v 14 22 34
+v 10 22 34
+f 5 6 7

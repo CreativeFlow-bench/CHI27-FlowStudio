@@ -20,4 +20,5 @@ from app.models.store import *  # noqa: F401,F403
 from app.models.semantic_divergence import *  # noqa: F401,F403
 from app.models.four_stage import *  # noqa: F401,F403
 from app.models.realtime_observation import *  # noqa: F401,F403
+from app.models.interaction import *  # noqa: F401,F403
 from app.models.experiment_project import *  # noqa: F401,F403

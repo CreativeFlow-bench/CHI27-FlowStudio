@@ -13,6 +13,7 @@ class ModelStage(str, Enum):
     SEMANTIC_DIVERGENCE = "semantic_divergence"
     PROMPT_COMPOSITION = "prompt_composition"
     IMAGE = "image"
+    PHENOMENON = "phenomenon"
 
 
 @dataclass(frozen=True, slots=True)

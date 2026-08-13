@@ -48,10 +48,15 @@ Make post-Gate divergence visibly reliable, return a useful and balanced set of 
 
 ### AI Behavior
 
-- Keep the existing translucent grey panel, rounded group cards, blue/cyan selected chips, and compact Manrope hierarchy.
-- Show `发散温度` and `内容数量` as two compact parameter rows.
-- Display the content amount as `5 / 维` through `8 / 维` so the meaning cannot be confused with the total.
-- Retain four vertical semantic sections; each section shows at least five chips at the default setting.
+- Preserve the approved full `AI BEHAVIOR` hierarchy from the linked Superdesign draft. The outer panel contains the `AI BEHAVIOR` header with three status dots, a visible `CURRENT PHENOMENON` card, a visible `NEXT ACTION` card, a `MODEL DETAILS` section label, and the divergence controls.
+- Render `More Creative?` as the title of a bordered child card under `MODEL DETAILS`; it is not the primary panel header.
+- Keep the `More Creative?` title visually smaller than the workspace `Flow Studio` wordmark. With the wordmark at `30px`, the child-card title must be no larger than `26px` on desktop.
+- Use `Confirm scope to start divergence` while locked; once accepted, keep the existing dynamic scope summary.
+- Present `DIVERGENCE` and `CONTENT` as two side-by-side rounded parameter cards. The content card uses a four-segment quantity control for values 5–8 while preserving keyboard-accessible range input semantics.
+- Display semantic group labels as uppercase `SHAPE`, `CONNECTION`, `SURFACE`, and `TRANSFER` headings followed by wrapping pill chips. The last visual label still maps to the canonical `semantic_transfer` group key.
+- Use a blue selected-chip treatment. Place the full-width blue `Generate` action below the More Creative child card and anchor it at the bottom of the outer AI Behavior panel.
+- Retain all four vertical semantic sections; each section shows at least five chips at the default setting. The fourth section may be below the initial viewport and remains reachable through panel scrolling.
+- Preserve loading, fallback, partial-knowledge, persistence-error, and Generate-disabled states inside the approved outer-panel/child-card hierarchy.
 
 ### Active version metadata
 

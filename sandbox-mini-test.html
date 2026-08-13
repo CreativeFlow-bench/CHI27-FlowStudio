@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandbox Minimal Test</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; padding: 30px; }
+  button { padding: 12px 24px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; margin: 6px; }
+  .primary { background: #6c8eff; color: white; }
+  .ghost { background: #21253a; color: #64748b; border: 1px solid #2e3350; }
+  .log { margin-top: 20px; padding: 12px; background: #1a1d27; border-radius: 8px; min-height: 60px; font-family: monospace; font-size: 12px; }
+  input, select { padding: 8px 12px; border-radius: 6px; border: 1px solid #2e3350; background: #21253a; color: #e2e8f0; margin: 4px 0; width: 100%; box-sizing: border-box; }
+  label { font-size: 11px; color: #64748b; display: block; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h2 style="color:#6c8eff">Sandbox 最小测试版</h2>
+
+<!-- Test row -->
+<div style="display:flex;gap:8px;margin-bottom:20px">
+  <button class="primary" onclick="testClick('按钮1')">按钮1</button>
+  <button class="ghost" onclick="testClick('按钮2')">按钮2</button>
+  <button class="primary" onclick="testClick('雪人预设')">雪人预设</button>
+  <button class="ghost" onclick="resetTest()">清空</button>
+</div>
+
+<!-- Form -->
+<select id="eventType">
+  <option value="brush_end">brush_end — 笔刷结束</option>
+  <option value="part_select">part_select — 点击选中部件</option>
+  <option value="intent_text_changed">intent_text_changed</option>
+</select>
+
+<input id="partId" placeholder="Part ID (如: head)">
+<input id="intentText" placeholder="Intent 文本 (如: 更圆润一点)">
+
+<button class="primary" onclick="addEvent()" style="width:100%;margin-top:12px">+ 记录事件</button>
+
+<div id="log" class="log">点击按钮测试…</div>
+<div id="eventList" style="margin-top:16px;font-size:12px;font-family:monospace;color:#64748b"></div>
+
+<script>
+let events = [];
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML = '<span style="color:#4ade80">✓</span> ' + msg + '<br>' + el.innerHTML;
+  console.log('[Sandbox]', msg);
+}
+
+function testClick(who) {
+  log(who + ' 被点击了！');
+}
+
+function resetTest() {
+  events = [];
+  document.getElementById('log').innerHTML = '已清空';
+  document.getElementById('eventList').textContent = '';
+  log('状态已重置');
+}
+
+function addEvent() {
+  const type = document.getElementById('eventType').value;
+  const partId = document.getElementById('partId').value.trim();
+  const intentText = document.getElementById('intentText').value.trim();
+
+  const event = {
+    id: 'evt-' + Date.now(),
+    event_type: type,
+    part_id: partId || null,
+    intent_text: intentText || null,
+    timestamp: new Date().toISOString(),
+  };
+
+  events.push(event);
+  log('记录事件: ' + type + (partId ? ' (part: ' + partId + ')' : '') + (intentText ? ' — "' + intentText + '"' : ''));
+
+  document.getElementById('eventList').innerHTML =
+    '共 ' + events.length + ' 条事件：<br>' +
+    events.map((e, i) => (i+1) + '. ' + e.event_type + (e.part_id ? ' [' + e.part_id + ']' : '') + (e.intent_text ? ' "' + e.intent_text + '"' : '')).join('<br>');
+}
+
+log('页面加载完成，JS 正常执行');
+</script>
+</body>
+</html>

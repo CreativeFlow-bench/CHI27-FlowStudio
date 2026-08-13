@@ -20,20 +20,24 @@ Legacy Qwen/local VLM adapters:      disabled
 Remote worker/Hunyuan3D:             disabled
 ```
 
-Configure the shared OpenAI-compatible relay with neutral names. Existing
-`GEMINI_API_BASE` and `GEMINI_API_KEY` remain credential compatibility
-fallbacks, so the previous local key can continue to be used without copying it
-into source control.
+Cloud model credentials are isolated from the general runtime env:
+
+1. Copy `.env.example` → `.env` for worker / IUL / remote settings (no API keys).
+2. Copy `.env.model_api.example` → `.env.model_api` and put `MODEL_API_KEY` only there.
+3. Never commit `.env` or `.env.model_api`.
 
 ```bash
+# .env.model_api (gitignored)
 MODEL_API_BASE=https://128api.cn/v1
 MODEL_API_KEY=...
 MODEL_FAST_TEXT=gemini-3.6-flash
 MODEL_REASONING_TEXT=gpt-5.5
 MODEL_IMAGE=gpt-image-2
-ENABLE_LEGACY_LOCAL_MODELS=false
-ENABLE_3D_GENERATION=false
 ```
+
+`GEMINI_API_*` remain optional credential fallbacks. Legacy local models and 3D
+generation stay off by default (`ENABLE_LEGACY_LOCAL_MODELS=false`,
+`ENABLE_3D_GENERATION=false`).
 
 Start the local-only backend and frontend on the fixed development ports:
 
@@ -292,7 +296,7 @@ export REMOTE_CREATIVEFLOW_WORKER_URL=http://SERVER_HOST:18100
 When using an SSH tunnel:
 
 ```bash
-ssh -fN -L 18101:127.0.0.1:18100 -p 47501 root@connect.westd.seetacloud.com
+ssh -fN -L 18101:127.0.0.1:18100 -p 34333 root@connect.westd.seetacloud.com
 export REMOTE_CREATIVEFLOW_WORKER_URL=http://127.0.0.1:18101
 ```
 

@@ -227,8 +227,10 @@ def test_scenario_profiles_separate_narrative_and_product_structure_invariants()
         dimensions={"Scenario": ["narrative_character"]},
     )
     narrative_spec = GenerationSpecBuilder(candidate_count=4).build_spec(narrative, "opt_1")
-    assert all("Narrative transfer" in prompt for prompt in narrative_spec.prompt_candidates)
+    assert all("Change the overall silhouette" in prompt or "Change the material appearance" in prompt or "Change the internal structure" in prompt or "Add ornament" in prompt for prompt in narrative_spec.prompt_candidates)
     assert all("do not replace the source character" in prompt for prompt in narrative_spec.prompt_candidates)
+    assert all("Front-facing studio view" in prompt for prompt in narrative_spec.prompt_candidates)
+    assert narrative_spec.model == "gpt-image-2"
 
     narrative.intent_ir.intent.scope = "material"
     narrative_material_spec = GenerationSpecBuilder(candidate_count=4).build_spec(narrative, "opt_1")
@@ -255,7 +257,7 @@ def test_scenario_profiles_separate_narrative_and_product_structure_invariants()
         dimensions={"Scenario": ["product_structure"]},
     )
     structure_spec = GenerationSpecBuilder(candidate_count=4).build_spec(structure, "opt_1")
-    assert all("Structure transfer" in prompt for prompt in structure_spec.prompt_candidates)
+    assert all("USER-SELECTED DIRECTION:" in prompt for prompt in structure_spec.prompt_candidates)
     assert all("horizontal usable tabletop" in prompt for prompt in structure_spec.prompt_candidates)
     assert all("texture-only recoloring is insufficient" in prompt for prompt in structure_spec.prompt_candidates)
 
@@ -277,9 +279,10 @@ def test_trusted_intent_context_derives_narrative_scenario_after_canonical_selec
 
     spec = GenerationSpecBuilder(candidate_count=4).build_spec(run, "opt_1")
 
-    assert all("Narrative transfer" in prompt for prompt in spec.prompt_candidates)
+    assert all("USER-SELECTED DIRECTION:" in prompt for prompt in spec.prompt_candidates)
     assert all("do not replace the source character" in prompt for prompt in spec.prompt_candidates)
     assert all("preserve category-defining facial and limb cues" in prompt for prompt in spec.prompt_candidates)
+    assert all("Front-facing studio view" in prompt for prompt in spec.prompt_candidates)
 
 
 def test_trusted_intent_context_derives_product_structure_after_canonical_selection() -> None:
@@ -299,9 +302,10 @@ def test_trusted_intent_context_derives_product_structure_after_canonical_select
 
     spec = GenerationSpecBuilder(candidate_count=4).build_spec(run, "opt_1")
 
-    assert all("Structure transfer" in prompt for prompt in spec.prompt_candidates)
+    assert all("USER-SELECTED DIRECTION:" in prompt for prompt in spec.prompt_candidates)
     assert all("horizontal usable tabletop" in prompt for prompt in spec.prompt_candidates)
     assert all("plausible load-bearing support system" in prompt for prompt in spec.prompt_candidates)
+    assert all("Front-facing studio view" in prompt for prompt in spec.prompt_candidates)
 
 
 @pytest.mark.parametrize(
@@ -334,8 +338,8 @@ def test_scenario_identity_matching_does_not_use_unsafe_substrings(
 @pytest.mark.parametrize(
     ("object_type", "goal", "required"),
     [
-        ("snowman character", "turn it into an ancient stone relic", "Narrative transfer"),
-        ("茶几", "将茶几的支撑改为流动熔岩结构", "Structure transfer"),
+        ("snowman character", "turn it into an ancient stone relic", "do not replace the source character"),
+        ("茶几", "将茶几的支撑改为流动熔岩结构", "horizontal usable tabletop"),
     ],
 )
 def test_scenario_identity_matching_preserves_explicit_aliases(
@@ -353,6 +357,8 @@ def test_scenario_identity_matching_preserves_explicit_aliases(
     spec = GenerationSpecBuilder(candidate_count=2).build_spec(run, "opt_1")
 
     assert all(required in prompt for prompt in spec.prompt_candidates)
+    assert all("Front-facing studio view" in prompt for prompt in spec.prompt_candidates)
+    assert all("USER-SELECTED DIRECTION:" in prompt for prompt in spec.prompt_candidates)
 
 
 def test_each_candidate_uses_one_user_direction_without_cross_contamination() -> None:

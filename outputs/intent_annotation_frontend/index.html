@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowStudio Intent Annotator</title>
+    <style>
+      :root {
+        color: #20242c;
+        background: #f5f6f8;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      button {
+        min-height: 34px;
+        border: 1px solid #cfd4dc;
+        border-radius: 6px;
+        background: #fff;
+        color: #20242c;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: #6d5b92;
+      }
+
+      button.primary {
+        background: #4b3568;
+        border-color: #4b3568;
+        color: #fff;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid #cfd4dc;
+        border-radius: 6px;
+        background: #fff;
+        padding: 8px 9px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
+
+      .topbar {
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px solid #d9dde5;
+        background: #fff;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .topbar-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .layout {
+        height: calc(100vh - 58px);
+        display: grid;
+        grid-template-columns: 360px minmax(460px, 1fr) 390px;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .panel {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #d9dde5;
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .panel-header h2 {
+        margin: 0;
+        font-size: 14px;
+      }
+
+      .panel-body {
+        min-height: 0;
+        overflow: auto;
+        padding: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 5px;
+        margin-bottom: 9px;
+        color: #4b5563;
+        font-size: 12px;
+      }
+
+      .json-card {
+        margin-bottom: 10px;
+        border: 1px solid #d9dde5;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .json-card.active {
+        border-color: #6d5b92;
+        box-shadow: 0 0 0 2px #eee7f7;
+      }
+
+      .json-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        background: #f7f8fa;
+        font-size: 12px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 10px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #111827;
+        color: #e5e7eb;
+        font:
+          11px / 1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          monospace;
+      }
+
+      .video-card {
+        width: 100%;
+        border-radius: 8px;
+        background: #111827;
+        color: #f9fafb;
+        overflow: hidden;
+        padding: 22px;
+        border: 1px solid #d9dde5;
+      }
+
+      .video-card h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      .video-card p {
+        margin: 0 0 14px;
+        color: #cbd5e1;
+        line-height: 1.45;
+      }
+
+      .video-card button {
+        min-height: 44px;
+        width: 100%;
+        border-color: #ffffff;
+        background: #ffffff;
+        color: #111827;
+        font-weight: 700;
+      }
+
+      .time-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .step-title {
+        margin: 0;
+        font-size: 18px;
+        color: #4b3568;
+      }
+
+      .choice-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .choice,
+      .tag {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        border: 1px solid #d9dde5;
+        border-radius: 8px;
+        background: #fff;
+        padding: 9px;
+        cursor: pointer;
+      }
+
+      .choice input,
+      .tag input {
+        width: auto;
+        margin-top: 3px;
+      }
+
+      .choice.active,
+      .tag.active {
+        border-color: #6d5b92;
+        background: #f5f0fb;
+      }
+
+      .choice strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .choice span {
+        display: block;
+        color: #6b7280;
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+      }
+
+      .route-list,
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .route {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        padding: 8px 11px;
+        cursor: pointer;
+      }
+
+      .route input {
+        width: auto;
+      }
+
+      .contour {
+        background: #ccddff;
+      }
+
+      .breakthrough {
+        background: #ffd9a8;
+      }
+
+      .local {
+        background: #bcefff;
+      }
+
+      .material {
+        background: #a9f0de;
+      }
+
+      .none {
+        background: #f5e5aa;
+      }
+
+      .signal-group {
+        margin-bottom: 14px;
+      }
+
+      .signal-group h3 {
+        margin: 0 0 7px;
+        font-size: 13px;
+      }
+
+      .bottom-actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .hint {
+        color: #6b7280;
+        font-size: 12px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 8px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 11px;
+      }
+
+      .sync-status {
+        min-width: 74px;
+        color: #6b7280;
+        font-size: 12px;
+        align-self: center;
+      }
+
+      .login-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(17, 24, 39, 0.68);
+        padding: 20px;
+      }
+
+      .login-card {
+        width: min(520px, 100%);
+        border-radius: 10px;
+        background: #fff;
+        border: 1px solid #d9dde5;
+        padding: 18px;
+      }
+
+      .login-card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .account-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+
+      @media (max-width: 1160px) {
+        .layout {
+          height: auto;
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loginOverlay" class="login-overlay">
+      <div class="login-card">
+        <h2>选择标注账号</h2>
+        <div id="accountGrid" class="account-grid"></div>
+      </div>
+    </div>
+
+    <header class="topbar">
+      <h1>FlowStudio Intent Annotator</h1>
+      <div class="topbar-actions">
+        <button id="accountBtn">账号</button>
+        <button id="prevCaseBtn">上一条 case</button>
+        <button id="nextCaseBtn">下一条 case</button>
+        <button id="deleteCurrentBtn">删除当前 case</button>
+        <button id="exportJsonBtn" class="primary">导出当前账号全部标注 JSON</button>
+        <button id="exportCsvBtn">导出当前账号 CSV</button>
+        <span id="syncStatus" class="sync-status">未同步</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>左侧：意图表示 JSON</h2>
+          <span id="caseCounter" class="hint"></span>
+        </div>
+        <div id="caseList" class="panel-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>中间：视频片段</h2>
+        </div>
+        <div class="panel-body">
+          <label>
+            YouTube URL
+            <input id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." />
+          </label>
+          <div id="videoBox" class="video-card">
+            <h3>当前视频片段</h3>
+            <p>点击下方按钮，在 YouTube 新标签页打开对应时间点。</p>
+            <button id="openYoutubeBtn">打开当前片段</button>
+          </div>
+          <div class="time-grid">
+            <label>
+              video_id
+              <input id="videoId" placeholder="video_01" />
+            </label>
+            <label>
+              start
+              <input id="startTime" placeholder="00:00" />
+            </label>
+            <label>
+              end
+              <input id="endTime" placeholder="00:42" />
+            </label>
+          </div>
+          <label>
+            episode_summary
+            <textarea id="summary" placeholder="这一段发生了什么"></textarea>
+          </label>
+          <label>
+            task_group
+            <select id="taskGroup">
+              <option value="Task 1 · Character / Organic Modeling">Task 1 · Character / Organic Modeling</option>
+              <option value="Task 2 · Product / Industrial Modeling">Task 2 · Product / Industrial Modeling</option>
+              <option value="Task 3 · Hard-surface / Mechanical Modeling">Task 3 · Hard-surface / Mechanical Modeling</option>
+              <option value="Task 4 · Material / Rendering / Evaluation">Task 4 · Material / Rendering / Evaluation</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>右侧：翻页标注</h2>
+          <span id="pageLabel" class="hint"></span>
+        </div>
+        <div class="panel-body">
+          <div class="pager">
+            <button id="prevBtn">上一项</button>
+            <h2 id="stepTitle" class="step-title"></h2>
+            <button id="nextBtn">下一项</button>
+          </div>
+          <div id="annotationPage"></div>
+          <div class="bottom-actions">
+            <button id="toggleDoneBtn">标记当前完成</button>
+            <button id="copyCurrentBtn">复制当前 JSON</button>
+            <button id="resetBtn">重置当前标注</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const states = [
+        ["early_exploration", "Early Exploration", "Broad directions, loose ideation"],
+        ["coarse_forming", "Coarse Forming", "Global shape, divergent ideation"],
+        ["local_refinement", "Local Refinement", "Part edits, fine adjustments"],
+        ["relationship_adjustment", "Relationship Adjustment", "Repeated micro-edits, stuck in details"],
+        ["material_refinement", "Material Refinement", "Texture, finish, surface quality"],
+        ["evaluation", "Evaluation", "Browse, compare, and select"],
+      ];
+
+      const routes = [
+        ["generate_contour_variants", "生成轮廓变体", "contour"],
+        ["generate_breakthrough_reference_variants", "生成突破性的参考变体", "breakthrough"],
+        ["generate_local_variants", "生成局部变体", "local"],
+        ["generate_material_variants", "生成材质变体", "material"],
+        ["no_intervention", "不介入", "none"],
+      ];
+
+      const signalGroups = [
+        {
+          label: "行为与时间信号",
+          items: [
+            ["pause_hover", "停留/悬停"],
+            ["repeated_micro_edit", "反复微调"],
+            ["undo_redo_loop", "撤销/重做循环"],
+            ["rapid_tool_switch", "频繁切换工具"],
+            ["accept_reject", "接受/拒绝候选"],
+            ["long_compare", "长时间比较"],
+          ],
+        },
+        {
+          label: "空间与视口信号",
+          items: [
+            ["global_orbit", "全局旋转"],
+            ["local_zoom", "局部放大"],
+            ["zoom_out", "缩小看整体"],
+            ["select_object", "选择整体"],
+            ["select_part", "选择局部"],
+            ["large_brush", "大范围笔刷/遮罩"],
+            ["small_brush", "小范围笔刷/遮罩"],
+            ["multi_view_check", "多视角检查"],
+          ],
+        },
+        {
+          label: "语义与认知信号",
+          items: [
+            ["form_change", "形态变化"],
+            ["surface_change", "表面/材质变化"],
+            ["concept_change", "概念变化"],
+            ["match_reference", "贴合参考"],
+            ["seek_alternative", "寻找替代方向"],
+            ["preserve_structure", "保留现有结构"],
+            ["stuck_uncertain", "犹豫/卡住"],
+          ],
+        },
+      ];
+
+      const accounts = ["coder_1", "coder_2", "coder_3", "coder_4", "coder_5"];
+      const accountStorageKey = "flowstudio_current_annotator_v1";
+      let currentAccount = localStorage.getItem(accountStorageKey) || "";
+      let storageKey = "";
+      let assignment = null;
+      let page = 0;
+      let selectedState = "coarse_forming";
+      let selectedRoute = "generate_contour_variants";
+      let selectedSignals = new Set();
+      let cases = [];
+      let selectedCaseIndex = 0;
+      let saveTimer = null;
+
+      const $ = (id) => document.querySelector(`#${id}`);
+
+      function labelOf(list, code) {
+        return list.find((item) => item[0] === code)?.[1] ?? code;
+      }
+
+      function parseVideoId(url) {
+        const text = url.trim();
+        return (
+          text.match(/watch\?v=([^&]+)/)?.[1] ||
+          text.match(/youtu\.be\/([^?&]+)/)?.[1] ||
+          text.match(/embed\/([^?&]+)/)?.[1] ||
+          text.match(/bilibili\.com\/video\/(BV[^/?&]+)/)?.[1] ||
+          text.match(/bilibili\.com\/video\/(av\d+)/)?.[1] ||
+          ""
+        );
+      }
+
+      function sourcePlatform(url) {
+        if (/bilibili\.com/.test(url)) return "Bilibili";
+        if (/youtube\.com|youtu\.be/.test(url)) return "YouTube";
+        return "Video";
+      }
+
+      function currentSourceUrl() {
+        const raw = $("videoUrl").value.trim();
+        const id = parseVideoId(raw);
+        const seconds = toSeconds($("startTime").value);
+        if (/bilibili\.com/.test(raw) && id) return `https://www.bilibili.com/video/${id}/?t=${seconds}`;
+        if (/youtube\.com|youtu\.be/.test(raw) && id) return `https://www.youtube.com/watch?v=${id}&t=${seconds}s`;
+        return raw;
+      }
+
+      function toSeconds(value) {
+        const parts = value.split(":").map(Number);
+        if (parts.some(Number.isNaN)) return 0;
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        return parts[0] || 0;
+      }
+
+      function updateVideo() {
+        const id = parseVideoId($("videoUrl").value);
+        const url = currentSourceUrl();
+        const platform = sourcePlatform($("videoUrl").value);
+        if (!$("videoId").value.trim()) $("videoId").value = id;
+        $("videoBox").innerHTML = `
+          <h3>${platform}: ${id || "未选择视频"}</h3>
+          <p>${$("startTime").value || "00:00"} - ${$("endTime").value || "未填"}<br />点击按钮打开原站对应时间点。</p>
+          <button id="openYoutubeBtn" ${url ? "" : "disabled"}>打开当前片段</button>
+        `;
+        $("openYoutubeBtn").addEventListener("click", openYoutube);
+      }
+
+      function selectedSignalLabels() {
+        return signalGroups
+          .flatMap((group) => group.items.map(([code, label]) => ({ code, label, group: group.label })))
+          .filter((item) => selectedSignals.has(item.code));
+      }
+
+      function accountCasesKey(account) {
+        return `flowstudio_intent_cases_${account}_v2`;
+      }
+
+      function setAccount(account) {
+        currentAccount = account;
+        storageKey = accountCasesKey(account);
+        localStorage.setItem(accountStorageKey, account);
+        cases = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        $("loginOverlay").style.display = "none";
+        $("accountBtn").textContent = account;
+        boot();
+      }
+
+      function setSyncStatus(text) {
+        $("syncStatus").textContent = text;
+      }
+
+      function renderAccounts() {
+        $("accountGrid").innerHTML = accounts
+          .map((account) => `<button data-account="${account}" class="${account === currentAccount ? "primary" : ""}">${account}</button>`)
+          .join("");
+      }
+
+      function currentCase() {
+        const videoId = $("videoId").value.trim() || "video_unknown";
+        const start = $("startTime").value.trim() || "00:00";
+        return {
+          case_id: `${videoId}_${start.replaceAll(":", "-")}`,
+          video_id: videoId,
+          source_url: $("videoUrl").value.trim(),
+          start_time: start,
+          end_time: $("endTime").value.trim(),
+          episode_summary: $("summary").value.trim(),
+          Cognitive_Status: {
+            code: selectedState,
+            label: labelOf(states, selectedState),
+          },
+          Intuitive_Signals: selectedSignalLabels(),
+          Creativeflow_route: {
+            code: selectedRoute,
+            label: labelOf(routes, selectedRoute),
+          },
+          task_group: $("taskGroup").value,
+          annotator: currentAccount,
+          retrieval_text: [
+            labelOf(states, selectedState),
+            selectedSignalLabels().map((item) => item.label).join("；"),
+            labelOf(routes, selectedRoute),
+            $("summary").value.trim(),
+            $("taskGroup").value,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        };
+      }
+
+      function persistCurrentCase() {
+        if (!cases.length) return;
+        cases[selectedCaseIndex] = {
+          ...cases[selectedCaseIndex],
+          ...currentCase(),
+          case_id: cases[selectedCaseIndex].case_id || currentCase().case_id,
+        };
+        saveLocalAndScheduleRemote();
+        renderLeft();
+      }
+
+      function saveLocalAndScheduleRemote() {
+        localStorage.setItem(storageKey, JSON.stringify(cases));
+        scheduleRemoteSave();
+      }
+
+      function scheduleRemoteSave() {
+        if (!currentAccount || !cases.length) return;
+        setSyncStatus("同步中...");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveRemote, 450);
+      }
+
+      async function saveRemote() {
+        if (!currentAccount || !cases.length) return;
+        try {
+          const response = await fetch(`/api/submission/${currentAccount}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cases }),
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const result = await response.json();
+          setSyncStatus(`已同步 ${result.done_count}/${result.case_count}`);
+        } catch {
+          setSyncStatus("同步失败");
+        }
+      }
+
+      function renderLeft() {
+        const overlapCount = cases.filter((item) => item.assignment_type === "overlap").length;
+        const doneCount = cases.filter((item) => item.annotation_done).length;
+        const remainingCount = Math.max(0, cases.length - doneCount);
+        $("caseCounter").textContent = cases.length
+          ? `${selectedCaseIndex + 1} / ${cases.length} · 已完成 ${doneCount} · 剩余 ${remainingCount} · overlap ${overlapCount}`
+          : "0 / 0";
+        const item = cases[selectedCaseIndex];
+        $("caseList").innerHTML = item
+          ? `
+            <div class="json-card active">
+              <div class="json-title">
+                <strong>${selectedCaseIndex + 1}. ${item.case_id}</strong>
+                <span class="badge">${item.assignment_type || "individual"}</span>
+                <span class="badge">${item.annotation_done ? "done" : "todo"}</span>
+                <button data-delete="${selectedCaseIndex}">删除</button>
+              </div>
+              <pre>${JSON.stringify(item, null, 2)}</pre>
+            </div>
+          `
+          : `<p class="hint">没有 case。</p>`;
+      }
+
+      function loadCase(index) {
+        const item = cases[index];
+        if (!item) return;
+        selectedCaseIndex = index;
+        $("videoUrl").value = item.source_url || "";
+        $("videoId").value = parseVideoId(item.source_url || "") || item.video_id || "";
+        $("startTime").value = item.start_time || "";
+        $("endTime").value = item.end_time || "";
+        $("summary").value = item.episode_summary || "";
+        $("taskGroup").value = item.task_group || "Task 1 · Character / Organic Modeling";
+        selectedState = item.Cognitive_Status?.code || item.state?.code || selectedState;
+        selectedSignals = new Set((item.Intuitive_Signals || item.signals || []).map((signal) => signal.code));
+        selectedRoute = item.Creativeflow_route?.code || item.creativeflow_route?.code || selectedRoute;
+        updateVideo();
+        renderLeft();
+        renderPage();
+        updateDoneButton();
+      }
+
+      function renderPage() {
+        $("pageLabel").textContent = `${page + 1} / 3`;
+        const titles = ["Cognitive_Status", "Intuitive_Signals", "Creativeflow_route"];
+        $("stepTitle").textContent = titles[page];
+
+        if (page === 0) {
+          $("annotationPage").innerHTML = `
+            <div class="choice-grid">
+              ${states
+                .map(
+                  ([code, label, desc]) => `
+                    <label class="choice ${selectedState === code ? "active" : ""}">
+                      <input type="radio" name="state" value="${code}" ${selectedState === code ? "checked" : ""} />
+                      <span><strong>${label}</strong><span>${desc}</span></span>
+                    </label>
+                  `,
+                )
+                .join("")}
+            </div>`;
+        }
+
+        if (page === 1) {
+          $("annotationPage").innerHTML = signalGroups
+            .map(
+              (group) => `
+                <section class="signal-group">
+                  <h3>${group.label}</h3>
+                  <div class="tag-list">
+                    ${group.items
+                      .map(
+                        ([code, label]) => `
+                          <label class="tag ${selectedSignals.has(code) ? "active" : ""}">
+                            <input type="checkbox" value="${code}" ${selectedSignals.has(code) ? "checked" : ""} />
+                            ${label}
+                          </label>
+                        `,
+                      )
+                      .join("")}
+                  </div>
+                </section>
+              `,
+            )
+            .join("");
+        }
+
+        if (page === 2) {
+          $("annotationPage").innerHTML = `
+            <div class="route-list">
+              ${routes
+                .map(
+                  ([code, label, cls]) => `
+                    <label class="route ${cls}">
+                      <input type="radio" name="route" value="${code}" ${selectedRoute === code ? "checked" : ""} />
+                      ${label}
+                    </label>
+                  `,
+                )
+                .join("")}
+            </div>`;
+        }
+      }
+
+      function saveCases() {
+        saveLocalAndScheduleRemote();
+        renderLeft();
+      }
+
+      function goCase(delta) {
+        if (!cases.length) return;
+        selectedCaseIndex = Math.max(0, Math.min(cases.length - 1, selectedCaseIndex + delta));
+        loadCase(selectedCaseIndex);
+      }
+
+      function openYoutube() {
+        const url = currentSourceUrl();
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      function deleteCurrentCase() {
+        if (!cases.length) return;
+        cases.splice(selectedCaseIndex, 1);
+        selectedCaseIndex = Math.max(0, Math.min(selectedCaseIndex, cases.length - 1));
+        saveCases();
+        if (cases.length) loadCase(selectedCaseIndex);
+        else {
+          renderLeft();
+          renderPage();
+        }
+      }
+
+      function toggleCurrentDone() {
+        if (!cases.length) return;
+        const item = cases[selectedCaseIndex];
+        item.annotation_done = !item.annotation_done;
+        if (item.annotation_done) {
+          item.completed_at = new Date().toISOString();
+          item.annotator = currentAccount;
+        } else {
+          delete item.completed_at;
+        }
+        saveLocalAndScheduleRemote();
+        renderLeft();
+        updateDoneButton();
+      }
+
+      function updateDoneButton() {
+        const item = cases[selectedCaseIndex];
+        $("toggleDoneBtn").textContent = item?.annotation_done ? "取消完成标记" : "标记当前完成";
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target.name === "state") selectedState = event.target.value;
+        if (event.target.name === "route") selectedRoute = event.target.value;
+        if (event.target.type === "checkbox") {
+          if (event.target.checked) selectedSignals.add(event.target.value);
+          else selectedSignals.delete(event.target.value);
+        }
+        renderPage();
+        persistCurrentCase();
+      });
+
+      ["videoUrl", "videoId", "startTime", "endTime", "summary", "taskGroup"].forEach((id) =>
+        $(id).addEventListener("input", () => {
+          if (["videoUrl", "startTime", "endTime"].includes(id)) updateVideo();
+          persistCurrentCase();
+        }),
+      );
+      $("prevCaseBtn").addEventListener("click", () => goCase(-1));
+      $("nextCaseBtn").addEventListener("click", () => goCase(1));
+      $("deleteCurrentBtn").addEventListener("click", deleteCurrentCase);
+      $("toggleDoneBtn").addEventListener("click", toggleCurrentDone);
+      $("prevBtn").addEventListener("click", () => {
+        page = Math.max(0, page - 1);
+        renderPage();
+      });
+      $("nextBtn").addEventListener("click", () => {
+        page = Math.min(2, page + 1);
+        renderPage();
+      });
+      $("copyCurrentBtn").addEventListener("click", async () => {
+        await navigator.clipboard.writeText(JSON.stringify(cases[selectedCaseIndex] || currentCase(), null, 2));
+      });
+      $("resetBtn").addEventListener("click", () => {
+        selectedState = "coarse_forming";
+        selectedRoute = "generate_contour_variants";
+        selectedSignals = new Set();
+        renderPage();
+      });
+      $("caseList").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-delete]");
+        if (button) {
+          deleteCurrentCase();
+          return;
+        }
+      });
+      $("exportJsonBtn").addEventListener("click", () => {
+        download(`flowstudio_intent_cases_${currentAccount}.json`, JSON.stringify(cases, null, 2), "application/json");
+      });
+      $("exportCsvBtn").addEventListener("click", () => {
+        const header = [
+          "case_id",
+          "video_id",
+          "annotator",
+          "assignment_type",
+          "annotation_done",
+          "task_group",
+          "start_time",
+          "end_time",
+          "Cognitive_Status",
+          "Intuitive_Signals",
+          "Creativeflow_route",
+          "summary",
+        ];
+        const rows = cases.map((item) => [
+          item.case_id,
+          item.video_id,
+          item.annotator || currentAccount,
+          item.assignment_type,
+          item.annotation_done ? "true" : "false",
+          item.task_group,
+          item.start_time,
+          item.end_time,
+          (item.Cognitive_Status || item.state || {}).code,
+          (item.Intuitive_Signals || item.signals || []).map((signal) => signal.code).join(";"),
+          (item.Creativeflow_route || item.creativeflow_route || {}).code,
+          item.episode_summary,
+        ]);
+        download(
+          `flowstudio_intent_cases_${currentAccount}.csv`,
+          [header, ...rows]
+            .map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(","))
+            .join("\n"),
+          "text/csv",
+        );
+      });
+
+      function download(filename, content, type) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function boot() {
+        if (!currentAccount) {
+          renderAccounts();
+          $("loginOverlay").style.display = "flex";
+          return;
+        }
+        storageKey = accountCasesKey(currentAccount);
+        $("accountBtn").textContent = currentAccount;
+        try {
+          const response = await fetch("./cases.json", { cache: "no-store" });
+          const assignmentResponse = await fetch("./assignment.json", { cache: "no-store" });
+          if (response.ok) {
+            const serverCases = await response.json();
+            if (assignmentResponse.ok) assignment = await assignmentResponse.json();
+            const assignedIds = assignment?.assignments?.[currentAccount] || serverCases.map((item) => item.case_id);
+            const overlapIds = new Set(assignment?.overlap_case_ids || []);
+            const assignedIdSet = new Set(assignedIds);
+            const assignedCases = serverCases
+              .filter((item) => assignedIdSet.has(item.case_id))
+              .sort((a, b) => assignedIds.indexOf(a.case_id) - assignedIds.indexOf(b.case_id))
+              .map((item) => ({
+                ...item,
+                annotator: currentAccount,
+                assignment_type: overlapIds.has(item.case_id) ? "overlap" : "individual",
+              }));
+            const remoteResponse = await fetch(`/api/submission/${currentAccount}`, { cache: "no-store" });
+            if (remoteResponse.ok) {
+              const remotePayload = await remoteResponse.json();
+              if (remotePayload.exists && Array.isArray(remotePayload.cases) && remotePayload.cases.length) {
+                cases = remotePayload.cases;
+                localStorage.setItem(storageKey, JSON.stringify(cases));
+                setSyncStatus(`已同步 ${remotePayload.done_count || 0}/${remotePayload.case_count || cases.length}`);
+                renderLeft();
+                renderPage();
+                if (cases.length) loadCase(0);
+                return;
+              }
+            }
+            const localHasNewSchema =
+              !cases.length || Boolean(cases[0]?.Cognitive_Status && cases[0]?.Intuitive_Signals && cases[0]?.Creativeflow_route);
+            const serverHasNewSchema = Boolean(
+              assignedCases[0]?.Cognitive_Status && assignedCases[0]?.Intuitive_Signals && assignedCases[0]?.Creativeflow_route,
+            );
+            const localMatchesAssignment = cases.length === assignedCases.length && cases.every((item) => assignedIdSet.has(item.case_id));
+            if (!cases.length || !localMatchesAssignment || (serverHasNewSchema && !localHasNewSchema)) {
+              cases = assignedCases;
+              localStorage.setItem(storageKey, JSON.stringify(cases));
+            }
+          }
+        } catch {
+          if (!cases.length) cases = [];
+        }
+        renderLeft();
+        renderPage();
+        if (cases.length) loadCase(0);
+        scheduleRemoteSave();
+      }
+
+      $("accountBtn").addEventListener("click", () => {
+        renderAccounts();
+        $("loginOverlay").style.display = "flex";
+      });
+      $("accountGrid").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-account]");
+        if (button) setAccount(button.dataset.account);
+      });
+
+      boot();
+    </script>
+  </body>
+</html>

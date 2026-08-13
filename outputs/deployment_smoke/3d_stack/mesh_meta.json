@@ -1,0 +1,27 @@
+{
+  "target_id": "smoke_20260730",
+  "source_id": "snowman_pbr",
+  "relation_id": "deployment_regression",
+  "prompt_text": "deployment regression: preserve snowman identity",
+  "input_image": "/root/autodl-tmp/creativeflow_material_snowman_pbr_20260722/carved_pale_wood/renders_pbr/front.png",
+  "glb_key": "creativeflow/deployment_smoke/20260730/mesh.glb",
+  "obj_key": "creativeflow/deployment_smoke/20260730/mesh.obj",
+  "textured": true,
+  "texture_error": null,
+  "multiview_enabled": true,
+  "multiview_used": true,
+  "multiview_error": null,
+  "multiview_grid_key": "creativeflow/deployment_smoke/20260730/multiview_grid.png",
+  "multiview_meta_key": "creativeflow/deployment_smoke/20260730/multiview_meta.json",
+  "shape_model": "hunyuan3d-2mv:hunyuan3d-dit-v2-mv-fast",
+  "shape_meta": {
+    "mode": "multiview",
+    "num_inference_steps": 8,
+    "octree_resolution": 192,
+    "num_chunks": 8000,
+    "shape_model": "hunyuan3d-2mv:hunyuan3d-dit-v2-mv-fast"
+  },
+  "started_at": "2026-07-30T09:24:19.708700Z",
+  "completed_at": "2026-07-30T09:25:16.956723Z",
+  "worker": "hunyuan3d-2mv"
+}

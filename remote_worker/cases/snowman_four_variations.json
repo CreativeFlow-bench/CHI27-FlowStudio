@@ -1,0 +1,16 @@
+{
+  "case_id": "snowman-four-variations-v1",
+  "object_type": "snowman",
+  "source_prompt": "A single friendly snowman made from three stacked snow spheres, centered on a neutral studio background, coal eyes and buttons, carrot nose, twig arms, black top hat and red scarf, full object visible.",
+  "candidate_count": 4,
+  "variations": [
+    {"stage": "original", "fidelity": "medium", "endpoint": "/jobs/creativeflow-original"},
+    {"stage": "low_fidelity", "fidelity": "low", "endpoint": "/jobs/creativeflow-low-fidelity"},
+    {"stage": "part", "fidelity": "high", "endpoint": "/jobs/creativeflow-part", "required_inputs": ["source_image_path", "brush_mask_path"]},
+    {"stage": "texture", "fidelity": "high", "endpoint": "/jobs/creativeflow-texture"}
+  ],
+  "knowledge_graph": {
+    "primary": "Wikidata/Getty through configured proxy",
+    "fallback": "prompt_library.json#objects.snowman"
+  }
+}

@@ -65,16 +65,21 @@ def build_external_model_runtime(
         semantic_primary=GatewaySemanticGenerator(
             gateway,
             stage=ModelStage.SEMANTIC_DIVERGENCE,
-            model=profile.reasoning_text_model,
-            min_candidates=settings.semantic_divergence_min_candidates,
-            max_candidates=settings.semantic_divergence_max_candidates,
-        ),
-        semantic_fallback=GatewaySemanticGenerator(
-            gateway,
-            stage=ModelStage.PERCEPTION,
             model=profile.fast_text_model,
             min_candidates=settings.semantic_divergence_min_candidates,
             max_candidates=settings.semantic_divergence_max_candidates,
+            call_timeout_sec=max(40.0, settings.semantic_divergence_timeout_sec),
+            max_retries=1,
+        ),
+        # Quality spare after fast primary — prefer gemini pro over gpt reasoning.
+        semantic_fallback=GatewaySemanticGenerator(
+            gateway,
+            stage=ModelStage.SEMANTIC_DIVERGENCE,
+            model=settings.model_semantic_fallback or profile.fast_text_model,
+            min_candidates=settings.semantic_divergence_min_candidates,
+            max_candidates=settings.semantic_divergence_max_candidates,
+            call_timeout_sec=max(45.0, settings.semantic_divergence_timeout_sec),
+            max_retries=1,
         ),
         image_gateway=image_gateway,
         image_client=ExternalImageClient(image_gateway),

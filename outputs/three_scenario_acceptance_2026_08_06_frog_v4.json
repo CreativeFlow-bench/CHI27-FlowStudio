@@ -1,0 +1,1061 @@
+{
+  "results": [
+    {
+      "scenario": "narrative_frog",
+      "session_id": "sess_32e07a511d",
+      "asset": {
+        "asset_id": "asset_69aaafbaf8",
+        "session_id": "sess_32e07a511d",
+        "object_type": "frog",
+        "label": "frog",
+        "mesh_url": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+        "obj_url": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj",
+        "thumbnail_url": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source/image_v01.png",
+        "parts": [],
+        "created_at": "2026-08-05T17:36:58.735276Z",
+        "metadata": {
+          "source": "benchmark",
+          "benchmark_id": "src_20260403112017_d949",
+          "benchmark_metadata": {
+            "source": "creativeflow_github_pages_picked",
+            "asset_kind": "github_picked_source",
+            "project_id": "data_batch_20260403_live500_queue_v4",
+            "source_id": "src_20260403112017_d949",
+            "source_index": 124,
+            "category_id": null,
+            "category_label": "其他待定",
+            "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source/image_v01.png",
+            "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+            "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj",
+            "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/multiview/grid.png",
+            "source_image_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source/image_v01.png",
+            "source_mesh_glb_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+            "source_mesh_obj_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj",
+            "source_multiview_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/multiview/grid.png",
+            "relation_count": 10,
+            "target_count": 20,
+            "target_image_count": 20,
+            "target_mesh_count": 20,
+            "summary": {
+              "relation_count": 10,
+              "target_count": 20,
+              "target_image_count": 20,
+              "target_mesh_count": 20
+            },
+            "relations": [
+              {
+                "id": "rel_src_20260403112017_d949_g01_r01",
+                "label": "preserve identity while transforming into a bloated, stitched leather bag with brass clasps for eyes",
+                "rank": 1,
+                "semantic_distance": "mid",
+                "domain": "Soft Goods / Leathercraft",
+                "targets": [
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i01",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i02",
+                    "text": "将青蛙塑造成一个鼓胀的皮革包，头部作为包的顶部，四肢作为包的把手，眼睛位置设计成金属扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i03",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i04",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i05",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i06",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i07",
+                    "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  }
+                ]
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r02",
+                "label": "preserve identity while remapping anatomy into heavy construction machinery with yellow painted metal, hydraulic pistons for legs, and cab windows for eyes",
+                "rank": 2,
+                "semantic_distance": "far",
+                "domain": "Industrial Systems / Vehicles",
+                "targets": [
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i01",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i02",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i03",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i04",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i05",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i06",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i07",
+                    "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  }
+                ]
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r03",
+                "label": "preserve identity while eroding into a weathered, moss-covered stone gargoyle",
+                "rank": 3,
+                "semantic_distance": "near",
+                "domain": "Architecture / Erosion",
+                "targets": [
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r03_e01_i01",
+                    "text": "将青蛙塑造成一个风化的石制怪兽，保留其基本形态，但使其呈现出覆盖着青苔的粗糙纹理，强调其厚重感和侧面轮廓。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r03_e01_i02",
+                    "text": "将青蛙转化为一个古老的石制怪兽，保留其核心特征，通过增加厚度和不规则的表面处理，使其看起来像是从石头中雕刻出来的，带有自然风化的痕迹。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  }
+                ]
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r04",
+                "label": "preserve identity while crystallizing the form into faceted gemstone-like planes",
+                "rank": 4,
+                "semantic_distance": "far",
+                "domain": "",
+                "targets": [
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r04_e01_i01",
+                    "text": "将青蛙的形态转化为晶莹剔透的宝石状平面，保留其核心特征，如绿色皮肤和棕色斑点，同时强调其侧面轮廓和厚度，使其呈现出一种立体感。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r04_e01_i02",
+                    "text": "将青蛙的形态抽象为多面体的宝石状结构，保留其基本颜色和纹理，通过不同角度的切面展示其侧面轮廓和厚度，使其看起来像是一块镶嵌在透明底座上的精美宝石。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  }
+                ]
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r05",
+                "label": "preserve identity while migrating the silhouette toward a fruit-like organic volume",
+                "rank": 5,
+                "semantic_distance": "far",
+                "domain": "",
+                "targets": [
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r05_e01_i01",
+                    "text": "将青蛙的轮廓迁移到类似水果的有机体积中，保持其核心辨识特征不变，增加厚度感和曲线变化，使其呈现出更加饱满和圆润的形态。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  },
+                  {
+                    "id": "tgt_rel_src_20260403112017_d949_g01_r05_e01_i02",
+                    "text": "将青蛙的轮廓迁移到一个类似水果的有机体积中，保留其核心辨识特征，增加厚度感和曲率变化，使其呈现出更加立体和饱满的形态。",
+                    "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/image.png",
+                    "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/mesh.glb",
+                    "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/mesh.obj",
+                    "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/multiview/grid.png",
+                    "image_ready": true,
+                    "mesh_ready": true
+                  }
+                ]
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r06",
+                "label": "preserve identity while turning rigid structure into a soft plush cushion-like body",
+                "rank": 6,
+                "semantic_distance": "mid",
+                "domain": "",
+                "targets": []
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r07",
+                "label": "preserve identity while reshaping the body with aquatic hydrodynamic flow",
+                "rank": 7,
+                "semantic_distance": "far",
+                "domain": "",
+                "targets": []
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r08",
+                "label": "preserve identity while making the proportions chunkier and toy-like",
+                "rank": 8,
+                "semantic_distance": "mid",
+                "domain": "",
+                "targets": []
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r09",
+                "label": "preserve identity while pulling the silhouette toward an avian wing-like structure",
+                "rank": 9,
+                "semantic_distance": "far",
+                "domain": "",
+                "targets": []
+              },
+              {
+                "id": "rel_src_20260403112017_d949_g01_r10",
+                "label": "preserve identity while folding the form into an origami-like planar construction",
+                "rank": 10,
+                "semantic_distance": "mid",
+                "domain": "",
+                "targets": []
+              }
+            ],
+            "targets": [
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i01",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i02",
+                "text": "将青蛙塑造成一个鼓胀的皮革包，头部作为包的顶部，四肢作为包的把手，眼睛位置设计成金属扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t02/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i03",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t03/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i04",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t04/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i05",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t05/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i06",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t06/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i07",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t07/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i01",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t01/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i02",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t02/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i03",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t03/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i04",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t04/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i05",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t05/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i06",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t06/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r02_e01_i07",
+                "text": "将青蛙的形态重塑为带有黄色金属外壳、液压缸腿和驾驶舱窗户眼睛的重型机械，保持其核心辨识特征不变。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r02/e01-t07/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r03_e01_i01",
+                "text": "将青蛙塑造成一个风化的石制怪兽，保留其基本形态，但使其呈现出覆盖着青苔的粗糙纹理，强调其厚重感和侧面轮廓。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t01/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r03_e01_i02",
+                "text": "将青蛙转化为一个古老的石制怪兽，保留其核心特征，通过增加厚度和不规则的表面处理，使其看起来像是从石头中雕刻出来的，带有自然风化的痕迹。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r03/e01-t02/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r04_e01_i01",
+                "text": "将青蛙的形态转化为晶莹剔透的宝石状平面，保留其核心特征，如绿色皮肤和棕色斑点，同时强调其侧面轮廓和厚度，使其呈现出一种立体感。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t01/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r04_e01_i02",
+                "text": "将青蛙的形态抽象为多面体的宝石状结构，保留其基本颜色和纹理，通过不同角度的切面展示其侧面轮廓和厚度，使其看起来像是一块镶嵌在透明底座上的精美宝石。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r04/e01-t02/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r05_e01_i01",
+                "text": "将青蛙的轮廓迁移到类似水果的有机体积中，保持其核心辨识特征不变，增加厚度感和曲线变化，使其呈现出更加饱满和圆润的形态。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t01/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              },
+              {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r05_e01_i02",
+                "text": "将青蛙的轮廓迁移到一个类似水果的有机体积中，保留其核心辨识特征，增加厚度感和曲率变化，使其呈现出更加立体和饱满的形态。",
+                "image": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/image.png",
+                "mesh_glb": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/mesh.glb",
+                "mesh_obj": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/mesh.obj",
+                "multiview": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r05/e01-t02/multiview/grid.png",
+                "image_ready": true,
+                "mesh_ready": true
+              }
+            ],
+            "relation_id": "rel_src_20260403112017_d949_g01_r01",
+            "relation_key": "g01-r01",
+            "relation_text": "preserve identity while transforming into a bloated, stitched leather bag with brass clasps for eyes",
+            "target_id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i01",
+            "target_key": "e01-t01",
+            "target_text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+            "mesh_glb_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+            "mesh_obj_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj",
+            "picked_dataset_url": "https://creativeflow-bench.github.io/Creativeflow-Dataset/data/creativeflow-picked.json",
+            "creativeflow_tree": {
+              "source": {
+                "id": "src_20260403112017_d949",
+                "object_type": "frog",
+                "image_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source/image_v01.png",
+                "mesh_glb_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+                "mesh_obj_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj",
+                "reference_image_path": null,
+                "reference_mesh_path": null,
+                "texture_rule": "source.image_key is the source texture preview when OBJ has no explicit MTL sidecar"
+              },
+              "relation": {
+                "id": "rel_src_20260403112017_d949_g01_r01",
+                "key": "g01-r01",
+                "text": "preserve identity while transforming into a bloated, stitched leather bag with brass clasps for eyes"
+              },
+              "target": {
+                "id": "tgt_rel_src_20260403112017_d949_g01_r01_e01_i01",
+                "key": "e01-t01",
+                "text": "将青蛙转化为一个鼓胀的皮革手袋，边缘缝合，眼睛处有铜色扣环，保持青蛙的头部和四肢轮廓，调整为手袋的形状，强调皮革的质感和厚度。",
+                "mesh_glb_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.glb",
+                "mesh_obj_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/mesh.obj",
+                "canonical_image_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/image.png",
+                "creative_image_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/image.png",
+                "multiview_grid_key": "creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/targets/g01-r01/e01-t01/multiview/grid.png",
+                "reference_image_path": null,
+                "reference_mesh_path": null,
+                "texture_rule": "target.mesh_glb_key is authoritative when available because it embeds baseColorTexture"
+              }
+            },
+            "oss_host": "creativeflow.oss-cn-beijing.aliyuncs.com",
+            "texture_index_rule": {
+              "version": "creativeflow_benchmark_texture_tree.v1",
+              "tree": "source -> relation -> target",
+              "priority": [
+                "source.source_mesh_glb_key: load GLB directly; Hunyuan GLB embeds baseColorTexture when present",
+                "source.source_mesh_obj_key + source.source_image_key fallback"
+              ],
+              "missing_texture_policy": "do_not_synthesize_texture; render material-only/white-shell regions"
+            }
+          },
+          "remote_asset": {
+            "source": "creativeflow_github_pages_picked",
+            "mesh_url": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+            "obj_url": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.obj"
+          },
+          "storage_path": null,
+          "white_model_category": null,
+          "white_model_collection": null,
+          "texture_index_rule": {
+            "version": "creativeflow_benchmark_texture_tree.v1",
+            "tree": "source -> relation -> target",
+            "priority": [
+              "source.source_mesh_glb_key: load GLB directly; Hunyuan GLB embeds baseColorTexture when present",
+              "source.source_mesh_obj_key + source.source_image_key fallback"
+            ],
+            "missing_texture_policy": "do_not_synthesize_texture; render material-only/white-shell regions"
+          }
+        }
+      },
+      "white_model_render": {
+        "ok": true,
+        "job_id": "renderjob_1ca2df71a9",
+        "status": "completed",
+        "operation": "thumbnail",
+        "thumbnail_url": "/files/render/renderjob_1ca2df71a9/thumb.png",
+        "views": {
+          "three_quarter": "/files/render/renderjob_1ca2df71a9/thumb.png"
+        },
+        "turntable_video_url": null,
+        "metadata": {
+          "engine": "blender",
+          "blender_bin": "/usr/local/bin/blender",
+          "operation": "thumbnail",
+          "camera_preset": "auto_object_fit",
+          "lighting_preset": "studio_soft"
+        },
+        "artifacts": {
+          "thumbnail": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "artifact_ids": [
+            "art_e7a1e35dff"
+          ]
+        },
+        "error": null
+      },
+      "behaviors": [
+        {
+          "behavior_id": "behavior_b96d6143a2",
+          "session_id": "sess_32e07a511d",
+          "behavior_seq": 1,
+          "tool": "drag",
+          "target": {
+            "asset_id": "asset_69aaafbaf8",
+            "object_type": "frog"
+          },
+          "status": "committed",
+          "started_at": "2026-08-05T17:37:04.590694Z",
+          "ended_at": "2026-08-05T17:37:04.590701Z",
+          "stroke_count": 4,
+          "operation_summary": {
+            "mode": "3d",
+            "gesture": "short outward silhouette pulls around brow and back",
+            "intent_signal": "test sculptural mass while retaining frog pose"
+          },
+          "start_views": {
+            "front": "/files/render/renderjob_1ca2df71a9/thumb.png",
+            "side": null,
+            "top": null
+          },
+          "end_views": {
+            "front": "/files/render/renderjob_1ca2df71a9/thumb.png",
+            "side": null,
+            "top": null
+          },
+          "evidence_refs": [
+            "/files/render/renderjob_1ca2df71a9/thumb.png"
+          ]
+        },
+        {
+          "behavior_id": "behavior_29fb4da803",
+          "session_id": "sess_32e07a511d",
+          "behavior_seq": 2,
+          "tool": "smooth",
+          "target": {
+            "asset_id": "asset_69aaafbaf8",
+            "object_type": "frog"
+          },
+          "status": "committed",
+          "started_at": "2026-08-05T17:37:04.702804Z",
+          "ended_at": "2026-08-05T17:37:04.702810Z",
+          "stroke_count": 7,
+          "operation_summary": {
+            "mode": "3d",
+            "gesture": "smooth local transitions after drag",
+            "intent_signal": "stone-carved continuous surface"
+          },
+          "start_views": {
+            "front": "/files/render/renderjob_1ca2df71a9/thumb.png",
+            "side": null,
+            "top": null
+          },
+          "end_views": {
+            "front": "/files/render/renderjob_1ca2df71a9/thumb.png",
+            "side": null,
+            "top": null
+          },
+          "evidence_refs": [
+            "/files/render/renderjob_1ca2df71a9/thumb.png"
+          ]
+        }
+      ],
+      "observation": {
+        "session_id": "sess_32e07a511d",
+        "latest_behavior_seq": 2,
+        "encoded_through_seq": 2,
+        "design_phase": "formation",
+        "operation": "observe",
+        "scope": "whole",
+        "target": {
+          "asset_id": "asset_69aaafbaf8",
+          "object_type": "frog"
+        },
+        "confidence": 1.0,
+        "intent_confidence": 0.0,
+        "state_scores": {
+          "exploration": 0.0,
+          "formation": 1.0,
+          "refinement": 0.0,
+          "evaluation": 0.0
+        },
+        "matched_rules": [
+          "formation.primary"
+        ],
+        "previous_state": "observe",
+        "state_changed": true,
+        "possible_fixation": false,
+        "insufficient_evidence": false,
+        "suggested_policy": "structured_candidates",
+        "pending_state": "formation",
+        "pending_state_windows": 2,
+        "behavior_count": 2,
+        "retrieval_query": [],
+        "retrieval_fingerprint": "1ba6d7907c70ffb9aab30eeda4f34195411bd4cedaa1f3dede90be46bcac8300",
+        "intent_summary": "view asset details",
+        "updated_at": "2026-08-05T17:37:25.465839Z"
+      },
+      "revision": {
+        "revision_id": "intent_afc702359d",
+        "session_id": "sess_32e07a511d",
+        "intent_seq": 1,
+        "parent_revision_id": null,
+        "window_start_seq": 1,
+        "cutoff_seq": 2,
+        "behavior_ids": [
+          "behavior_b96d6143a2",
+          "behavior_29fb4da803"
+        ],
+        "user_text": "把这只小青蛙叙事迁移为石像青蛙；完整保留青蛙物种身份、头身比例、四肢数量、蹲伏姿态和轮廓，只探索石雕文化、年代与风化叙事。",
+        "source_context": {
+          "asset_id": "asset_69aaafbaf8",
+          "object_type": "frog",
+          "version_id": null,
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "source_model_ref": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+          "target_part_id": null,
+          "target_mask_ref": null,
+          "camera_ref": null
+        },
+        "status": "accepted",
+        "run_id": "fsrun_3a190a7cd5",
+        "gate_id": "gate_decision_ebfb8622ee",
+        "gate_question": "你想改变这个 frog 的表面或材质吗？",
+        "gate_target": "frog",
+        "gate_scope": "material",
+        "base_keywords": [],
+        "delta_keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen"
+        ],
+        "effective_keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen"
+        ],
+        "divergence_selection": {
+          "scope": "whole",
+          "target_part_id": null,
+          "selected_keywords": [
+            "weathered temple basalt",
+            "moss-covered forest shrine relic",
+            "cracked pale marble guardian",
+            "eroded river-stone idol",
+            "volcanic stone with glowing mineral seams",
+            "ancient sandstone votive sculpture",
+            "rain-polished granite monument",
+            "archaeological patina and lichen"
+          ],
+          "user_text": "把这只小青蛙叙事迁移为石像青蛙；完整保留青蛙物种身份、头身比例、四肢数量、蹲伏姿态和轮廓，只探索石雕文化、年代与风化叙事。",
+          "dimensions": {
+            "Scenario": [
+              "narrative_character"
+            ]
+          },
+          "system_keywords": []
+        },
+        "error": null,
+        "created_at": "2026-08-05T17:37:04.814566Z",
+        "updated_at": "2026-08-05T17:37:20.569390Z"
+      },
+      "gate": {
+        "question": "你想改变这个 frog 的表面或材质吗？",
+        "target": "frog",
+        "scope": "material"
+      },
+      "selected_option": {
+        "option_id": "opt_1",
+        "label": "将小青蛙叙事迁移为石像青蛙 — aesthetic direction",
+        "rationale": "Rule fallback direction along the Aesthetic axis; prior case bilibili_maya_hardsurface_core_29",
+        "confidence": 0.5,
+        "evidence_refs": [
+          "dsir_bilibili_maya_hardsurface_core_29",
+          "dsir_bilibili_maya_hardsurface_core_39"
+        ],
+        "constraints": [
+          "保留青蛙物种身份",
+          "保留头身比例",
+          "保留四肢数量",
+          "保留蹲伏姿态",
+          "保留轮廓",
+          "探索石雕文化",
+          "探索年代",
+          "探索风化叙事"
+        ],
+        "divergence_seeds": [
+          "soft silhouette",
+          "surface ornament",
+          "material contrast"
+        ]
+      },
+      "batch": {
+        "batch_id": "batch_intent_afc702359d",
+        "session_id": "sess_32e07a511d",
+        "revision_id": "intent_afc702359d",
+        "intent_seq": 1,
+        "run_id": "fsrun_3a190a7cd5",
+        "append_index": 1,
+        "parent_batch_id": null,
+        "keyword_mode": "append",
+        "base_keywords": [],
+        "delta_keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen"
+        ],
+        "cumulative_keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen"
+        ],
+        "source_context": {
+          "asset_id": "asset_69aaafbaf8",
+          "object_type": "frog",
+          "version_id": null,
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "source_model_ref": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+          "target_part_id": null,
+          "target_mask_ref": null,
+          "camera_ref": null
+        },
+        "gate_id": "gate_decision_ebfb8622ee",
+        "status": "queued",
+        "artifacts": [],
+        "created_at": "2026-08-05T17:37:20.709451Z",
+        "updated_at": "2026-08-05T17:37:20.709455Z"
+      },
+      "generation_spec": {
+        "schema_version": "flowstudio.generation-spec.v2",
+        "generation_id": "gen_4f9e0f1576",
+        "run_id": "fsrun_3a190a7cd5",
+        "decision_id": "decision_ebfb8622ee",
+        "selected_option_id": "opt_1",
+        "source": {
+          "asset_id": "asset_69aaafbaf8",
+          "object_type": "frog",
+          "version_id": null,
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "source_model_ref": "https://creativeflow.oss-cn-beijing.aliyuncs.com/creativeflow/v2/data_batch_20260403_live500_queue_v4/src_20260403112017_d949/source3d/mesh.glb",
+          "target_part_id": null,
+          "target_mask_ref": null,
+          "camera_ref": null
+        },
+        "asset_id": "asset_69aaafbaf8",
+        "object_type": "frog",
+        "target": {
+          "scope": "material",
+          "part_id": null
+        },
+        "keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen",
+          "soft silhouette",
+          "surface ornament",
+          "material contrast",
+          "Aesthetic"
+        ],
+        "selected_keywords": [
+          "weathered temple basalt",
+          "moss-covered forest shrine relic",
+          "cracked pale marble guardian",
+          "eroded river-stone idol",
+          "volcanic stone with glowing mineral seams",
+          "ancient sandstone votive sculpture",
+          "rain-polished granite monument",
+          "archaeological patina and lichen"
+        ],
+        "dimensions": {
+          "Scenario": [
+            "narrative_character"
+          ]
+        },
+        "prompt_candidates": [
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through material and age: preserve the complete recognizable character silhouette, anatomy, pose, and part count; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: weathered temple basalt; system variation axes: weathered temple basalt, soft silhouette",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through cultural provenance: preserve the same character and express a different stone-carving tradition through local details; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: moss-covered forest shrine relic; system variation axes: moss-covered forest shrine relic, surface ornament",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through weathering history: preserve the same character geometry while varying erosion, cracks, moss, and patina; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: cracked pale marble guardian; system variation axes: cracked pale marble guardian, material contrast",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through sculptural finish: preserve the same character identity while varying carving depth and stone finish; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: eroded river-stone idol; system variation axes: eroded river-stone idol, soft silhouette",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through material and age: preserve the complete recognizable character silhouette, anatomy, pose, and part count; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: volcanic stone with glowing mineral seams; system variation axes: volcanic stone with glowing mineral seams, surface ornament",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through cultural provenance: preserve the same character and express a different stone-carving tradition through local details; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: ancient sandstone votive sculpture; system variation axes: ancient sandstone votive sculpture, material contrast",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through weathering history: preserve the same character geometry while varying erosion, cracks, moss, and patina; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: rain-polished granite monument; system variation axes: rain-polished granite monument, soft silhouette",
+          "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through sculptural finish: preserve the same character identity while varying carving depth and stone finish; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: archaeological patina and lichen; system variation axes: archaeological patina and lichen, surface ornament"
+        ],
+        "preserved_constraints": [
+          "preserve frog identity",
+          "保留青蛙物种身份",
+          "保留头身比例",
+          "保留四肢数量",
+          "保留蹲伏姿态",
+          "保留轮廓",
+          "探索石雕文化",
+          "探索年代",
+          "探索风化叙事",
+          "preserve exact geometry, silhouette, proportions, and every part shape",
+          "preserve pose, camera, composition, and background",
+          "preserve category-defining semantic features and part roles",
+          "apply materials by semantic region; never coat every part with one uniform donor material",
+          "allow color and material appearance to change visibly",
+          "preserve the complete recognizable character silhouette, anatomy, pose, and part count",
+          "preserve category-defining facial and limb cues",
+          "do not replace the source character with a different object or species",
+          "keep the full source object, camera, composition, and background"
+        ],
+        "candidate_count": 8,
+        "model": "Qwen-Image-2512",
+        "seeds": [
+          2231,
+          65505,
+          15902,
+          45936,
+          94824,
+          1169,
+          67086,
+          51926
+        ],
+        "run_hy3d": false,
+        "created_at": "2026-08-05T17:37:20.721485Z"
+      },
+      "artifacts": [
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_01",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_01.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through material and age: preserve the complete recognizable character silhouette, anatomy, pose, and part count; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: weathered temple basalt; system variation axes: weathered temple basalt, soft silhouette",
+          "seed": 2231,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_02",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_02.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through cultural provenance: preserve the same character and express a different stone-carving tradition through local details; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: moss-covered forest shrine relic; system variation axes: moss-covered forest shrine relic, surface ornament",
+          "seed": 65505,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_03",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_03.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through weathering history: preserve the same character geometry while varying erosion, cracks, moss, and patina; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: cracked pale marble guardian; system variation axes: cracked pale marble guardian, material contrast",
+          "seed": 15902,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_04",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_04.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through sculptural finish: preserve the same character identity while varying carving depth and stone finish; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: eroded river-stone idol; system variation axes: eroded river-stone idol, soft silhouette",
+          "seed": 45936,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_05",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_05.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through material and age: preserve the complete recognizable character silhouette, anatomy, pose, and part count; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: volcanic stone with glowing mineral seams; system variation axes: volcanic stone with glowing mineral seams, surface ornament",
+          "seed": 94824,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_06",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_06.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through cultural provenance: preserve the same character and express a different stone-carving tradition through local details; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: ancient sandstone votive sculpture; system variation axes: ancient sandstone votive sculpture, material contrast",
+          "seed": 1169,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_07",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_07.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through weathering history: preserve the same character geometry while varying erosion, cracks, moss, and patina; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: rain-polished granite monument; system variation axes: rain-polished granite monument, soft silhouette",
+          "seed": 67086,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        },
+        {
+          "candidate_id": "cand_gen_4f9e0f1576_08",
+          "url": "/files/four_stage/gen_4f9e0f1576/candidate_08.png",
+          "prompt": "frog: 将小青蛙叙事迁移为石像青蛙 — Part-aware semantic material transfer preserving exact geometry. Narrative transfer through sculptural finish: preserve the same character identity while varying carving depth and stone finish; PRESERVE: preserve frog identity, 保留青蛙物种身份, 保留头身比例, 保留四肢数量, 保留蹲伏姿态, 保留轮廓, 探索石雕文化, 探索年代, 探索风化叙事, preserve exact geometry, silhouette, proportions, and every part shape, preserve pose, camera, composition, and background, preserve category-defining semantic features and part roles, apply materials by semantic region; never coat every part with one uniform donor material, allow color and material appearance to change visibly, preserve the complete recognizable character silhouette, anatomy, pose, and part count, preserve category-defining facial and limb cues, do not replace the source character with a different object or species, keep the full source object, camera, composition, and background; USER-SELECTED DIRECTION: archaeological patina and lichen; system variation axes: archaeological patina and lichen, surface ornament",
+          "seed": 51926,
+          "identity_mode": "conditioned",
+          "source_image_ref": "/files/render/renderjob_1ca2df71a9/thumb.png",
+          "target_mask_ref": null,
+          "kind": "png"
+        }
+      ],
+      "final_stage": "completed",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "stage": "low_fidelity",
+  "object_type": "robot toy",
+  "source_id": "low_noun_robot_toy_v1",
+  "source_image_path": "",
+  "source_description": "A small robot toy with a compact body, head, arms, legs, face panel, and mechanical toy proportions. Preserve the identity cues of robot toy: head, torso, limbs, face panel, and toy-like mechanical construction. Only change the overall silhouette and massing.",
+  "user_prompt": "只改变整体轮廓形状，保持物体概念不变。",
+  "candidate_count": 8
+}

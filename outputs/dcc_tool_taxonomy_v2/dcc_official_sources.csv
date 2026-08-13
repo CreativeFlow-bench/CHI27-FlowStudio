@@ -1,0 +1,45 @@
+﻿source_id,software,document_title,url,supported_scope,source_type,access_date
+B01,Blender,Mesh Primitives,https://docs.blender.org/manual/en/latest/modeling/meshes/primitives.html,基础体创建,Official technical documentation,2026-07-30
+B02,Blender,Mesh Editing,https://docs.blender.org/manual/en/4.0/modeling/meshes/editing/index.html,网格编辑操作,Official technical documentation,2026-07-30
+B03,Blender,Modifiers,https://docs.blender.org/manual/en/2.83/modeling/modifiers/index.html,生成、形变、布尔、镜像、阵列,Official technical documentation,2026-07-30
+B04,Blender,Simple Deform,https://docs.blender.org/manual/id/3.6/modeling/modifiers/deform/simple_deform.html,弯曲、扭转、锥化,Official technical documentation,2026-07-30
+B05,Blender,Sculpt Brushes,https://docs.blender.org/manual/en/4.2/sculpt_paint/sculpting/introduction/brush.html,雕刻笔刷机制,Official technical documentation,2026-07-30
+B06,Blender,Sculpt Mask,https://docs.blender.org/manual/en/3.2/sculpt_paint/sculpting/tools/mask.html,遮罩作用域,Official technical documentation,2026-07-30
+M01,Maya,Modeling Toolkit commands,https://help.autodesk.com/cloudhelp/ENU/MayaCRE-Modeling/files/GUID-C8EC81A1-46B2-498C-A759-7DC304D8B687.htm,多边形编辑,Official technical documentation,2026-07-30
+M02,Maya,Sculpting tools,https://help.autodesk.com/cloudhelp/2022/ENU/Maya-Modeling/files/GUID-820F611F-3380-4D33-AC69-EEC62A59109B.htm,雕刻工具,Official technical documentation,2026-07-30
+M03,Maya,Soft Selection,https://help.autodesk.com/cloudhelp/2025/ENU/Maya-Modeling/files/GUID-7EC09146-E5E8-449E-83D7-BFE7C780C32D.htm,软选择,Official technical documentation,2026-07-30
+M04,Maya,Set a live surface,https://help.autodesk.com/cloudhelp/2025/ENU/Maya-Basics/files/GUID-EBF1E652-4DDD-423F-B42E-3BF85AE46A5D.htm,Quad Draw 表面贴合,Official technical documentation,2026-07-30
+M05,Maya,Duplicate Special,https://help.autodesk.com/cloudhelp/2025/ENU/Maya-Basics/files/GUID-961B262B-F882-452C-B6A9-1B7F3AD8E0FE.htm,规则复制,Official technical documentation,2026-07-30
+M06,Maya,Sweep Mesh,https://help.autodesk.com/cloudhelp/2025/ENU/Maya-Modeling/files/GUID-1E33DECF-6D99-4B18-A5C7-403BCFF5E023.htm,沿路径扫掠,Official technical documentation,2026-07-30
+A01,3ds Max,Editable Poly Methods,https://help.autodesk.com/view/MAXDEV/2024/ENU/?guid=GUID-B40F84EA-5F19-45B6-AA7C-0ADC77708BBE,多边形编辑机制,Official technical documentation,2026-07-30
+A02,3ds Max,Editable Poly Edge,https://help.autodesk.com/cloudhelp/2022/ENU/3DSMax-Modeling/files/GUID-2C16FF31-BF20-450F-8163-3362A7037603.htm,边编辑,Official technical documentation,2026-07-30
+A03,3ds Max,Basic building blocks,https://help.autodesk.com/cloudhelp/2026/ENU/3DSMax-Modeling/files/GUID-2B2647E7-4874-4E33-AC5A-B4684BD5E77A.htm,基础体,Official technical documentation,2026-07-30
+A04,3ds Max,TurboSmooth,https://help.autodesk.com/cloudhelp/2023/ENU/3DSMax-Modifiers/files/GUID-EA8FF838-B197-4565-9A85-71CE93DA4F68.htm,细分曲面,Official technical documentation,2026-07-30
+A05,3ds Max,FFD,https://help.autodesk.com/cloudhelp/2021/ENU/3DSMax-Modifiers/files/GUID-1129177A-6B3D-47EB-8636-B6D38BE816F8.htm,晶格变形,Official technical documentation,2026-07-30
+A06,3ds Max,Retopology FAQ,https://help.autodesk.com/cloudhelp/2025/ENU/3DSMax-Retopology/files/GUID-F5BAEA5B-2294-42E1-A50B-5C0A0EC00E2D.html,重拓扑,Official technical documentation,2026-07-30
+C01,Cinema 4D,Extrude Object,https://help.maxon.net/c4d/en-us/Content/html/OEXTRUDE.html,挤出生成,Official technical documentation,2026-07-30
+C02,Cinema 4D,Path/Loop Cut,https://help.maxon.net/c4d/en-us/Content/html/TOOLKNIFEPATH.html?TocPath=Mesh+Menu%7CPath%2FLoop+Cut%7C_____0,路径切割与环切,Official technical documentation,2026-07-30
+C03,Cinema 4D,Generators,https://help.maxon.net/c4d/en-us/Content/html/5166.html?TocPath=Coordinates%7CGenerators%7C_____0,参数化生成器,Official technical documentation,2026-07-30
+C04,Cinema 4D,Sculpt Brush Settings,https://help.maxon.net/c4d/en-us/Content/html/TOOLSCULPTBRUSHFLATTEN-MDATA_SCULPTBRUSH_SETTINGS_GROUP.html,雕刻笔刷,Official technical documentation,2026-07-30
+C05,Cinema 4D,Inflate,https://help.maxon.net/c4d/2026/en-us/Content/html/TOOLSCULPTBRUSHINFLATE.html,法向膨胀,Official technical documentation,2026-07-30
+C06,Cinema 4D,Sculpt Layers and Masks,https://help.maxon.net/c4d/en-us/Content/html/49926.html,遮罩、隐藏与作用域,Official technical documentation,2026-07-30
+Z01,ZBrush,Brush Types,https://help.maxon.net/zbr/en-us/Content/html/reference-guide/brush/brush-types/brush-types.html,雕刻笔刷与曲线笔刷,Official technical documentation,2026-07-30
+Z02,ZBrush,Geometry,https://help.maxon.net/zbr/en-us/Content/html/reference-guide/tool/polymesh/geometry/geometry.html,细分、DynaMesh、几何重建,Official technical documentation,2026-07-30
+Z03,ZBrush,ZRemesher,https://help.maxon.net/zbr/en-us/Content/html/zbrushcore/reference-guide/tool/geometry/geometry.html,重拓扑,Official technical documentation,2026-07-30
+Z04,ZBrush,Gizmo Deformers,https://help.maxon.net/zbr/en-us/Content/html/user-guide/3d-modeling/modeling-basics/gizmo-3d/deformers/list-of-deformers/list-of-deformers.html,参数变形,Official technical documentation,2026-07-30
+Z05,ZBrush,Live Boolean,https://help.maxon.net/zbr/en-us/Content/html/user-guide/3d-modeling/modeling-basics/creating-meshes/live-boolean/live-boolean.html,布尔组合,Official technical documentation,2026-07-30
+Z06,ZBrush,Panel Loops,https://help.maxon.net/zbr/en-us/Content/html/user-guide/3d-modeling/hard-surface/panel-loops/panel-loops.html,壳体与厚度,Official technical documentation,2026-07-30
+N01,Nomad Sculpt,Tools,https://nomadsculpt.com/manual/tools,笔刷、选择、创建与变换工具,Official technical documentation,2026-07-30
+N02,Nomad Sculpt,Topology,https://nomadsculpt.com/manual/topology,体素重网格与拓扑,Official technical documentation,2026-07-30
+N03,Nomad Sculpt,Symmetry,https://nomadsculpt.com/manual/symmetry,对称操作,Official technical documentation,2026-07-30
+N04,Nomad Sculpt,Scene,https://nomadsculpt.com/manual/scene,基础体与对象结构,Official technical documentation,2026-07-30
+H01,Houdini,Geometry modeling overview,https://www.sidefx.com/docs/houdini/model/index.html,几何建模总览,Official technical documentation,2026-07-30
+H02,Houdini,SOP node index,https://www.sidefx.com/docs/houdini/nodes/sop/index.html,SOP 节点机制,Official technical documentation,2026-07-30
+H03,Houdini,PolyBevel,https://www.sidefx.com/docs/houdini/nodes/sop/polybevel.html,倒角,Official technical documentation,2026-07-30
+H04,Houdini,Dissolve,https://www.sidefx.com/docs/houdini/nodes/sop/dissolve.html,溶解拓扑,Official technical documentation,2026-07-30
+H05,Houdini,Smooth,https://www.sidefx.com/docs/houdini/nodes/sop/smooth,算子式表面平滑,Official technical documentation,2026-07-30
+H06,Houdini,Sculpt,https://www.sidefx.com/docs/houdini/nodes/sop/sculpt.html,交互式雕刻,Official technical documentation,2026-07-30
+H07,Houdini,Group Paint,https://www.sidefx.com/docs/houdini/nodes/sop/grouppaint.html,区域分组与绘制,Official technical documentation,2026-07-30
+H08,Houdini,Visibility,https://www.sidefx.com/docs/houdini/nodes/sop/visibility.html,可见性,Official technical documentation,2026-07-30
+H09,Houdini,Curve,https://www.sidefx.com/docs/houdini/nodes/sop/curve.html,曲线创建,Official technical documentation,2026-07-30
+H10,Houdini,Skin Solidify,https://www.sidefx.com/docs/houdini/nodes/sop/skinsolidify.html,壳体与厚度,Official technical documentation,2026-07-30

@@ -1,0 +1,157 @@
+import type { VersionGraphNode } from "../types";
+
+export const FLOWSTUDIO_CANDIDATE_MIME = "application/x-flowstudio-candidate";
+
+const ACTIVE_NODE_SIZE = 520;
+const HISTORY_NODE_SIZE = 220;
+const SIBLING_ROW_PITCH = 240;
+const SIBLING_ACTIVE_CLEARANCE = ACTIVE_NODE_SIZE + 40;
+
+export function compactVersionLabel(label: string): string {
+  const parts = label
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.at(-1) ?? "Untitled";
+}
+
+
+export type VersionGraphLayoutNode = {
+  id: string;
+  graphNode: VersionGraphNode;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isActive: boolean;
+  isActivePath: boolean;
+};
+
+export type VersionGraphLayoutLink = {
+  id: string;
+  parentId: string;
+  childId: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  controlX1: number;
+  controlX2: number;
+  isActivePath: boolean;
+};
+
+
+export function activePathNodeIds(
+  nodes: VersionGraphNode[],
+  activeNodeId: string | null,
+): Set<string> {
+  const byId = new Map(nodes.map((node) => [node.node_id, node]));
+  const path = new Set<string>();
+  let currentId = activeNodeId;
+  while (currentId && !path.has(currentId)) {
+    const current = byId.get(currentId);
+    if (!current) break;
+    path.add(current.node_id);
+    currentId = current.parent_node_id;
+  }
+  return path;
+}
+
+
+export function layoutVersionGraph(
+  nodes: VersionGraphNode[],
+  activeNodeId: string | null,
+  expandActive = true,
+): { nodes: VersionGraphLayoutNode[]; links: VersionGraphLayoutLink[] } {
+  if (!nodes.length) return { nodes: [], links: [] };
+  const sorted = [...nodes].sort(
+    (left, right) => left.version_number - right.version_number,
+  );
+  const byId = new Map(sorted.map((node) => [node.node_id, node]));
+  const resolvedActiveId = byId.has(activeNodeId ?? "")
+    ? activeNodeId
+    : sorted[sorted.length - 1].node_id;
+  const activePath = activePathNodeIds(sorted, resolvedActiveId);
+  const depthMemo = new Map<string, number>();
+
+  const depthOf = (nodeId: string, visiting = new Set<string>()): number => {
+    const cached = depthMemo.get(nodeId);
+    if (cached !== undefined) return cached;
+    if (visiting.has(nodeId)) return 0;
+    const node = byId.get(nodeId);
+    if (!node?.parent_node_id || !byId.has(node.parent_node_id)) {
+      depthMemo.set(nodeId, 0);
+      return 0;
+    }
+    const nextVisiting = new Set(visiting).add(nodeId);
+    const depth = depthOf(node.parent_node_id, nextVisiting) + 1;
+    depthMemo.set(nodeId, depth);
+    return depth;
+  };
+
+  // Ternary fan: 1st child continues horizontally; 2nd goes up; 3rd goes down…
+  const siblingIndexById = new Map<string, number>();
+  const childrenByParent = new Map<string, VersionGraphNode[]>();
+  for (const node of sorted) {
+    if (!node.parent_node_id) continue;
+    const list = childrenByParent.get(node.parent_node_id) ?? [];
+    list.push(node);
+    childrenByParent.set(node.parent_node_id, list);
+  }
+  for (const children of childrenByParent.values()) {
+    children
+      .sort((left, right) => left.version_number - right.version_number)
+      .forEach((child, index) => siblingIndexById.set(child.node_id, index));
+  }
+
+  const activeDepth = depthOf(resolvedActiveId ?? sorted[0].node_id);
+  const positioned: VersionGraphLayoutNode[] = sorted.map((node) => {
+    const depth = depthOf(node.node_id);
+    const isActive = node.node_id === resolvedActiveId;
+    const isActivePath = activePath.has(node.node_id);
+    let y = 0;
+    const siblingIndex = siblingIndexById.get(node.node_id);
+    if (siblingIndex !== undefined && siblingIndex > 0) {
+      const distance = Math.ceil(siblingIndex / 2);
+      const pitch = isActive || isActivePath
+        ? SIBLING_ACTIVE_CLEARANCE
+        : SIBLING_ROW_PITCH;
+      // odd index → up, even index → down
+      y = distance * pitch * (siblingIndex % 2 === 1 ? -1 : 1);
+    }
+    return {
+      id: node.node_id,
+      graphNode: node,
+      x: 640 + (depth - activeDepth) * 280,
+      y,
+      width: isActive && expandActive ? ACTIVE_NODE_SIZE : HISTORY_NODE_SIZE,
+      height: isActive && expandActive ? ACTIVE_NODE_SIZE : HISTORY_NODE_SIZE,
+      isActive,
+      isActivePath,
+    };
+  });
+  const positionedById = new Map(positioned.map((node) => [node.id, node]));
+  const links = positioned.flatMap((child): VersionGraphLayoutLink[] => {
+    const parentId = child.graphNode.parent_node_id;
+    const parent = parentId ? positionedById.get(parentId) : undefined;
+    if (!parent) return [];
+    const x1 = parent.x + parent.width;
+    const y1 = parent.y + parent.height / 2;
+    const x2 = child.x;
+    const y2 = child.y + child.height / 2;
+    const bend = Math.max(48, Math.abs(x2 - x1) * 0.5);
+    return [{
+      id: `link-${parent.id}-${child.id}`,
+      parentId: parent.id,
+      childId: child.id,
+      x1,
+      y1,
+      x2,
+      y2,
+      controlX1: x1 + bend,
+      controlX2: x2 - bend,
+      isActivePath: parent.isActivePath && child.isActivePath,
+    }];
+  });
+  return { nodes: positioned, links };
+}

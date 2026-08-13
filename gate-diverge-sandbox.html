@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate → Diverge Sandbox</title>
+<style>
+  :root {
+    --bg: #10131a; --panel: #181c27; --panel2: #212636; --border: #30364a;
+    --text: #e8edf7; --muted: #8090a8; --accent: #6c8eff; --green: #4ade80;
+    --yellow: #fbbf24; --red: #f87171; --mono: "SF Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  header h1 { margin: 0; font-size: 16px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: #243056; color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12px; }
+  .toolbar, .engine-bar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel2);
+  }
+  .engine-bar { background: #171b28; font-size: 12px; color: var(--muted); }
+  .engine-bar strong { color: var(--text); }
+  label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  input, select, textarea {
+    background: #151922; color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font: inherit;
+  }
+  textarea { width: 100%; min-height: 110px; font-family: var(--mono); font-size: 12px; line-height: 1.45; resize: vertical; }
+  .btn {
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); border-color: transparent; color: #0b1224; font-weight: 700; }
+  .status { font-size: 12px; color: var(--muted); }
+  .status.ok { color: var(--green); }
+  .status.bad { color: var(--red); }
+  .main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 0.95fr; }
+  .col { min-height: 0; overflow: auto; padding: 14px 16px; border-right: 1px solid var(--border); }
+  .col:last-child { border-right: none; }
+  .section { margin-bottom: 16px; }
+  .section h2 {
+    margin: 0 0 8px; font-size: 12px; letter-spacing: .08em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 10px;
+    font-size: 12px; background: #151922;
+  }
+  .chip.shape { border-color: #3b82f6; }
+  .chip.connection { border-color: #a78bfa; }
+  .chip.surface { border-color: #34d399; }
+  .chip.semantic_transfer { border-color: #f59e0b; }
+  .gate-card, .raw, .phase-log {
+    background: #151922; border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+  }
+  .phase-log {
+    font-family: var(--mono); font-size: 11px; max-height: 220px; overflow: auto;
+    white-space: pre-wrap; color: #c9d4ea;
+  }
+  .phase-log .now { color: var(--yellow); }
+  .raw { font-family: var(--mono); font-size: 11px; white-space: pre-wrap; max-height: 320px; overflow: auto; color: #c9d4ea; }
+  .candidate { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; background: #151922; }
+  .candidate .meta { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tabs button.active { border-color: var(--accent); color: var(--accent); }
+  .checkrow { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .checkrow label { flex-direction: row; align-items: center; gap: 6px; }
+  @media (max-width: 980px) {
+    .main { grid-template-columns: 1fr; }
+    .col { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gate → Diverge Sandbox</h1>
+  <span class="badge">live LLM + KB SSE</span>
+  <span class="hint">Gate → 知识库 → 大模型发散 · 流式 phase 与主界面同款</span>
+</header>
+
+<div class="toolbar">
+  <label>Backend <input id="apiBase" type="text" value="http://127.0.0.1:18001" style="width:210px"></label>
+  <button class="btn" type="button" onclick="checkBackend()">检测连接</button>
+  <span class="status" id="liveStatus">未检测</span>
+  <label style="flex-direction:row;align-items:center;gap:6px"><input id="syncVlm" type="checkbox" checked> 同步 Gate Planner</label>
+</div>
+
+<div class="engine-bar" id="engineBar">
+  引擎：加载中…
+</div>
+
+<div class="main">
+  <div class="col">
+    <div class="section">
+      <h2>1. 输入 → Gate</h2>
+      <div class="grid2">
+        <label>物体 <input id="objectType" value="雪人"></label>
+        <label>事件
+          <select id="eventType">
+            <option value="brush_end">brush_end</option>
+            <option value="part_select">part_select</option>
+            <option value="intent_text_changed">intent_text_changed</option>
+            <option value="drag_end">drag_end</option>
+          </select>
+        </label>
+        <label>part_id <input id="partId" value="hat"></label>
+        <label>part_label <input id="partLabel" value="帽子"></label>
+      </div>
+      <label style="margin-top:8px">意图文本 <input id="intentText" value="让帽子更高一点"></label>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-primary" type="button" id="btnGate" onclick="runGate()">① 跑 Gate</button>
+        <button class="btn" type="button" onclick="loadDefaults()">重置提示词</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Gate 系统提示词</h2>
+      <textarea id="gatePrompt" spellcheck="false"></textarea>
+    </div>
+
+    <div class="section">
+      <h2>2. 发散请求 / 权重 / 知识库</h2>
+      <div class="grid3">
+        <label>scope
+          <select id="scope">
+            <option value="part">part</option>
+            <option value="whole">whole</option>
+            <option value="material_region">material_region</option>
+          </select>
+        </label>
+        <label>temperature（路由+采样）
+          <input id="temperature" type="number" min="0" max="1" step="0.1" value="0.2">
+        </label>
+        <label>strictness（校验）
+          <input id="strictness" type="number" min="0" max="1" step="0.1" value="0.6">
+        </label>
+        <label>per_group_count（×4）
+          <input id="perGroup" type="number" min="5" max="8" step="1" value="5">
+        </label>
+        <label>模型
+          <select id="modelChoice">
+            <option value="primary">仅 primary（gemini，默认更快）</option>
+            <option value="fallback">仅 fallback（gpt，更慢）</option>
+            <option value="primary_then_fallback">primary → fallback</option>
+          </select>
+        </label>
+        <label>知识库
+          <select id="knowledgeMode">
+            <option value="auto">auto（按 temperature/意图）</option>
+            <option value="on">强制开启</option>
+            <option value="off">关闭（更快）</option>
+          </select>
+        </label>
+      </div>
+      <div class="checkrow">
+        <label><input id="useWikidata" type="checkbox" checked> Wikidata</label>
+        <label><input id="useGetty" type="checkbox" checked> Getty AAT</label>
+        <label><input id="useAsknature" type="checkbox"> AskNature</label>
+      </div>
+      <label style="margin-top:8px">gate_question <input id="gateQuestion"></label>
+      <label style="margin-top:8px">user_semantic_intent <input id="userIntent"></label>
+      <label style="margin-top:8px">behavior_summary <input id="behaviorSummary"></label>
+      <div class="row" style="margin-top:10px">
+        <button class="btn btn-primary" type="button" id="btnDiverge" onclick="runDivergeStream()">② 流式发散</button>
+        <button class="btn" type="button" onclick="previewDiverge()">预览提示词</button>
+      </div>
+      <p class="hint" style="margin-top:8px">慢的主因是 <strong>大模型 API</strong> 一次生成整表 JSON（默认 20 条）。想快：选 fallback、knowledge=off、per_group=5。</p>
+    </div>
+
+    <div class="section">
+      <h2>发散系统提示词</h2>
+      <textarea id="divergePrompt" spellcheck="false" style="min-height:160px"></textarea>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="section">
+      <h2>Gate 判断</h2>
+      <div class="gate-card" id="gateCard">先跑 Gate。</div>
+    </div>
+
+    <div class="section">
+      <h2>流式进度（与主界面 phase 一致）</h2>
+      <div class="phase-log" id="phaseLog">等待发散…</div>
+    </div>
+
+    <div class="section">
+      <h2>发散文本</h2>
+      <div class="tabs">
+        <button class="btn active" type="button" data-tab="chips" onclick="showTab('chips')">关键词</button>
+        <button class="btn" type="button" data-tab="detail" onclick="showTab('detail')">条目</button>
+        <button class="btn" type="button" data-tab="raw" onclick="showTab('raw')">Raw</button>
+      </div>
+      <div id="tab-chips" class="chips"></div>
+      <div id="tab-detail" hidden></div>
+      <div id="tab-raw" class="raw" hidden>等待发散…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { defaultGatePrompt: "", defaultDivergePrompt: "", defaults: null };
+
+function apiBase() {
+  return (document.getElementById("apiBase").value || "http://127.0.0.1:18001").replace(/\/$/, "");
+}
+function setStatus(text, ok) {
+  const el = document.getElementById("liveStatus");
+  el.textContent = text;
+  el.className = "status " + (ok === true ? "ok" : ok === false ? "bad" : "");
+}
+function appendPhase(line, current) {
+  const el = document.getElementById("phaseLog");
+  const stamp = new Date().toLocaleTimeString();
+  const prev = el.textContent === "等待发散…" ? "" : el.textContent + "\n";
+  el.innerHTML = prev.replace(/class="now"/g, "") +
+    `<span class="${current ? "now" : ""}">[${stamp}] ${escapeHtml(line)}</span>`;
+  el.scrollTop = el.scrollHeight;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+function describePhase(event) {
+  const phase = event.phase || "";
+  if (event.message) return `${phase}: ${event.message}`;
+  return phase || JSON.stringify(event);
+}
+
+async function loadDefaults() {
+  const res = await fetch(apiBase() + "/api/v1/sandbox/defaults");
+  if (!res.ok) throw new Error("defaults HTTP " + res.status);
+  const data = await res.json();
+  state.defaults = data;
+  state.defaultGatePrompt = data.default_gate_system_prompt || data.default_system_prompt || "";
+  state.defaultDivergePrompt = data.default_divergence_system_prompt || "";
+  document.getElementById("gatePrompt").value = state.defaultGatePrompt;
+  document.getElementById("divergePrompt").value = state.defaultDivergePrompt;
+  document.getElementById("engineBar").innerHTML =
+    `<strong>引擎=大模型 API</strong>（不是本地规则发散）` +
+    ` · primary=<strong>${data.divergence_primary_provider}/${data.divergence_primary_model || "—"}</strong>` +
+    ` · fallback=<strong>${data.divergence_fallback_provider}/${data.divergence_fallback_model || "—"}</strong>` +
+    ` · ${data.notes?.slow_reason || ""}`;
+  setStatus(
+    `已连接 · primary ${data.divergence_primary_configured ? "ok" : "no"} / fallback ${data.divergence_fallback_configured ? "ok" : "no"}`,
+    Boolean(data.divergence_primary_configured || data.divergence_fallback_configured),
+  );
+}
+async function checkBackend() {
+  try { await loadDefaults(); } catch (err) { setStatus(String(err), false); }
+}
+
+function applyGateDraft(draft) {
+  if (!draft) return;
+  if (draft.scope) document.getElementById("scope").value = draft.scope;
+  if (draft.part_id != null) document.getElementById("partId").value = draft.part_id || "";
+  if (draft.part_label != null) document.getElementById("partLabel").value = draft.part_label || "";
+  document.getElementById("gateQuestion").value = draft.gate_question || "";
+  document.getElementById("userIntent").value = draft.user_semantic_intent || document.getElementById("intentText").value;
+  document.getElementById("behaviorSummary").value = draft.behavior_summary || "";
+}
+
+async function runGate() {
+  const btn = document.getElementById("btnGate");
+  btn.disabled = true;
+  setStatus("Gate 运行中…");
+  try {
+    const body = {
+      event_type: document.getElementById("eventType").value,
+      object_type: document.getElementById("objectType").value.trim() || "object",
+      part_id: document.getElementById("partId").value.trim() || null,
+      part_label: document.getElementById("partLabel").value.trim() || null,
+      intent_text: document.getElementById("intentText").value.trim() || null,
+      system_prompt: document.getElementById("gatePrompt").value || null,
+      sync_vlm: document.getElementById("syncVlm").checked,
+    };
+    const res = await fetch(apiBase() + "/api/v1/sandbox/interpret", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    applyGateDraft(data.gate_draft);
+    const interp = data.interpretation || {};
+    document.getElementById("gateCard").innerHTML =
+      `<strong>${data.gate_draft?.gate_question || "(no question)"}</strong>` +
+      `<div class="meta">intent=${interp.primary_intent ?? "—"} · conf=${interp.confidence ?? "—"} · policy=${interp.assistance_policy ?? "—"}</div>` +
+      `<div class="meta">scope=${data.gate_draft?.scope} · part=${data.gate_draft?.part_id || "—"}</div>`;
+    setStatus("Gate 完成", true);
+  } catch (err) {
+    document.getElementById("gateCard").textContent = String(err);
+    setStatus(String(err), false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function divergeBody(previewOnly) {
+  const kbMode = document.getElementById("knowledgeMode").value;
+  return {
+    object_type: document.getElementById("objectType").value.trim() || "object",
+    scope: document.getElementById("scope").value,
+    part_id: document.getElementById("partId").value.trim() || null,
+    part_label: document.getElementById("partLabel").value.trim() || null,
+    user_semantic_intent: document.getElementById("userIntent").value.trim()
+      || document.getElementById("intentText").value.trim() || "refine",
+    behavior_summary: document.getElementById("behaviorSummary").value.trim() || "sandbox",
+    gate_question: document.getElementById("gateQuestion").value.trim() || null,
+    temperature: Number(document.getElementById("temperature").value || 0.2),
+    strictness: Number(document.getElementById("strictness").value || 0.6),
+    per_group_count: Number(document.getElementById("perGroup").value || 5),
+    system_prompt: document.getElementById("divergePrompt").value || null,
+    preview_only: Boolean(previewOnly),
+    model_choice: document.getElementById("modelChoice").value,
+    knowledge_mode: kbMode,
+    use_wikidata: document.getElementById("useWikidata").checked,
+    use_getty_aat: document.getElementById("useGetty").checked,
+    use_asknature: document.getElementById("useAsknature").checked,
+  };
+}
+
+function renderCandidates(data) {
+  const candidates = data.candidates || [];
+  document.getElementById("tab-chips").innerHTML = candidates.map((c) =>
+    `<span class="chip ${c.group || ""}" title="${c.prompt_phrase || ""}">${c.display_label_zh || c.label_en || c.candidate_id}</span>`
+  ).join("") || '<span class="hint">无 candidates</span>';
+  document.getElementById("tab-detail").innerHTML = candidates.map((c) =>
+    `<div class="candidate"><strong>${c.display_label_zh || c.label_en}</strong>
+      <div class="meta">${c.group} · ${c.operation || ""}</div>
+      <div>${c.prompt_phrase || ""}</div>
+      <div class="meta">${c.semantic_anchor || ""}</div></div>`
+  ).join("") || '<div class="hint">无条目</div>';
+  document.getElementById("tab-raw").textContent = JSON.stringify(data, null, 2);
+}
+
+function showTab(name) {
+  for (const id of ["chips", "detail", "raw"]) {
+    document.getElementById("tab-" + id).hidden = id !== name;
+  }
+  document.querySelectorAll(".tabs button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === name);
+  });
+}
+
+async function parseSseStream(response, onEvent) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() || "";
+    for (const chunk of chunks) {
+      const lines = chunk.split("\n");
+      let event = "message";
+      const dataLines = [];
+      for (const line of lines) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+      }
+      if (!dataLines.length) continue;
+      let data = dataLines.join("\n");
+      try { data = JSON.parse(data); } catch { /* keep string */ }
+      onEvent(event, data);
+    }
+  }
+}
+
+async function runDivergeStream() {
+  const btn = document.getElementById("btnDiverge");
+  btn.disabled = true;
+  document.getElementById("phaseLog").textContent = "";
+  appendPhase("connecting SSE…", true);
+  setStatus("流式发散中…");
+  try {
+    const res = await fetch(apiBase() + "/api/v1/sandbox/diverge/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify(divergeBody(false)),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || ("HTTP " + res.status));
+    }
+    let finalData = null;
+    await parseSseStream(res, (event, data) => {
+      if (event === "phase") {
+        appendPhase(describePhase(data), true);
+        if (Array.isArray(data.candidates) && data.candidates.length) {
+          renderCandidates({ candidates: data.candidates, partial: true, phase: data.phase });
+          showTab("chips");
+        } else if (Array.isArray(data.preview_labels) && data.preview_labels.length) {
+          document.getElementById("tab-chips").innerHTML = data.preview_labels
+            .map((label) => `<span class="chip">${label}</span>`).join("");
+        }
+      } else if (event === "done") {
+        finalData = data;
+        appendPhase(`done · ${data.model || "?"} · ${data.latency_ms}ms · kb=${data.knowledge_route?.mode}`, false);
+      } else if (event === "error") {
+        throw new Error(data.detail || JSON.stringify(data));
+      }
+    });
+    if (!finalData) throw new Error("stream ended without done");
+    renderCandidates(finalData);
+    showTab("chips");
+    setStatus(`完成 · ${finalData.provider}/${finalData.model} · ${finalData.latency_ms}ms`, true);
+  } catch (err) {
+    appendPhase(String(err), false);
+    document.getElementById("tab-raw").textContent = String(err);
+    showTab("raw");
+    setStatus(String(err), false);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function previewDiverge() {
+  setStatus("预览提示词…");
+  try {
+    const res = await fetch(apiBase() + "/api/v1/sandbox/diverge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(divergeBody(true)),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || ("HTTP " + res.status));
+    renderCandidates(data);
+    showTab("raw");
+    setStatus(`已预览 · ${data.provider}/${data.model} · kb=${data.knowledge_route?.mode}`, true);
+  } catch (err) {
+    setStatus(String(err), false);
+  }
+}
+
+checkBackend().catch(() => undefined);
+</script>
+</body>
+</html>

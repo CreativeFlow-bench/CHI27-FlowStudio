@@ -45,14 +45,13 @@ def test_runtime_profile_keeps_legacy_models_and_3d_off_by_default() -> None:
 def test_stage_routing_matches_the_approved_external_models() -> None:
     profile = ModelApiProfile.from_settings(Settings(_env_file=None))
 
-    for stage in (ModelStage.INTENT, ModelStage.PERCEPTION):
+    for stage in (ModelStage.INTENT, ModelStage.PERCEPTION, ModelStage.SEMANTIC_DIVERGENCE):
         route = profile.route_for(stage)
         assert route.primary_model == "gemini-3.6-flash"
         assert route.fallback_model == "gpt-5.5"
 
     for stage in (
         ModelStage.REREPRESENTATION,
-        ModelStage.SEMANTIC_DIVERGENCE,
         ModelStage.PROMPT_COMPOSITION,
     ):
         route = profile.route_for(stage)
@@ -62,3 +61,8 @@ def test_stage_routing_matches_the_approved_external_models() -> None:
     image_route = profile.route_for(ModelStage.IMAGE)
     assert image_route.primary_model == "gpt-image-2"
     assert image_route.fallback_model is None
+    assert profile.ordered_image_models() == [
+        "gpt-image-2",
+        "gemini-3.1-flash-image",
+        "gemini-3-pro-image-2k",
+    ]

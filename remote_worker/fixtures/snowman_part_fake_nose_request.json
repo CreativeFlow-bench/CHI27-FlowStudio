@@ -1,0 +1,21 @@
+{
+  "stage": "part",
+  "object_type": "snowman",
+  "source_id": "snowman_part_fake_nose_v1",
+  "source_image_path": "/root/autodl-tmp/flowstudio_worker_runs/snowman_inputs/source.png",
+  "source_description": "A standing snowman with white stacked snow body and head, black top hat, red scarf, twig arms, black coal face and buttons, and an orange carrot nose attached at the center of the face. Preserve the full snowman, changing only the nose part.",
+  "part_name": "nose",
+  "part_semantics": {
+    "part_id": "fake_nose_mask_01",
+    "canonical_name": "nose",
+    "semantic_role": "central facial protrusion",
+    "current_shape": "short tapered cone protruding from the face",
+    "current_material": "orange carrot",
+    "attachment_socket": "center front of the snowman's head between the eyes and mouth",
+    "scale_constraint": "small facial part; must not cover the eyes, mouth, scarf, hat, or body",
+    "fake_mask": true,
+    "mask_hint": "approximate small oval/cone region centered on the carrot nose"
+  },
+  "user_prompt": "只改变选中的鼻子部件，其它部分保持不变。",
+  "candidate_count": 4
+}

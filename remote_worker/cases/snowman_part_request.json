@@ -1,0 +1,66 @@
+{
+  "stage": "part",
+  "object_type": "snowman",
+  "source_id": "snowman_shared_source_v1",
+  "source_image_path": "/root/autodl-tmp/flowstudio_worker_runs/snowman_inputs/source.png",
+  "source_mesh_path": "/root/autodl-tmp/creativeflow_variations_20260716/hunyuan3d/source/snowman_source/mesh.glb",
+  "part_semantics_path": "/root/autodl-tmp/creativeflow_variations_20260716/snowman_part_semantics_final.json",
+  "user_prompt": "Use relation-first CreativeFlow knowledge-graph expansion from the SAM3D-resolved selected nose. Expand candidate relations first, then retrieve and score near and far target nodes. Change only the selected physical part while preserving its attachment socket and every unselected pixel and part. Do not use fixed replacement examples.",
+  "candidate_count": 4,
+  "source_elements": {
+    "object_identity": "snowman",
+    "global_silhouette": "compact upright two-lobed figure",
+    "segment_structure": {
+      "count": 2,
+      "rhythm": "large rounded body plus smaller rounded head"
+    },
+    "part_inventory": [
+      "black top hat with one red band",
+      "orange carrot nose",
+      "closed red neck scarf without a hanging tail",
+      "two brown twig arms",
+      "two black coal eyes",
+      "six black coal mouth pieces",
+      "two black coal body buttons"
+    ],
+    "materials": [
+      "white packed snow",
+      "black felt hat",
+      "red woven fabric",
+      "orange carrot",
+      "brown wood",
+      "black coal"
+    ],
+    "colors": [
+      "white",
+      "black",
+      "red",
+      "orange",
+      "brown"
+    ],
+    "accessory_topology": [
+      "the scarf is a closed neck ring and has no hanging tail",
+      "the hat is centered on the head",
+      "the twig arms attach at the left and right sides of the body"
+    ],
+    "color_roles": [
+      "snow body and head -> white",
+      "top hat -> black",
+      "hat band and closed scarf -> red",
+      "nose -> orange",
+      "eyes mouth and buttons -> black",
+      "twig arms -> brown"
+    ],
+    "pose_composition": [
+      "standing upright",
+      "twig arms spread laterally",
+      "centered studio product view"
+    ],
+    "confidence": 1.0
+  },
+  "source_part_visual_evidence": {
+    "visible_color": "orange",
+    "visible_material": "carrot",
+    "user_brush_mask": "/root/autodl-tmp/flowstudio_worker_runs/snowman_inputs/nose_mask.png"
+  }
+}

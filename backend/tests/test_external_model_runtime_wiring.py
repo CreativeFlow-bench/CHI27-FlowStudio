@@ -97,7 +97,11 @@ def _semantic_request() -> SemanticDivergenceRequest:
         constraints=[],
         behavior_summary="The user requested a softer whole-object silhouette.",
         behavior_window_id="window_1",
-        params=SemanticDivergenceParams(temperature=0.5, strictness=0.7),
+        params=SemanticDivergenceParams(
+            temperature=0.5,
+            strictness=0.7,
+            candidate_count=9,
+        ),
     )
 
 
@@ -257,8 +261,8 @@ def test_default_runtime_builds_only_external_adapters(monkeypatch) -> None:
     assert isinstance(runtime.semantic_fallback, GatewaySemanticGenerator)
     assert isinstance(runtime.image_client, ExternalImageClient)
     assert isinstance(runtime.interaction_predictor, ExternalInteractionIntentPredictor)
-    assert runtime.semantic_primary.model == "gpt-5.5"
-    assert runtime.semantic_fallback.model == "gemini-3.6-flash"
+    assert runtime.semantic_primary.model == "gemini-3.6-flash"
+    assert runtime.semantic_fallback.model == "gemini-3.1-pro"
 
 
 def test_application_default_wiring_uses_the_external_runtime() -> None:

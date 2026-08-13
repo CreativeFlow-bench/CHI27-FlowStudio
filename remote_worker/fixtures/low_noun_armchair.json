@@ -1,0 +1,9 @@
+{
+  "stage": "low_fidelity",
+  "object_type": "armchair",
+  "source_id": "low_noun_armchair_v1",
+  "source_image_path": "",
+  "source_description": "An armchair with a broad seat, upright back, two side arms, short legs, and cushioned massing. Preserve the identity cues of armchair: seat, back, arms, legs, and sitting function. Only change the overall silhouette and massing.",
+  "user_prompt": "只改变整体轮廓形状，保持物体概念不变。",
+  "candidate_count": 8
+}

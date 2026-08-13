@@ -1,11 +1,14 @@
 .studio-shell {
   --workspace-edge: clamp(12px, 1.4vw, 22px);
   --workspace-gap: 16px;
-  --perception-width: clamp(280px, 24vw, 340px);
-  --solution-space-left: clamp(360px, 34vw, 440px);
-  --solution-space-height: clamp(152px, 22vh, 176px);
-  --ai-behavior-width: clamp(292px, 22vw, 340px);
-  --ai-behavior-top: clamp(148px, 22vh, 190px);
+  /* Live panel sizes (overridden from React when panels resize). */
+  --perception-width: 320px;
+  --ai-behavior-width: 340px;
+  --solution-space-height: 168px;
+  --solution-space-left: calc(var(--workspace-edge) + var(--perception-width) + var(--workspace-gap));
+  /* Span to the right edge of the AI Behavior panel (viewport edge), not its left. */
+  --solution-space-right: var(--workspace-edge);
+  --ai-behavior-top: var(--workspace-edge);
   --composer-reserve: 132px;
   --workspace-safe-top: 64px;
   --workspace-safe-right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
@@ -17,8 +20,13 @@
 }
 
 .studio-shell.has-solution-space {
-  --ai-behavior-top: calc(var(--workspace-edge) + var(--solution-space-height) + var(--workspace-gap));
-  --workspace-safe-top: calc(var(--workspace-edge) + var(--solution-space-height));
+  --workspace-safe-top: var(--solution-space-height);
+  --ai-behavior-top: calc(var(--solution-space-height) + var(--workspace-gap));
+}
+
+.studio-shell.has-solution-space .ai-behavior-float {
+  top: var(--ai-behavior-top);
+  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge));
 }
 
 .workspace,
@@ -36,8 +44,9 @@
   position: fixed;
   top: 68px;
   left: var(--workspace-edge);
-  width: var(--perception-width);
-  max-width: var(--perception-width);
+  z-index: 42;
+  width: var(--shell-width, var(--perception-width));
+  max-width: var(--shell-max-width, var(--perception-width));
   padding: 0;
   overflow: hidden;
 }
@@ -50,7 +59,7 @@
 }
 
 .perception-float .observe-current {
-  padding: 12px 14px 14px;
+  padding: 6px 14px 6px !important;
 }
 
 .perception-float .observe-sentence {
@@ -65,25 +74,29 @@
 
 .solution-space-rail {
   position: fixed;
-  top: var(--workspace-edge);
+  top: 0;
   left: var(--solution-space-left);
-  right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
-  z-index: 24;
+  right: var(--solution-space-right);
+  z-index: 40;
+  pointer-events: auto;
   height: var(--solution-space-height);
   min-width: 0;
   max-width: none;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 6px;
-  padding: 10px 12px;
+  padding: 10px 12px 14px;
   overflow: hidden;
   transform: none;
+  border-radius: 0 0 18px 18px;
+  transition: left 160ms ease, right 160ms ease;
 }
 
 .solution-space-rail .solution-space-scroll {
   min-width: 0;
   min-height: 0;
-  height: auto;
+  height: 100%;
+  align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -94,13 +107,13 @@
 }
 
 .solution-space-rail .solution-card {
-  flex: 0 0 118px;
+  flex: 0 0 148px;
   height: 100%;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 34px;
-  gap: 4px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
   padding: 4px;
 }
 
@@ -112,6 +125,8 @@
   height: 100%;
   min-height: 0;
   border-radius: 8px;
+  object-fit: cover;
+  display: block;
 }
 
 .solution-space-rail .solution-card-body {
@@ -126,19 +141,7 @@
 }
 
 .solution-space-rail .solution-card-actions {
-  grid-column: 1;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: minmax(40px, 0.75fr) minmax(62px, 1.25fr);
-  gap: 2px;
-}
-
-.solution-space-rail .solution-card-actions button {
-  min-width: 0;
-  min-height: 34px;
-  padding: 1px 2px;
-  font-size: 7.5px;
-  white-space: nowrap;
+  display: none;
 }
 
 .ai-behavior-float {
@@ -146,16 +149,24 @@
   top: var(--ai-behavior-top);
   right: var(--workspace-edge);
   z-index: 24;
-  width: var(--ai-behavior-width);
-  height: auto;
-  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge) - 104px);
+  width: var(--shell-width, var(--ai-behavior-width));
+  min-height: 220px;
+  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge));
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
   transition: top 180ms ease, max-height 180ms ease;
 }
 
 .ai-behavior-float .ai-behavior-panel-body {
-  max-height: inherit;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
 }
 
 .canvas-nav {
@@ -167,13 +178,14 @@
 .canvas-composer-shell {
   position: fixed;
   bottom: 24px;
-  width: min(720px, calc(100vw - 48px));
+  width: min(var(--shell-width, 576px), calc(100vw - 48px));
   max-height: calc(100dvh - 48px);
 }
 
 .ai-behavior-float.float-panel {
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-color: rgba(167, 178, 191, 0.62);
   background: rgba(247, 248, 249, 0.94);
   box-shadow: 0 12px 32px rgba(42, 52, 66, 0.1);
@@ -199,11 +211,7 @@
 }
 
 .ai-behavior-panel-body {
-  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge) - 44px);
   padding: 12px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
 }
 
 .ai-behavior-narrative {
@@ -212,10 +220,9 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
-  padding: 14px;
-  border: 1px solid rgba(43, 57, 70, 0.08);
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   color: #26323b;
   font-size: 13px;
   font-weight: 650;
@@ -230,16 +237,12 @@
   margin: 10px 2px 0;
 }
 
-@media (max-width: 1279px) {
-  .studio-shell {
-    --perception-width: clamp(250px, 23vw, 300px);
-    --solution-space-left: clamp(320px, 31vw, 390px);
-    --ai-behavior-width: clamp(280px, 24vw, 312px);
-  }
-}
-
 @media (max-width: 1149px) {
   .canvas-nav {
+    bottom: calc(var(--workspace-safe-bottom) + 12px);
+  }
+
+  .canvas-drag-handle {
     bottom: calc(var(--workspace-safe-bottom) + 12px);
   }
 }
@@ -250,6 +253,10 @@
     --workspace-safe-top: 64px;
     --workspace-safe-right: 0px;
     --workspace-safe-bottom: 148px;
+  }
+
+  .canvas-drag-handle {
+    bottom: calc(var(--workspace-safe-bottom) + 12px);
   }
 
   .perception-float {
@@ -265,26 +272,27 @@
   }
 
   .solution-space-rail {
-    top: 64px;
-    left: 12px;
-    right: 12px;
-    height: 148px;
+    top: 0;
+    left: max(12px, var(--solution-space-left));
+    right: max(12px, var(--solution-space-right));
   }
 
   .ai-behavior-float {
     top: 72px;
     right: 12px;
     width: min(330px, calc(100vw - 24px));
+    height: min(62vh, 560px);
     max-height: min(62vh, 560px);
   }
 
   .ai-behavior-float:not(.is-mobile-open) {
     width: 164px;
+    height: 44px;
     max-height: 44px;
   }
 
   .ai-behavior-float:not(.is-mobile-open) .ai-behavior-panel-body,
-  .ai-behavior-float:not(.is-mobile-open) .status-dots {
+  .ai-behavior-float:not(.is-mobile-open) .more-creative-header > span {
     display: none;
   }
 
@@ -302,13 +310,14 @@
   }
 
   .studio-shell.has-solution-space .perception-float {
-    top: 224px;
-    max-height: 84px;
+    top: 68px;
+    max-height: none;
   }
 
   .studio-shell.has-solution-space .ai-behavior-float {
-    top: 320px;
-    max-height: max(44px, calc(100dvh - 320px - var(--workspace-safe-bottom)));
+    top: var(--ai-behavior-top);
+    height: auto;
+    max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-safe-bottom));
   }
 }
 

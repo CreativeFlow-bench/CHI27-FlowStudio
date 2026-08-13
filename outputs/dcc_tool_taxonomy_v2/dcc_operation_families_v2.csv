@@ -1,0 +1,42 @@
+﻿family_id,macro_group,family_cn,family_en,operation_role,target,mechanism,final_effect,topology_effect,inclusion_rule,exclusion_rule,evidence_count,software_coverage_count,software_coverage,evidence_strength
+F01,生成与构造,基础体实例化,Primitive instantiation,创建,无→对象,从参数化模板实例化几何,生成标准初始体,新建拓扑,球、立方体、圆柱等模板实例化,不含曲线绘制、扫掠或放样,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F02,生成与构造,曲线与路径创建,Curve/path authoring,创建,曲线/路径,放置控制点或绘制路径,生成可编辑曲线,新建曲线表示,直接创建曲线或样条,沿曲线直接生成实体归入 F27,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F03,变换与布局,仿射变换,Affine transform,修改,对象/组件,平移、旋转、缩放矩阵,改变位置、朝向或尺度,拓扑不变,直接操纵对象或组件的刚性/尺度状态,不含带衰减或笼形变,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F04,变换与布局,吸附与轴向约束放置,Snapped/constrained placement,控制,对象/组件,将变换限制到网格、点、曲线或轴,提高放置精度,拓扑不变,吸附或变换轴约束,整体对齐或包围盒匹配归入 F05,7,6,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt,Cross-software evidence: 4+ software
+F05,变换与布局,对齐与包围盒匹配,Alignment/bounds fitting,控制,对象,依据轴、中心或包围盒求对齐变换,匹配位置、中心或尺寸,拓扑不变,Align、Axis Center、Match Size,逐点吸附归入 F04,5,5,3ds Max；Cinema 4D；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F06,拓扑构造,连通挤出,Connected extrusion,修改,面/边界,复制边界并连接侧壁,沿方向或法线延伸体量,增加拓扑,Extrude/PolyExtrude,仅增加厚度且形成壳体归入 F20,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F07,拓扑构造,面内缩与轮廓偏移,Face inset/outline offset,修改,面,在面内生成偏移边界,形成内嵌轮廓或边框,增加拓扑,Inset、Inner Extrude、PolyInset,普通挤出归入 F06,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F08,拓扑构造,边角倒角与圆角,Edge/vertex bevel,修改,边/顶点,截去尖角并插入过渡面,软化或切平边角,增加拓扑,Bevel、Chamfer、PolyBevel,表面抛光归入 F34,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F09,拓扑构造,边插入与环切,Edge insertion/loop split,修改,边环/面带,在现有面上插入连续边,增加局部控制线,增加拓扑,Loop Cut、Connect、PolySplit,任意路径切割归入 F10,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F10,拓扑构造,自由路径切割,Freeform path cutting,修改,表面,按用户路径在表面插入切线,按路径分割表面,增加/分割拓扑,Knife、Multi-Cut、Line Cut、PolyCut,单一平面截切归入 F11,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F11,拓扑构造,平面截切,Planar section/bisection,修改,对象/网格,用平面与几何求交并切分,得到平整截面或两侧部分,分割拓扑,Bisect、Slice Plane、Clip,自由手绘切线归入 F10,3,3,3ds Max；Blender；Houdini,Focused evidence: 2–3 software
+F12,拓扑构造,边界桥接,Boundary bridging,修改,两个开放边界,在两个边界之间生成连接面带,连接间隙,增加拓扑,Bridge、PolyBridge,单个洞口填充归入 F13,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F13,拓扑构造,洞口填充与封口,Hole filling/capping,修改,单个开放边界,依据边界生成填充面,封闭洞口,增加拓扑,Fill、Cap、Close Hole、PolyFill,两个边界之间连接归入 F12,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F14,拓扑简化,合并与焊接,Merge/weld,修改,顶点/对象,将多个元素合并为共享元素,消除缝隙或重复点,减少拓扑,Merge、Weld、Fuse,保持表面但去除边归入 F15,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F15,拓扑简化,溶解与冗余拓扑移除,Dissolve/redundant topology removal,修改,边/点/面,移除元素并重建邻接关系,简化不必要拓扑,减少拓扑,Dissolve、Remove、Optimize,阈值焊接归入 F14,4,4,3ds Max；Blender；Cinema 4D；Houdini,Cross-software evidence: 4+ software
+F16,重建与分辨率,细分曲面与分辨率细化,Subdivision/refinement,重建,网格,按细分规则增加采样并可平滑极限面,提升分辨率/连续性,系统性增加拓扑,Subdivide、Subdivision Surface、TurboSmooth、Divide,重采样为均匀网格归入 F17,6,6,3ds Max；Blender；Cinema 4D；Houdini；Maya；ZBrush,Cross-software evidence: 4+ software
+F17,重建与分辨率,体素或均匀重网格,Voxel/uniform remeshing,重建,网格/体素,重新采样并生成近均匀拓扑,统一密度、合并碎片,替换拓扑,Voxel Remesh、DynaMesh、Remesh,面流重构归入 F18,4,4,Blender；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F18,重建与分辨率,重拓扑与四边形化,Retopology/quadrangulation,重建,网格,依据表面与流向重建面布局,生成更适合编辑/动画的拓扑,替换拓扑,Retopologize、ZRemesher、Quad Draw,均匀体素重采样归入 F17,3,2,Maya；ZBrush,Focused evidence: 2–3 software
+F19,实体组合,布尔集合运算,Boolean composition,修改,多个对象,求并集、交集或差集,组合或切除体量,重算拓扑,Boolean、Boole、Live Boolean,普通切割归入 F10/F11,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F20,实体组合,壳体与厚度生成,Shell/thickness generation,修改,表面,沿法线偏移并连接边界形成厚度,将薄面变为壳体/实体,增加拓扑,Solidify、Shell、Panel Loops、Extract,沿方向延伸局部面归入 F06,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F21,复制与对称,几何镜像,Geometry reflection,修改,对象/几何,复制或反射几何到对称平面另一侧,得到对称几何,复制/生成拓扑,Mirror modifier/SOP、Symmetry object,仅复制笔触与编辑动作归入 F22,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F22,复制与对称,对称操作复制,Symmetric action replication,控制,操作/笔触,把同一编辑动作映射到对称位置,同步产生对称编辑结果,取决于被复制操作,Sculpt symmetry,生成镜像几何本身归入 F21,2,2,Nomad Sculpt；ZBrush,Focused evidence: 2–3 software
+F23,复制与对称,阵列与实例化重复,Pattern duplication/instancing,创建,对象/实例,按规则重复复制或实例化,形成线性、径向或点分布重复,复制对象/实例,Array、MASH、Cloner、Copy to Points,仅二侧对称归入 F21/F22,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F24,参数形变,轴向参数变形,Axial parametric deformation,修改,对象,依据轴与角度/曲率函数变形,弯曲、扭转、锥化或张开,拓扑不变,Bend、Twist、Taper、Simple Deform,自由手动拉动归入 F31,7,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F25,参数形变,衰减与晶格笼变形,Falloff/cage deformation,修改,对象/组件,由权重场或控制笼插值位移,产生连续局部形变,拓扑不变,Soft Selection、Proportional Edit、FFD、Lattice,无衰减的普通变换归入 F03,8,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F26,截面生成,旋转成形,Profile revolution,创建,截面曲线,截面绕轴旋转生成表面,形成轴对称体,新建拓扑,Lathe、Revolve、Spin,沿任意路径生成归入 F27,6,6,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt,Cross-software evidence: 4+ software
+F27,截面生成,沿路径扫掠,Path sweep,创建,路径+截面,截面沿一条路径传输,形成管、条带或扫掠体,新建拓扑,Sweep、Curve Bevel、CurveTube、Tube,多条截面之间过渡归入 F28,9,7,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F28,截面生成,多截面放样与蒙皮,Multi-profile loft/skin,创建,多条截面/骨架,在多个截面或骨架之间插值连接,形成连续表面,新建拓扑,Loft、Skin,单路径单截面扫掠归入 F27,5,5,3ds Max；Blender；Cinema 4D；Houdini；Maya,Cross-software evidence: 4+ software
+F29,贴合与传递,表面贴合与收缩包裹,Surface conformation,修改,源几何+目标表面,沿最近点、射线或投射方向移动点到目标表面,使整体/局部几何贴合目标,通常拓扑不变,Shrinkwrap、Conform、Ray、Project vertices,转移高频细节归入 F30,6,6,3ds Max；Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt,Cross-software evidence: 4+ software
+F30,贴合与传递,几何细节投射与转移,Detail projection/transfer,重建,源表面+目标网格,把源表面细节采样到另一网格,在新拓扑上恢复几何细节,目标拓扑不变,Project All、detail reprojection,只贴合大形体归入 F29,1,1,ZBrush,Boundary review: single-software evidence
+F31,雕刻形态,雕刻抓取与牵拉,Sculpt grab/pull,修改,局部表面,以笔刷中心和衰减场直接位移表面,拖动、抓取或延展局部轮廓,拓扑通常不变,Grab、Move、SnakeHook、Drag,参数化弯曲归入 F24,6,6,Blender；Cinema 4D；Houdini；Maya；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F32,雕刻形态,雕刻堆积与挖除,Sculpt deposit/excavate,修改,局部表面,沿笔刷轨迹增加或移除体量,塑造凸起、凹陷和块面,拓扑通常不变/可动态重建,Clay、ClayBuildup、Wax、Pull,纯法向均匀膨胀归入 F35,5,5,Blender；Cinema 4D；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F33,雕刻形态,交互式局部平滑与放松,Interactive local smoothing/relaxation,修改,局部表面,在笔刷影响域内平均或放松顶点,消除局部噪声并保留/弱化形状,拓扑不变,Sculpt Smooth、Relax,全局算子式平滑归入 F41；压平归入 F34,5,5,Blender；Cinema 4D；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F34,雕刻形态,交互式压平刮削与抛光,Interactive flatten/scrape/polish,修改,局部表面,把局部点投到估计平面或削平峰值,形成平面、硬边或抛光表面,拓扑不变,Flatten、TrimDynamic、HPolish、Polish,邻域平均归入 F33,4,4,Blender；Cinema 4D；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F35,雕刻形态,法向膨胀与收缩,Normal inflate/deflate,修改,局部表面,沿表面法线正向或反向位移,局部鼓起或收缩,拓扑不变,Inflate、Deflate,黏土式体量堆积归入 F32,5,5,Blender；Cinema 4D；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F36,雕刻形态,收紧刻痕与褶皱强化,Pinch/crease sharpening,修改,局部表面,把邻近点向笔刷中心线收拢并可压入,锐化边、刻痕或褶皱,拓扑不变,Pinch、Crease、DamStandard,倒角归入 F08,5,5,Blender；Cinema 4D；Houdini；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F37,作用域与组织,遮罩与权重影响场,Mask/weight influence field,控制,顶点/区域,建立连续或离散权重以限制后续操作,保护区域或调节影响强度,不直接改变拓扑,Mask、Freeze、Weight Paint,仅定义离散集合归入 F38,4,4,Blender；Cinema 4D；Nomad Sculpt；ZBrush,Cross-software evidence: 4+ software
+F38,作用域与组织,组件分组与区域选择定义,Component grouping/selection authoring,控制,组件集合,记录离散选择、面集或多边形组,界定后续操作范围,不直接改变拓扑,Face Sets、PolyGroups、Paint Selection、Group Paint,连续权重遮罩归入 F37,4,4,Blender；Houdini；Maya；ZBrush,Cross-software evidence: 4+ software
+F39,作用域与组织,可见性与隔离,Visibility/isolation,控制,对象/组件集合,切换显示状态而不删除几何,隐藏或隔离编辑区域,拓扑不变,Hide、Visibility、Isolate,将几何拆成新对象归入 F40,2,2,Houdini；Nomad Sculpt,Focused evidence: 2–3 software
+F40,作用域与组织,对象与组件分离,Object/component separation,修改,对象/选区,把选中部分拆分为独立对象,分离对象边界或编辑单元,对象结构变化,Separate、Split,仅隐藏归入 F39,1,1,Nomad Sculpt,Boundary review: single-software evidence
+F41,重建与分辨率,算子式表面平滑与放松,Operator-based surface smoothing/relaxation,修改,网格/选择,由一次性算子或节点对选区迭代平均,整体或选区平滑,拓扑通常不变,Smooth SOP/operator,依赖笔刷局部轨迹的平滑归入 F33,1,1,Houdini,Boundary review: single-software evidence

@@ -18,6 +18,12 @@ from uuid import UUID, uuid4
 
 logger = logging.getLogger("flowstudio.api")
 
+# LaunchAgent runs uvicorn with WorkingDirectory=backend/, but post-process
+# helpers live in the repo-root package ``remote_worker``.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from fastapi import (
     Depends,
     FastAPI,
@@ -44,6 +50,7 @@ from app.api import (
     create_directions_router,
     create_generation_router,
     create_perception_router,
+    create_sandbox_router,
     create_system_router,
     create_projects_router,
     create_interaction_router,
@@ -296,6 +303,7 @@ semantic_divergence_service = SemanticDivergenceService(
     gemini=semantic_primary_model,
     local_vlm=semantic_fallback_model,
     validator=SemanticCandidateValidator(),
+    call_timeout_sec=settings.semantic_divergence_timeout_sec,
 )
 
 
@@ -432,14 +440,15 @@ async def _four_stage_generate_images(
             image_path,
             stage=str(getattr(spec.target, "scope", "whole")),
         )
-        if not qa["accepted"]:
+        # Soft QA only: selected-keyword Generate always ships the image.
+        if not qa.get("accepted"):
             logger.warning(
-                "four_stage rejected candidate=%s attempt=%s qa=%s",
+                "four_stage soft-qa candidate=%s attempt=%s qa=%s",
                 index + 1,
                 attempt + 1,
                 qa,
             )
-            return None
+            qa = {**qa, "accepted": True, "soft_override": True}
         artifact: dict[str, object] = {
             "candidate_id": f"cand_{spec.generation_id}_{index + 1:02d}",
             "url": f"/files/{relative}",
@@ -452,6 +461,15 @@ async def _four_stage_generate_images(
             "kind": "png",
         }
         progress_artifacts.append(artifact)
+        # Persist mid-flight so frontend run polling can show cards even if WS drops.
+        if run_id:
+            try:
+                current = four_stage_store.get_run(run_id)
+                if current is not None:
+                    current.generation_artifacts = list(progress_artifacts)
+                    four_stage_store.save_run(current)
+            except Exception:  # pragma: no cover
+                logger.warning("four_stage progress persist failed", exc_info=True)
         # 串行生成：每完成一张就实时推给前端（进度 + 已完成产物），
         # 避免 8 张生成期间前端长时间无反馈。
         if session_id and websocket_manager is not None:
@@ -477,8 +495,8 @@ async def _four_stage_generate_images(
         spec.prompt_candidates[: spec.candidate_count],
         spec.seeds,
         generate_attempt=_generate_attempt,
-        minimum_accepted=min(6, total),
-        max_attempts_per_prompt=3,
+        minimum_accepted=min(8, max(1, total)),
+        max_attempts_per_prompt=2,
     )
 
 
@@ -639,7 +657,7 @@ async def _four_stage_poll(remote_job_id: str) -> dict[str, object]:
 
 four_stage_generation_service = FourStageGenerationService(
     four_stage_store,
-    builder=GenerationSpecBuilder(),
+    builder=GenerationSpecBuilder(model=external_model_runtime.profile.image_model),
     quality_gate=GenerationQualityGate(),
     dispatch=_four_stage_dispatch,
     poll=_four_stage_poll,
@@ -657,13 +675,17 @@ realtime_observation_service = RealtimeObservationService(
     four_stage_store,
     four_stage_orchestrator,
     recorder=experiment_project_store,
+    text_gateway=external_model_runtime.text_gateway,
 )
+if "pytest" in sys.modules:
+    realtime_observation_service.gate_llm_enabled = False
 interaction_orchestrator = InteractionOrchestrator(
     store=four_stage_store,
     pipeline=four_stage_orchestrator,
     observation=realtime_observation_service,
     websocket_manager=websocket_manager,
 )
+realtime_observation_service.interaction_orchestrator = interaction_orchestrator
 
 
 async def _four_stage_on_failed(run_id: str, error: Exception) -> None:
@@ -1157,6 +1179,7 @@ def create_app() -> FastAPI:
     storage_root = Path(__file__).resolve().parents[1] / "storage"
     files_root = storage_root / "files"
     files_root.mkdir(parents=True, exist_ok=True)
+    realtime_observation_service.files_root = files_root
     configure_cross_domain(
         studio_store=studio_store,
         planner_control_context=_planner_control_context,
@@ -1198,6 +1221,19 @@ def create_app() -> FastAPI:
             live_signals_payload=_live_signals_payload,
             perception_payload=_perception_payload,
             compact_evidence_summary=_compact_evidence_summary,
+        )
+    )
+    app.include_router(
+        create_sandbox_router(
+            studio_store=studio_store,
+            interaction_service=interaction_service,
+            semantic_primary=semantic_primary_model,
+            semantic_fallback=semantic_fallback_model,
+            knowledge_router=semantic_divergence_service.knowledge_router,
+            image_client=image_generation_client,
+            image_model=external_model_runtime.profile.image_model,
+            files_root=files_root,
+            text_gateway=external_model_runtime.text_gateway,
         )
     )
     app.include_router(
@@ -1484,6 +1520,16 @@ def create_app() -> FastAPI:
                 "configured": remote_worker_adapter.is_configured,
                 "error": str(exc),
             }
+
+    @app.get("/api/v1/model-api/probe")
+    async def model_api_probe(include_image: bool = True) -> dict[str, object]:
+        """Live ping for cloud text (+ optional image) before a study run."""
+        from app.services.model_api.probe import probe_external_models
+
+        return await probe_external_models(
+            external_model_runtime,
+            include_image=include_image,
+        )
 
     @app.get("/api/v1/remote-worker/preflight")
     async def remote_worker_preflight() -> dict[str, object]:

@@ -1,0 +1,43 @@
+#!/usr/bin/env expect -f
+# Sync local frontend/dist to AutoDL /root/flowstudio_app/frontend/dist
+# (frontend-only; leaves backend/remote_worker untouched)
+# Usage: REMOTE_PORT=34333 REMOTE_PASS=... ./scripts/sync_frontend_dist.expect
+
+set timeout 300
+set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "34333"}]
+set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westd.seetacloud.com"}]
+set user [expr {[info exists env(REMOTE_USER)] ? $env(REMOTE_USER) : "root"}]
+set pass $env(REMOTE_PASS)
+set root [expr {[info exists env(REPO_ROOT)] ? $env(REPO_ROOT) : [exec pwd]}]
+
+set tar "/tmp/fs_dist_[pid].tgz"
+puts "Building dist tarball from $root/frontend ..."
+exec env LC_ALL=C tar czf $tar -C $root/frontend dist
+
+spawn scp -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -P $port $tar $user@$host:/tmp/fs_dist.tgz
+expect {
+  -re {[Pp]assword:} { send "$pass\r" }
+  timeout { puts "SCP_AUTH_TIMEOUT"; exit 1 }
+}
+expect eof
+catch wait scp_result
+if {[lindex $scp_result 3] != 0} { puts "SCP_FAIL"; exit 1 }
+
+set remote_cmd {set -e
+cd /root/flowstudio_app/frontend
+bk=dist.pre_cf_$(date +%Y%m%d_%H%M%S)
+cp -a dist $bk
+rm -rf dist
+tar xzf /tmp/fs_dist.tgz
+rm -f /tmp/fs_dist.tgz
+echo DIST_OK backup=$bk
+}
+spawn ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -p $port $user@$host $remote_cmd
+expect {
+  -re {[Pp]assword:} { send "$pass\r" }
+  timeout { puts "SSH_AUTH_TIMEOUT"; exit 1 }
+}
+expect { -re {DIST_OK} {} timeout { puts "EXTRACT_TIMEOUT"; exit 1 } }
+catch { expect eof }
+catch wait extract_result
+exit [lindex $extract_result 3]

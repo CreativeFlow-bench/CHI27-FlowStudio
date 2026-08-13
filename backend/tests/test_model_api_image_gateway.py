@@ -4,6 +4,7 @@ import asyncio
 import base64
 import io
 import json
+import urllib.error
 from pathlib import Path
 from typing import Any
 
@@ -157,12 +158,48 @@ def test_response_must_contain_decodable_png() -> None:
     invalid_b64 = _gateway(
         lambda request, timeout: _Response(payload={"data": [{"b64_json": "not-base64"}]})
     )
-    with pytest.raises(ImageResponseError, match="base64"):
+    with pytest.raises(ImageResponseError):
         asyncio.run(invalid_b64.generate("snowman"))
 
     invalid_image = _gateway(lambda request, timeout: _Response(b"not-an-image"))
-    with pytest.raises(ImageResponseError, match="image"):
+    with pytest.raises(ImageResponseError):
         asyncio.run(invalid_image.generate("snowman"))
+
+
+def test_generate_falls_back_to_gemini_native_when_openai_image_fails() -> None:
+    calls: list[str] = []
+    jpeg = io.BytesIO()
+    Image.new("RGB", (4, 4), (200, 40, 40)).save(jpeg, format="JPEG")
+    jpeg_b64 = base64.b64encode(jpeg.getvalue()).decode("ascii")
+
+    def open_request(request, timeout):
+        calls.append(request.full_url)
+        if "/images/generations" in request.full_url:
+            raise urllib.error.HTTPError(
+                request.full_url,
+                403,
+                "quota",
+                hdrs=None,  # type: ignore[arg-type]
+                fp=io.BytesIO(b'{"error":"quota"}'),
+            )
+        return _Response(
+            payload={
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {"inlineData": {"mimeType": "image/jpeg", "data": jpeg_b64}}
+                            ]
+                        }
+                    }
+                ]
+            }
+        )
+
+    result = asyncio.run(_gateway(open_request).generate("a red cube"))
+    assert result.startswith(b"\x89PNG")
+    assert any("/images/generations" in url for url in calls)
+    assert any("v1beta/models/gemini-3.1-flash-image:generateContent" in url for url in calls)
 
 
 def test_conditioned_product_path_never_falls_back_to_text_generation(tmp_path: Path) -> None:

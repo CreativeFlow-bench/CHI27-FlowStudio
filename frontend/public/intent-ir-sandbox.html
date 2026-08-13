@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intent IR Sandbox — FlowStudio</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --panel: #1a1d27;
+    --panel2: #21253a;
+    --border: #2e3350;
+    --accent: #6c8eff;
+    --accent2: #a78bfa;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    --radius: 10px;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────────── */
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  header .badge {
+    font-size: 11px;
+    background: rgba(108,142,255,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(108,142,255,0.3);
+    border-radius: 20px;
+    padding: 2px 10px;
+  }
+  header .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── Main grid ──────────────────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: 300px 1fr 340px;
+    gap: 1px;
+    background: var(--border);
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .col {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .col-header {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .col-header .count {
+    font-size: 11px;
+    background: var(--panel2);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+
+  /* ── Interaction Log ─────────────────────────────────── */
+  .interaction-form {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .interaction-form label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .interaction-form select,
+  .interaction-form input {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    outline: none;
+    font-family: var(--mono);
+  }
+  .interaction-form select:focus,
+  .interaction-form input:focus {
+    border-color: var(--accent);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-ghost {
+    background: var(--panel2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .log-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .log-entry {
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-family: var(--mono);
+    border-left: 3px solid transparent;
+    background: var(--panel2);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .log-entry:hover { background: #2a2f47; }
+  .log-entry.selected {
+    border-left-color: var(--accent);
+    background: rgba(108,142,255,0.1);
+  }
+  .log-entry .event-type {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .log-entry .event-meta {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* ── Inference Panel ─────────────────────────────────── */
+  .inference-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  .inference-section {
+    margin-bottom: 20px;
+  }
+  .inference-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inference-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .inference-row .key {
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 90px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  .inference-row .val {
+    font-weight: 500;
+    font-family: var(--mono);
+  }
+  .inference-row .val.scope-whole { color: #60a5fa; }
+  .inference-row .val.scope-part   { color: #a78bfa; }
+  .inference-row .val.scope-region { color: #fbbf24; }
+  .inference-row .val.op-explore   { color: #4ade80; }
+  .inference-row .val.op-refine    { color: #60a5fa; }
+  .inference-row .val.op-deform    { color: #fb923c; }
+  .inference-row .val.op-replace   { color: #f87171; }
+  .inference-row .val.conf-high    { color: var(--green); }
+  .inference-row .val.conf-mid     { color: var(--yellow); }
+  .inference-row .val.conf-low     { color: var(--red); }
+
+  .confidence-bar-wrap {
+    background: var(--panel2);
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .confidence-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  .confidence-bar.high { background: var(--green); }
+  .confidence-bar.mid  { background: var(--yellow); }
+  .confidence-bar.low  { background: var(--red); }
+
+  .hypothesis-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .hypothesis-item {
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .hypothesis-item.primary {
+    border: 1px solid rgba(108,142,255,0.4);
+    background: rgba(108,142,255,0.08);
+  }
+  .hypothesis-item .hyp-conf {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 30px;
+  }
+  .hypothesis-item .hyp-label {
+    font-family: var(--mono);
+    font-weight: 600;
+    flex: 1;
+  }
+  .hypothesis-item .hyp-evidence {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .policy-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .policy-badge.observe       { background: rgba(100,116,139,0.2); color: #94a3b8; }
+  .policy-badge.interpret     { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .policy-badge.soft-suggest  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .policy-badge.proactive     { background: rgba(108,142,255,0.15); color: #6c8eff; }
+  .policy-badge.ask-clarify   { background: rgba(248,113,113,0.15); color: #f87171; }
+
+  .target-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+
+  .no-inference {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+
+  /* ── Gate Panel ──────────────────────────────────────── */
+  .gate-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  .gate-section {
+    margin-bottom: 20px;
+  }
+
+  .gate-box {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--panel2);
+    margin-bottom: 12px;
+  }
+  .gate-box.yes {
+    border-color: var(--green);
+    background: rgba(74,222,128,0.06);
+  }
+  .gate-box.no {
+    border-color: var(--muted);
+    background: rgba(100,116,139,0.06);
+  }
+  .gate-box .gate-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: var(--muted);
+  }
+  .gate-box.yes .gate-label { color: var(--green); }
+  .gate-box.no .gate-label  { color: var(--muted); }
+
+  .gate-question {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .gate-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .gate-option {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .gate-option:hover {
+    border-color: var(--accent);
+    background: rgba(108,142,255,0.08);
+  }
+  .gate-option .opt-label {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .gate-option .opt-text {
+    font-size: 13px;
+    margin-top: 2px;
+    color: var(--text);
+  }
+
+  .evidence-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .evidence-item {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    padding: 4px 8px;
+    background: var(--panel2);
+    border-radius: 6px;
+    border-left: 2px solid var(--border);
+  }
+  .evidence-item::before {
+    content: "· ";
+    color: var(--accent);
+  }
+
+  .scene-preset {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .scene-preset button {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 6px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .scene-preset button:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .action-btns .btn { flex: 1; justify-content: center; }
+  .btn-accept { background: var(--green); color: #000; font-weight: 700; }
+  .btn-accept:hover { opacity: 0.85; }
+  .btn-reject { background: var(--red); color: #fff; font-weight: 700; }
+  .btn-reject:hover { opacity: 0.85; }
+
+  /* ── JSON View ──────────────────────────────────────── */
+  .json-view {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--panel2);
+    border-radius: var(--radius);
+    padding: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+    color: #a5b4fc;
+  }
+
+  /* ── Status dot ─────────────────────────────────────── */
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .status-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.idle   { background: var(--muted); }
+
+  /* ── Fusion weights bar ─────────────────────────────── */
+  .fusion-bar {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+  }
+  .fusion-bar .fusion-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .fusion-sliders {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 10px 16px;
+  }
+  .fusion-slider label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .fusion-slider label strong {
+    color: var(--text);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .fusion-slider input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .fusion-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .fusion-presets button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .fusion-presets button:hover,
+  .fusion-presets button.active {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .fusion-presets button.active {
+    background: rgba(108,142,255,0.15);
+  }
+  .channel-bars {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .channel-row {
+    display: grid;
+    grid-template-columns: 72px 1fr 40px;
+    gap: 8px;
+    align-items: center;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .channel-row .ch-name { color: var(--muted); }
+  .channel-row .ch-track {
+    height: 6px;
+    background: var(--panel2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .channel-row .ch-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .channel-row .ch-fill.gui { background: var(--accent); }
+  .channel-row .ch-fill.semantic { background: var(--accent2); }
+  .channel-row .ch-fill.cognition { background: var(--yellow); }
+  .channel-row .ch-fill.fused { background: var(--green); }
+  .channel-row .ch-val { color: var(--text); text-align: right; }
+
+  .live-bar {
+    background: #161925;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .live-bar label {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .live-bar input[type="text"] {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 4px 8px;
+    min-width: 220px;
+  }
+  .live-status {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+  }
+  .live-status.ok { color: var(--green); }
+  .live-status.bad { color: var(--red); }
+  .live-status.busy { color: var(--yellow); }
+  .prompt-panel {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    flex-shrink: 0;
+    max-height: 42vh;
+    overflow: auto;
+  }
+  .prompt-panel textarea {
+    width: 100%;
+    min-height: 72px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px;
+    resize: vertical;
+    margin-bottom: 8px;
+  }
+  .prompt-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  /* ── Scrollbar ──────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Intent IR Sandbox</h1>
+  <span class="badge">live interpret · prompt lab</span>
+  <span class="hint">事件 → 真实 Planner interpret → 提示词可调 → Gate</span>
+</header>
+
+<div class="live-bar">
+  <label>Backend <input id="apiBase" type="text" value="http://127.0.0.1:18001"></label>
+  <button class="btn btn-ghost" type="button" onclick="checkBackend()">检测连接</button>
+  <label><input id="liveMode" type="checkbox" checked onchange="onLiveModeChange()"> 真实 Interpret</label>
+  <label><input id="syncVlm" type="checkbox" checked> 同步跑 VLM/Planner</label>
+  <span class="live-status" id="liveStatus">未检测</span>
+  <button class="btn btn-primary" type="button" style="width:auto" onclick="runLiveInterpret()">▶ 发送到 Planner</button>
+  <button class="btn btn-ghost" type="button" onclick="previewPrompts()">预览提示词</button>
+</div>
+
+<div class="fusion-bar">
+  <div class="fusion-title">本地融合（对照）</div>
+  <div class="fusion-sliders">
+    <div class="fusion-slider">
+      <label>② GUI / 行为 <strong id="wGuiVal">0.60</strong></label>
+      <input id="wGui" type="range" min="0" max="1" step="0.05" value="0.60" oninput="onWeightChange()">
+    </div>
+    <div class="fusion-slider">
+      <label>③ 语义 / 图像 <strong id="wSemVal">0.40</strong></label>
+      <input id="wSem" type="range" min="0" max="1" step="0.05" value="0.40" oninput="onWeightChange()">
+    </div>
+    <div class="fusion-slider">
+      <label>① 认知调制 <strong id="wCogVal">1.00</strong></label>
+      <input id="wCog" type="range" min="0" max="1.5" step="0.05" value="1.00" oninput="onWeightChange()">
+    </div>
+  </div>
+  <div class="fusion-presets">
+    <button type="button" id="preset-paper" class="active" onclick="applyWeightPreset('paper')">论文默认 0.6/0.4</button>
+    <button type="button" id="preset-gui" onclick="applyWeightPreset('gui')">GUI-only</button>
+    <button type="button" id="preset-semantic" onclick="applyWeightPreset('semantic')">Semantic-only</button>
+    <button type="button" id="preset-balanced" onclick="applyWeightPreset('balanced')">均衡</button>
+    <button type="button" id="preset-cog" onclick="applyWeightPreset('cognition')">认知加重</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Column 1: Interaction Log -->
+  <div class="col">
+    <div class="col-header">
+      交互事件
+      <span class="count" id="eventCount">0</span>
+    </div>
+
+    <div class="interaction-form">
+      <div class="scene-preset">
+        <button onclick="loadPreset('snowman')">雪人</button>
+        <button onclick="loadPreset('chair')">椅子</button>
+        <button onclick="loadPreset('hat')">帽子</button>
+        <button onclick="loadPreset('car')">汽车</button>
+      </div>
+
+      <label>Event Type</label>
+      <select id="eventType">
+        <optgroup label="Part Targeting">
+          <option value="part_select">part_select — 点击选中部件</option>
+          <option value="part_hover">part_hover — 悬停部件</option>
+          <option value="hover_focus">hover_focus — 焦点聚焦</option>
+        </optgroup>
+        <optgroup label="Sculpt">
+          <option value="brush_end" selected>brush_end — 笔刷结束</option>
+          <option value="drag_end">drag_end — 拖拽结束</option>
+          <option value="smooth_end">smooth_end — 平滑结束</option>
+        </optgroup>
+        <optgroup label="Primitive">
+          <option value="primitive_add_intent">primitive_add_intent — 添加图元意图</option>
+        </optgroup>
+        <optgroup label="Candidate">
+          <option value="candidate_compared">candidate_compared — 对比候选项</option>
+          <option value="candidate_accepted">candidate_accepted — 接受候选项</option>
+          <option value="candidate_rejected">candidate_rejected — 拒绝候选项</option>
+        </optgroup>
+        <optgroup label="Intent Text">
+          <option value="intent_text_changed">intent_text_changed — intent 文本变更</option>
+          <option value="intent_episode_sent">intent_episode_sent — intent 发送</option>
+          <option value="intent_episode_submitted">intent_episode_submitted — intent 提交</option>
+        </optgroup>
+        <optgroup label="Actions">
+          <option value="generation_requested">generation_requested — 请求生成</option>
+          <option value="undo">undo — 撤销</option>
+        </optgroup>
+      </select>
+
+      <div class="form-row">
+        <div>
+          <label>Part ID</label>
+          <input id="partId" placeholder="head, body, base…">
+        </div>
+        <div>
+          <label>Drag Length</label>
+          <input id="dragLength" type="number" step="0.01" min="0" max="1" placeholder="0.05">
+        </div>
+      </div>
+
+      <label>Intent Text</label>
+      <input id="intentText" placeholder="更圆润一点 / 让帽子更高…">
+
+      <label>Text (detail)</label>
+      <input id="intentDetail" placeholder="保持边缘 / 更流畅的轮廓…">
+
+      <div class="form-row">
+        <div>
+          <label>Smooth Strength</label>
+          <input id="smoothStrength" type="number" step="0.01" min="0" max="1" placeholder="0">
+        </div>
+        <div>
+          <label>Image Refs</label>
+          <input id="imageRefCount" type="number" min="0" max="5" value="0">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="addEvent()">
+        + 记录事件
+      </button>
+    </div>
+
+    <div class="log-list" id="logList">
+      <div class="no-inference">点击「记录事件」开始添加交互…</div>
+    </div>
+  </div>
+
+  <!-- Column 2: Inference Output -->
+  <div class="col">
+    <div class="col-header">
+      <span><span class="status-dot idle" id="statusDot"></span> Intent 推断</span>
+      <button class="btn btn-ghost" style="font-size:10px;padding:2px 8px" onclick="runInference()">↻ 本地重算</button>
+    </div>
+
+    <div class="prompt-panel" id="promptPanel">
+      <div class="inference-section-title">Planner System Prompt（可编辑）</div>
+      <textarea id="systemPrompt" placeholder="加载默认提示词中…"></textarea>
+      <div class="prompt-actions">
+        <button class="btn btn-ghost" type="button" onclick="resetSystemPrompt()">恢复默认</button>
+        <button class="btn btn-primary" type="button" style="width:auto" onclick="runLiveInterpret()">用此提示词重跑</button>
+      </div>
+      <div class="inference-section-title">发给模型的 User Payload</div>
+      <div class="json-view" id="userPromptView">点击「预览提示词」或「发送到 Planner」后显示…</div>
+    </div>
+
+    <div class="inference-scroll" id="inferenceScroll">
+      <div class="no-inference">
+        添加交互事件后，这里将显示推断结果…
+      </div>
+    </div>
+  </div>
+
+  <!-- Column 3: Gate -->
+  <div class="col">
+    <div class="col-header">Gate 决策</div>
+    <div class="gate-scroll" id="gateScroll">
+      <div class="no-inference">
+        推断完成后将显示 Gate 判断和确认问题…
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// Data Models (mirrors backend/models)
+// ─────────────────────────────────────────────────────────────
+
+const IntentLabel = {
+  TARGET_PART:          "target_part",
+  SEMANTIC_FOCUS:      "semantic_focus",
+  REPLACE_REGION:       "replace_region",
+  REFINE_BOUNDARY:     "refine_boundary",
+  PROTECT_REGION:      "protect_region",
+  COMPARE_REGION:       "compare_region",
+  EXTEND_PART:         "extend_part",
+  SHRINK_PART:         "shrink_part",
+  BEND_OR_CURVE:       "bend_or_curve",
+  REPOSITION_PART:     "reposition_part",
+  CHANGE_PROPORTION:   "change_proportion",
+  OPEN_SPACE:          "open_space",
+  EMPHASIZE_FEATURE:   "emphasize_feature",
+  DEFORM_SURFACE:      "deform_surface",
+  EXPLORE_SHAPE:       "explore_shape",
+  COMPARE_CANDIDATES:  "compare_candidates",
+  ACCEPT_DIRECTION:    "accept_direction",
+  REJECT_DIRECTION:    "reject_direction",
+  REFINE_CANDIDATE:    "refine_candidate",
+  FINALIZE_DESIGN:     "finalize_design",
+  UNKNOWN:             "unknown",
+};
+
+const AssistancePolicy = {
+  OBSERVE:           "observe",
+  INTERPRET:         "interpret_silently",
+  SOFT_SUGGEST:      "soft_suggestion",
+  PROACTIVE:         "proactive_candidate",
+  ASK_CLARIFY:       "ask_clarification",
+};
+
+// ─────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────
+
+let state = {
+  objectType: "雪人",
+  assetId: "asset-snowman-001",
+  events: [],       // list of event objects
+  inference: null,  // local InteractionInterpretation
+  gate: null,       // { scope, question, options }
+  selectedEventId: null,
+  weights: { gui: 0.6, semantic: 0.4, cognition: 1.0 },
+  activePreset: "paper",
+  fusion: null,     // last fusion breakdown
+  liveMode: true,
+  sessionId: null,
+  liveResult: null,
+  defaultSystemPrompt: "",
+  prompts: null,
+};
+
+// ─────────────────────────────────────────────────────────────
+// Presets
+// ─────────────────────────────────────────────────────────────
+
+const PRESETS = {
+  snowman: {
+    objectType: "雪人",
+    assetId: "asset-snowman-001",
+  },
+  chair: {
+    objectType: "椅子",
+    assetId: "asset-chair-001",
+  },
+  hat: {
+    objectType: "帽子",
+    assetId: "asset-hat-001",
+  },
+  car: {
+    objectType: "汽车",
+    assetId: "asset-car-001",
+  },
+};
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  state.objectType = p.objectType;
+  state.assetId = p.assetId;
+  state.events = [];
+  state.inference = null;
+  state.gate = null;
+  state.selectedEventId = null;
+  renderAll();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Event Factory
+// ─────────────────────────────────────────────────────────────
+
+let _eventCounter = 0;
+
+function createEvent(type, extra = {}) {
+  const id = `evt-${++_eventCounter}-${Date.now()}`;
+  return {
+    id,
+    event_type: type,
+    asset_id: state.assetId,
+    part_id: extra.partId || null,
+    intent_text: extra.intentText || null,
+    text_detail: extra.intentDetail || null,
+    drag_length: extra.dragLength != null ? parseFloat(extra.dragLength) : null,
+    smooth_strength: extra.smoothStrength != null ? parseFloat(extra.smoothStrength) : null,
+    smooth_preserve_boundary: extra.smoothStrength > 0,
+    image_ref_count: extra.imageRefCount || 0,
+    creative_stage: extra.creativeStage || null,
+    timestamp: new Date().toISOString(),
+    // Computed features
+    same_part_recent_edits: 0,  // filled below
+    recent_undo_count: 0,
+    same_event_type_recent_count: 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Rule-Based Intent Predictor
+// (mirrors RuleBasedMultimodalIntentPredictor._generate_hypotheses)
+// ─────────────────────────────────────────────────────────────
+
+function predict(event, recentEvents) {
+  const evtType = event.event_type;
+  const text = (event.intent_text || "").toLowerCase();
+  const detail = (event.text_detail || "").toLowerCase();
+  const hyps = [];
+
+  // ── brush_end ─────────────────────────────────────────────
+  if (evtType === "brush_end") {
+    if (/boundary|edge|seam|preserve|refine|边缘|边界|保留|保持/.test(text)) {
+      hyps.push({ intent: IntentLabel.REFINE_BOUNDARY, confidence: 0.86, evidence: ["brush_signal", "boundary_language", "text_hint"] });
+    }
+    if (text) {
+      hyps.push({ intent: IntentLabel.REPLACE_REGION, confidence: 0.84, evidence: ["brush_signal", "text_intent"] });
+    } else {
+      hyps.push({ intent: IntentLabel.SEMANTIC_FOCUS, confidence: 0.58, evidence: ["brush_signal", "semantic_region"] });
+    }
+    const samePartEdits = recentEvents.filter(e => e.part_id === event.part_id && e.event_evtType === "brush_end").length;
+    if (samePartEdits >= 3) {
+      hyps.push({ intent: IntentLabel.REFINE_BOUNDARY, confidence: 0.67, evidence: ["repeated_brush_same_part", `count=${samePartEdits}`] });
+    }
+  }
+
+  // ── drag_end ──────────────────────────────────────────────
+  else if (evtType === "drag_end") {
+    const dl = event.drag_length || 0;
+    if (dl > 0.05) {
+      hyps.push({ intent: IntentLabel.EXTEND_PART, confidence: 0.71, evidence: ["drag_signal", `length=${dl.toFixed(3)}`] });
+      hyps.push({ intent: IntentLabel.CHANGE_PROPORTION, confidence: 0.47, evidence: ["drag_signal", "proportion_change"] });
+    }
+    hyps.push({ intent: IntentLabel.EXPLORE_SHAPE, confidence: 0.39, evidence: ["drag_signal", "exploratory"] });
+  }
+
+  // ── smooth_end ────────────────────────────────────────────
+  else if (evtType === "smooth_end") {
+    const ss = event.smooth_strength || 0;
+    if (ss > 0) {
+      hyps.push({ intent: IntentLabel.DEFORM_SURFACE, confidence: 0.80, evidence: ["smooth_signal", `strength=${ss.toFixed(2)}`] });
+    }
+    if (event.smooth_preserve_boundary) {
+      hyps.push({ intent: IntentLabel.REFINE_BOUNDARY, confidence: 0.64, evidence: ["smooth_preserve_boundary"] });
+    }
+    if (hyps.length === 0) {
+      hyps.push({ intent: IntentLabel.SMOOTH_SURFACE, confidence: 0.55, evidence: ["smooth_signal"] });
+    }
+  }
+
+  // ── primitive_add_intent / primitive_added ─────────────────
+  else if (evtType === "primitive_add_intent" || evtType === "primitive_added") {
+    hyps.push({ intent: IntentLabel.DEFORM_SURFACE, confidence: 0.76, evidence: ["primitive_signal"] });
+    hyps.push({ intent: IntentLabel.EXPLORE_SHAPE, confidence: 0.52, evidence: ["primitive_signal", "exploratory"] });
+  }
+
+  // ── part_select / hover / focus ────────────────────────────
+  else if (["part_select", "part_hover", "hover_focus"].includes(evtType)) {
+    hyps.push({ intent: IntentLabel.TARGET_PART, confidence: 0.62, evidence: ["part_targeting", "evtype=" + evtType] });
+    if (event.part_id) {
+      hyps.push({ intent: IntentLabel.SEMANTIC_FOCUS, confidence: 0.50, evidence: ["part_focus", event.part_id] });
+    }
+  }
+
+  // ── candidate_* ───────────────────────────────────────────
+  else if (evtType === "candidate_compared") {
+    hyps.push({ intent: IntentLabel.COMPARE_CANDIDATES, confidence: 0.76, evidence: ["candidate_inspection"] });
+  }
+  else if (evtType === "candidate_accepted") {
+    hyps.push({ intent: IntentLabel.ACCEPT_DIRECTION, confidence: 0.88, evidence: ["candidate_accepted"] });
+  }
+  else if (evtType === "candidate_rejected") {
+    hyps.push({ intent: IntentLabel.REJECT_DIRECTION, confidence: 0.83, evidence: ["candidate_rejected"] });
+  }
+
+  // ── generation_requested ──────────────────────────────────
+  else if (evtType === "generation_requested") {
+    const stage = event.creative_stage;
+    if (stage === "part" || stage === "replace") {
+      hyps.push({ intent: IntentLabel.REPLACE_REGION, confidence: 0.80, evidence: ["generation_request", `stage=${stage}`] });
+    } else if (stage === "texture") {
+      hyps.push({ intent: IntentLabel.DEFORM_SURFACE, confidence: 0.80, evidence: ["generation_request", "texture"] });
+    } else {
+      hyps.push({ intent: IntentLabel.EXPLORE_SHAPE, confidence: 0.80, evidence: ["generation_request"] });
+    }
+  }
+
+  // ── intent_text_changed / sent / submitted ────────────────
+  else if (["intent_text_changed", "intent_episode_sent", "intent_episode_submitted"].includes(evtType)) {
+    if (text) {
+      // Whole-object aesthetic language
+      if (/整体|整体轮廓|轮廓|外形|整体感/.test(text)) {
+        hyps.push({ intent: IntentLabel.EXPLORE_SHAPE, confidence: 0.74, evidence: ["text_whole_object", "aesthetic_language"] });
+      }
+      // Surface / material markers
+      else if (/表面|材质|纹理|颜色|质感/.test(text)) {
+        hyps.push({ intent: IntentLabel.DEFORM_SURFACE, confidence: 0.72, evidence: ["text_surface_marker"] });
+      }
+      // Part-level language
+      else if (event.part_id || /帽子|头|身体|底座|手|脚|眼|鼻子/.test(text)) {
+        hyps.push({ intent: IntentLabel.REPLACE_REGION, confidence: 0.70, evidence: ["text_part_level", event.part_id || ""] });
+      }
+      // With image refs
+      if (event.image_ref_count > 0) {
+        hyps.push({ intent: IntentLabel.EXPLORE_SHAPE, confidence: 0.61, evidence: [`image_refs=${event.image_ref_count}`] });
+      }
+      // No clear target
+      if (hyps.length === 0 || !text.trim()) {
+        hyps.push({ intent: IntentLabel.UNKNOWN, confidence: 0.34, evidence: ["no_stable_target"] });
+      }
+    } else {
+      hyps.push({ intent: IntentLabel.UNKNOWN, confidence: 0.34, evidence: ["no_text_intent"] });
+    }
+  }
+
+  // ── undo ──────────────────────────────────────────────────
+  else if (evtType === "undo") {
+    hyps.push({ intent: IntentLabel.REJECT_DIRECTION, confidence: 0.64, evidence: ["undo_action"] });
+  }
+
+  // Sort by confidence descending
+  hyps.sort((a, b) => b.confidence - a.confidence);
+
+  return hyps;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Multi-signal fusion (mirrors target_fusion paper formula)
+// score = (w_gui * gui + w_sem * semantic) / (w_gui + w_sem)
+//       * cognition_modifier(w_cog, cognition)
+// ─────────────────────────────────────────────────────────────
+
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
+}
+
+function scoreChannels(event, recentEvents) {
+  const guiTypes = new Set([
+    "brush_end", "drag_end", "smooth_end", "primitive_add_intent", "primitive_added",
+    "part_select", "part_hover", "hover_focus",
+  ]);
+  let gui = 0;
+  if (guiTypes.has(event.event_type)) gui = 0.55;
+  if ((event.drag_length || 0) > 0.05) gui = Math.max(gui, 0.72);
+  if ((event.smooth_strength || 0) > 0) gui = Math.max(gui, 0.68);
+  if (event.part_id) gui = Math.min(1, gui + 0.15);
+  if (event.event_type === "brush_end") gui = Math.max(gui, 0.62);
+
+  let semantic = 0;
+  if (event.intent_text) semantic = 0.62;
+  if (event.text_detail) semantic = Math.min(1, semantic + 0.12);
+  if ((event.image_ref_count || 0) > 0) {
+    semantic = Math.min(1, semantic + 0.18 * Math.min(event.image_ref_count, 3));
+  }
+  if (["intent_text_changed", "intent_episode_sent", "intent_episode_submitted", "generation_requested"].includes(event.event_type)) {
+    semantic = Math.max(semantic, event.intent_text ? 0.75 : 0.4);
+  }
+
+  let cognition = 0;
+  const undos = recentEvents.filter(e => e.event_type === "undo").length;
+  cognition += Math.min(0.55, undos * 0.22);
+  const samePart = recentEvents.filter(e => e.part_id && e.part_id === event.part_id).length;
+  if (samePart >= 2) cognition += 0.22;
+  if (samePart >= 4) cognition += 0.2;
+  if (!event.intent_text && gui > 0.5 && samePart >= 1) cognition += 0.12;
+  cognition = clamp01(cognition);
+
+  return { gui: clamp01(gui), semantic: clamp01(semantic), cognition };
+}
+
+function evidenceSupport(evidence) {
+  const joined = (evidence || []).join(" ").toLowerCase();
+  const gui = /brush|drag|smooth|primitive|part_target|part_focus|repeated_brush|evtype=/.test(joined) ? 1 : 0;
+  const semantic = /text_|boundary_language|image_ref|aesthetic|surface|generation_request|whole_object|part_level/.test(joined) ? 1 : 0;
+  const cognition = /undo|no_stable|exploratory|unknown|repeated/.test(joined) ? 1 : 0;
+  return {
+    gui: gui || (!semantic ? 1 : 0),
+    semantic: semantic || (!gui ? 0.35 : 0),
+    cognition,
+  };
+}
+
+function fuseHypotheses(hyps, channels, weights) {
+  const wg = weights.gui;
+  const ws = weights.semantic;
+  const wc = weights.cognition;
+  const denom = (wg + ws) || 1e-9;
+  const target = (wg * channels.gui + ws * channels.semantic) / denom;
+  const modifier = Math.min(1.15, Math.max(0.45, 1 - wc * channels.cognition * 0.35));
+  const scale = target * modifier;
+
+  const fused = hyps.map(h => {
+    const support = evidenceSupport(h.evidence);
+    const local = (wg * support.gui * channels.gui + ws * support.semantic * channels.semantic) / denom;
+    const mix = 0.5 * scale + 0.5 * Math.max(local, 0.08);
+    let conf = h.confidence * (0.35 + 0.65 * mix);
+    if (support.cognition) conf *= modifier;
+    return {
+      ...h,
+      base_confidence: h.confidence,
+      confidence: clamp01(conf),
+      support,
+    };
+  }).sort((a, b) => b.confidence - a.confidence);
+
+  return {
+    channels,
+    weights: { ...weights },
+    target,
+    modifier,
+    scale,
+    formula: `(${wg.toFixed(2)}·gui + ${ws.toFixed(2)}·sem) / ${denom.toFixed(2)} × cog_mod`,
+    hyps: fused,
+  };
+}
+
+const WEIGHT_PRESETS = {
+  paper:      { gui: 0.6, semantic: 0.4, cognition: 1.0 },
+  gui:        { gui: 1.0, semantic: 0.0, cognition: 1.0 },
+  semantic:   { gui: 0.0, semantic: 1.0, cognition: 1.0 },
+  balanced:   { gui: 0.5, semantic: 0.5, cognition: 1.0 },
+  cognition:  { gui: 0.6, semantic: 0.4, cognition: 1.5 },
+};
+
+function syncWeightInputs() {
+  const w = state.weights;
+  document.getElementById("wGui").value = w.gui;
+  document.getElementById("wSem").value = w.semantic;
+  document.getElementById("wCog").value = w.cognition;
+  document.getElementById("wGuiVal").textContent = w.gui.toFixed(2);
+  document.getElementById("wSemVal").textContent = w.semantic.toFixed(2);
+  document.getElementById("wCogVal").textContent = w.cognition.toFixed(2);
+  document.querySelectorAll(".fusion-presets button").forEach(btn => {
+    btn.classList.toggle("active", btn.id === `preset-${state.activePreset}`);
+  });
+}
+
+function onWeightChange() {
+  state.weights = {
+    gui: parseFloat(document.getElementById("wGui").value),
+    semantic: parseFloat(document.getElementById("wSem").value),
+    cognition: parseFloat(document.getElementById("wCog").value),
+  };
+  state.activePreset = "custom";
+  syncWeightInputs();
+  if (state.events.length) runInference();
+}
+
+function applyWeightPreset(name) {
+  const p = WEIGHT_PRESETS[name];
+  if (!p) return;
+  state.weights = { ...p };
+  state.activePreset = name;
+  syncWeightInputs();
+  if (state.events.length) runInference();
+}
+
+// ─────────────────────────────────────────────────────────────
+// AssistancePolicy from hypothesis confidence
+// ─────────────────────────────────────────────────────────────
+
+function derivePolicy(hyps) {
+  if (!hyps.length) return AssistancePolicy.OBSERVE;
+  const top = hyps[0];
+  const ambig = computeAmbiguity(hyps);
+
+  if (top.confidence >= 0.80 && ambig < 0.2) return AssistancePolicy.INTERPRET;
+  if (top.confidence >= 0.65 && ambig < 0.3) return AssistancePolicy.SOFT_SUGGEST;
+  if (top.confidence >= 0.50 && ambig < 0.5) return AssistancePolicy.PROACTIVE;
+  return AssistancePolicy.ASK_CLARIFY;
+}
+
+function computeAmbiguity(hyps) {
+  if (hyps.length < 2) return 0;
+  return Math.min(1, Math.max(0, 1 - (hyps[0].confidence - (hyps[1]?.confidence || 0))));
+}
+
+// ─────────────────────────────────────────────────────────────
+// IntentIR from hypotheses
+// ─────────────────────────────────────────────────────────────
+
+function buildIntentIR(event, hyps, objectType) {
+  const top = hyps[0];
+  if (!top) return null;
+
+  // Determine operation from top intent
+  const intentToOp = {
+    [IntentLabel.EXPLORE_SHAPE]:     "explore_variations",
+    [IntentLabel.SEMANTIC_FOCUS]:     "semantic_focus",
+    [IntentLabel.REPLACE_REGION]:     "replace",
+    [IntentLabel.REFINE_BOUNDARY]:    "refine",
+    [IntentLabel.DEFORM_SURFACE]:     "deform",
+    [IntentLabel.EXTEND_PART]:        "extend",
+    [IntentLabel.CHANGE_PROPORTION]:  "proportion",
+    [IntentLabel.TARGET_PART]:        "target",
+    [IntentLabel.COMPARE_CANDIDATES]: "compare",
+    [IntentLabel.ACCEPT_DIRECTION]:   "accept",
+    [IntentLabel.REJECT_DIRECTION]:   "reject",
+    [IntentLabel.UNKNOWN]:            "observe",
+  };
+
+  // Determine scope
+  let scope = "whole";
+  if (event.part_id) scope = "part";
+  if (/boundary|edge|region|局部/.test((event.intent_text || "") + (event.text_detail || ""))) scope = "region";
+
+  const op = intentToOp[top.intent] || "observe";
+
+  return {
+    operation: op,
+    scope,
+    goal: event.intent_text || null,
+    constraints: [],
+    preferred_axes: [],
+    confidence: top.confidence,
+    ambiguity: computeAmbiguity(hyps),
+    top_intent: top.intent,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gate Decision (mirrors _compress_revision_gate + decision_service)
+// ─────────────────────────────────────────────────────────────
+
+const _PRESERVATION = ["保持", "保留", "不变", "维持", "preserve", "unchanged", "keep"];
+
+function decideGate(event, intentIR, objectType) {
+  const text = (event.intent_text || "").toLowerCase();
+  const detail = (event.text_detail || "").toLowerCase();
+  const combined = text + " " + detail;
+
+  // Check for preservation markers — these should NOT trigger a gate
+  const isPreservation = _PRESERVATION.some(m => combined.includes(m));
+
+  // Compute text markers FIRST so they can influence gate decision
+  const hasSurfaceMarker = /表面|材质|纹理|颜色|质感|material|surface|texture/.test(combined);
+  const hasWholeMarker  = /整体|整体轮廓|轮廓|外形|whole|contour|silhouette/.test(combined);
+  const hasPartMarker   = !!(event.part_id) && !hasSurfaceMarker;
+  const hasBendMarker   = /弯曲|弧形|曲线|curve|bend|圆角/.test(combined);
+  const hasProportion   = /比例|大小|高|矮|胖|瘦|长|短/.test(combined);
+  const hasClearMarker = hasSurfaceMarker || hasWholeMarker || hasPartMarker || hasBendMarker || hasProportion;
+
+  const topIntent = intentIR?.top_intent;
+  const scope = intentIR?.scope || "whole";
+
+  // Gate if: preservation, no IR, low confidence, high ambiguity,
+  // OR a "hard" intent type, OR clear text markers (user said something specific)
+  const needsGate = !isPreservation && (
+    !intentIR ||
+    intentIR.confidence < 0.65 ||
+    intentIR.ambiguity > 0.4 ||
+    topIntent === IntentLabel.UNKNOWN ||
+    topIntent === IntentLabel.TARGET_PART ||
+    topIntent === IntentLabel.COMPARE_CANDIDATES ||
+    topIntent === IntentLabel.SEMANTIC_FOCUS ||
+    hasClearMarker  // explicit user intent → always confirm
+  );
+
+  if (!needsGate) {
+    // Silent pass — low-risk exploratory intent
+    return {
+      required: false,
+      scope: null,
+      question: null,
+      options: [],
+      reason: "高置信度、低歧义，直接进入生成",
+    };
+  }
+
+  let gateScope, question, options;
+
+  if (hasSurfaceMarker) {
+    gateScope = "material";
+    question = `你想改变这个 ${objectType} 的表面材质吗？`;
+    options = [
+      { label: "材质", text: question },
+      { label: "跳过", text: "不改变材质" },
+    ];
+  } else if (hasBendMarker || hasProportion) {
+    gateScope = "shape";
+    question = `你想要什么样的形状效果？`;
+    options = [
+      { label: "更圆润", text: "让它更圆润流畅" },
+      { label: "更锐利", text: "让它更有棱角" },
+      { label: "比例调整", text: "调整整体比例" },
+    ];
+  } else if (hasPartMarker || scope === "part") {
+    gateScope = "part";
+    question = `你想改变这个 ${objectType}（${event.part_id}）的形状还是位置？`;
+    options = [
+      { label: "形状", text: "改变形状" },
+      { label: "位置", text: "改变位置/连接" },
+      { label: "都要", text: "形状和位置都要变" },
+    ];
+  } else if (hasWholeMarker || scope === "whole") {
+    gateScope = "whole";
+    question = `你想改变这个 ${objectType} 的整体轮廓吗？`;
+    options = [
+      { label: "是", text: question },
+      { label: "否", text: "不改变整体轮廓" },
+    ];
+  } else {
+    gateScope = scope;
+    question = `你想对这个 ${objectType} 做哪种改变？`;
+    options = [
+      { label: "形状探索", text: "探索不同的形状" },
+      { label: "局部修改", text: "修改某个局部区域" },
+      { label: "表面材质", text: "改变表面/材质" },
+    ];
+  }
+
+  return {
+    required: true,
+    scope: gateScope,
+    question,
+    options,
+    reason: `confidence=${intentIR?.confidence?.toFixed(2) ?? "null"}, ambiguity=${intentIR?.ambiguity?.toFixed(2) ?? "null"}`,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main inference runner
+// ─────────────────────────────────────────────────────────────
+
+function runInference() {
+  if (state.events.length === 0) {
+    state.inference = null;
+    state.gate = null;
+    state.fusion = null;
+    renderInference();
+    renderGate();
+    return;
+  }
+
+  const lastEvent = state.events[state.events.length - 1];
+  const recentEvents = state.events.slice(-5);
+
+  const baseHyps = predict(lastEvent, recentEvents);
+  const fusion = fuseHypotheses(baseHyps, scoreChannels(lastEvent, recentEvents), state.weights);
+  const hyps = fusion.hyps;
+  state.fusion = fusion;
+
+  const policy = derivePolicy(hyps);
+  const intentIR = buildIntentIR(lastEvent, hyps, state.objectType);
+  const gate = decideGate(lastEvent, intentIR, state.objectType);
+
+  state.inference = {
+    event_id: lastEvent.id,
+    event_type: lastEvent.event_type,
+    predictor: "rule_based_multisignal+fusion",
+    hypotheses: hyps,
+    policy,
+    intentIR,
+    fusion: {
+      channels: fusion.channels,
+      weights: fusion.weights,
+      target: fusion.target,
+      modifier: fusion.modifier,
+      scale: fusion.scale,
+      formula: fusion.formula,
+    },
+    features: {
+      part_id: lastEvent.part_id,
+      intent_text: lastEvent.intent_text,
+      text_detail: lastEvent.text_detail,
+      drag_length: lastEvent.drag_length,
+      smooth_strength: lastEvent.smooth_strength,
+      image_ref_count: lastEvent.image_ref_count,
+      same_part_recent_edits: recentEvents.filter(e => e.part_id === lastEvent.part_id && e.event_type === "brush_end").length,
+    },
+  };
+  state.gate = gate;
+
+  renderInference();
+  renderGate();
+
+  document.getElementById("statusDot").className = state.inference ? "status-dot active" : "status-dot idle";
+}
+
+// ─────────────────────────────────────────────────────────────
+// Live backend interpret + prompt lab
+// ─────────────────────────────────────────────────────────────
+
+function apiBase() {
+  return (document.getElementById("apiBase").value || "http://127.0.0.1:18001").replace(/\/$/, "");
+}
+
+function setLiveStatus(text, cls) {
+  const el = document.getElementById("liveStatus");
+  el.textContent = text;
+  el.className = "live-status" + (cls ? " " + cls : "");
+}
+
+function onLiveModeChange() {
+  state.liveMode = document.getElementById("liveMode").checked;
+}
+
+function currentFormPayload() {
+  return {
+    session_id: state.sessionId,
+    event_type: document.getElementById("eventType").value,
+    object_type: state.objectType,
+    asset_id: state.assetId,
+    part_id: document.getElementById("partId").value.trim() || null,
+    part_label: document.getElementById("partId").value.trim() || null,
+    intent_text: document.getElementById("intentText").value.trim() || null,
+    text_detail: document.getElementById("intentDetail").value.trim() || null,
+    drag_length: document.getElementById("dragLength").value
+      ? parseFloat(document.getElementById("dragLength").value)
+      : null,
+    smooth_strength: document.getElementById("smoothStrength").value
+      ? parseFloat(document.getElementById("smoothStrength").value)
+      : null,
+    image_ref_count: parseInt(document.getElementById("imageRefCount").value) || 0,
+    system_prompt: document.getElementById("systemPrompt").value || null,
+    sync_vlm: document.getElementById("syncVlm").checked,
+  };
+}
+
+function showPrompts(prompts) {
+  state.prompts = prompts || null;
+  if (!prompts) return;
+  if (prompts.system && !document.getElementById("systemPrompt").value) {
+    document.getElementById("systemPrompt").value = prompts.system;
+  }
+  const userView = document.getElementById("userPromptView");
+  userView.textContent = prompts.user
+    || JSON.stringify(prompts.user_payload || prompts, null, 2);
+}
+
+async function checkBackend() {
+  setLiveStatus("检测中…", "busy");
+  try {
+    const res = await fetch(apiBase() + "/api/v1/sandbox/defaults");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    state.defaultSystemPrompt = data.default_system_prompt || "";
+    if (!document.getElementById("systemPrompt").value) {
+      document.getElementById("systemPrompt").value = state.defaultSystemPrompt;
+    }
+    setLiveStatus(
+      `已连接 · VLM=${data.vlm_configured ? "on" : "off"} · ${data.predictor || "?"}`,
+      data.vlm_configured ? "ok" : "busy"
+    );
+    return true;
+  } catch (err) {
+    setLiveStatus("连接失败: " + (err.message || err), "bad");
+    return false;
+  }
+}
+
+function resetSystemPrompt() {
+  document.getElementById("systemPrompt").value = state.defaultSystemPrompt || "";
+}
+
+async function previewPrompts() {
+  setLiveStatus("预览提示词…", "busy");
+  try {
+    const body = { ...currentFormPayload(), preview_only: true, sync_vlm: false };
+    const res = await fetch(apiBase() + "/api/v1/sandbox/interpret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 200));
+    const data = await res.json();
+    if (data.session_id) state.sessionId = data.session_id;
+    showPrompts(data.prompts);
+    setLiveStatus("提示词已预览（未调用模型）", "ok");
+  } catch (err) {
+    setLiveStatus("预览失败: " + (err.message || err), "bad");
+  }
+}
+
+async function runLiveInterpret() {
+  setLiveStatus("调用 Planner interpret…", "busy");
+  document.getElementById("statusDot").className = "status-dot active";
+  try {
+    const body = { ...currentFormPayload(), preview_only: false };
+    const res = await fetch(apiBase() + "/api/v1/sandbox/interpret", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 240));
+    const data = await res.json();
+    if (data.session_id) state.sessionId = data.session_id;
+    state.liveResult = data;
+    showPrompts(data.prompts);
+    applyLiveInterpretation(data.interpretation);
+    renderInference();
+    renderGate();
+    const mode = data.sync_vlm ? "sync-vlm" : "rules/defer";
+    const primary = data.interpretation?.primary_intent || "?";
+    setLiveStatus(`完成 · ${mode} · primary=${primary}`, "ok");
+  } catch (err) {
+    setLiveStatus("Interpret 失败: " + (err.message || err), "bad");
+  }
+}
+
+function applyLiveInterpretation(interp) {
+  if (!interp) return;
+  const hyps = (interp.hypotheses || []).map(h => ({
+    intent: h.intent,
+    confidence: h.confidence,
+    evidence: h.evidence || [],
+    base_confidence: h.confidence,
+  }));
+  const top = hyps[0];
+  state.inference = {
+    event_id: interp.source_event_id,
+    event_type: interp.action_type,
+    predictor: interp.predictor + " (live)",
+    hypotheses: hyps,
+    policy: interp.assistance_policy,
+    intentIR: {
+      operation: top?.intent || null,
+      scope: interp.target?.part_id ? "part" : "whole",
+      goal: (interp.features && interp.features.intent_text) || null,
+      confidence: interp.confidence,
+      ambiguity: interp.ambiguity,
+      top_intent: interp.primary_intent,
+    },
+    fusion: state.fusion,
+    live: true,
+    semantic_targets: interp.semantic_targets || [],
+    predictor_metadata: interp.predictor_metadata || {},
+    raw: interp,
+  };
+  // Prefer backend clarification / gate-ish signal
+  const needsClarify =
+    interp.assistance_policy === "ask_clarification" ||
+    (interp.semantic_targets || []).some(t => t.requires_clarification);
+  if (needsClarify) {
+    const q =
+      interp.predictor_metadata?.clarification_question ||
+      interp.suggested_assistance?.[0]?.message ||
+      `确认要对 ${state.objectType}${interp.target?.part_id ? "（" + interp.target.part_id + "）" : ""} 做什么？`;
+    state.gate = {
+      required: true,
+      scope: interp.target?.part_id ? "part" : "whole",
+      question: q,
+      options: (interp.semantic_targets || []).slice(0, 3).map(t => ({
+        label: t.semantic?.label_zh || t.level || t.target_id,
+        text: `${t.operation_hint || ""} · conf=${(t.confidence ?? 0).toFixed?.(2) ?? t.confidence}`,
+      })),
+      reason: `live interpret · policy=${interp.assistance_policy} · conf=${interp.confidence}`,
+    };
+  } else {
+    state.gate = {
+      required: false,
+      scope: null,
+      question: null,
+      options: [],
+      reason: `live interpret 高置信/无需澄清 · policy=${interp.assistance_policy}`,
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Add event
+// ─────────────────────────────────────────────────────────────
+
+function addEvent() {
+  const type = document.getElementById("eventType").value;
+  const partId = document.getElementById("partId").value.trim() || null;
+  const intentText = document.getElementById("intentText").value.trim() || null;
+  const intentDetail = document.getElementById("intentDetail").value.trim() || null;
+  const dragLength = document.getElementById("dragLength").value;
+  const smoothStrength = document.getElementById("smoothStrength").value;
+  const imageRefCount = parseInt(document.getElementById("imageRefCount").value) || 0;
+
+  const event = createEvent(type, {
+    partId, intentText, intentDetail,
+    dragLength: dragLength || null,
+    smoothStrength: smoothStrength || null,
+    imageRefCount,
+  });
+
+  state.events.push(event);
+  state.selectedEventId = event.id;
+
+  runInference();
+  renderLog();
+  if (document.getElementById("liveMode").checked) {
+    runLiveInterpret();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render: Log
+// ─────────────────────────────────────────────────────────────
+
+function renderLog() {
+  const list = document.getElementById("logList");
+  document.getElementById("eventCount").textContent = state.events.length;
+
+  if (state.events.length === 0) {
+    list.innerHTML = '<div class="no-inference">点击「记录事件」开始添加交互…</div>';
+    return;
+  }
+
+  list.innerHTML = state.events.map((ev, i) => {
+    const meta = [];
+    if (ev.part_id) meta.push(`part: ${ev.part_id}`);
+    if (ev.intent_text) meta.push(`"${ev.intent_text}"`);
+    if (ev.drag_length != null) meta.push(`drag=${ev.drag_length.toFixed(3)}`);
+    if (ev.smooth_strength != null) meta.push(`smooth=${ev.smooth_strength.toFixed(2)}`);
+    return `
+      <div class="log-entry ${ev.id === state.selectedEventId ? "selected" : ""}"
+           onclick="selectEvent('${ev.id}')">
+        <div class="event-type">${i + 1}. ${ev.event_type}</div>
+        ${meta.length ? `<div class="event-meta">${meta.join(" · ")}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function selectEvent(id) {
+  state.selectedEventId = id;
+  const idx = state.events.findIndex(e => e.id === id);
+  if (idx >= 0) {
+    const ev = state.events[idx];
+    const recent = state.events.slice(Math.max(0, idx - 4), idx);
+    const fusion = fuseHypotheses(predict(ev, recent), scoreChannels(ev, recent), state.weights);
+    const hyps = fusion.hyps;
+    state.fusion = fusion;
+    const policy = derivePolicy(hyps);
+    const intentIR = buildIntentIR(ev, hyps, state.objectType);
+    const gate = decideGate(ev, intentIR, state.objectType);
+    state.inference = {
+      event_id: ev.id,
+      event_type: ev.event_type,
+      predictor: "rule_based_multisignal+fusion",
+      hypotheses: hyps,
+      policy,
+      intentIR,
+      fusion: {
+        channels: fusion.channels,
+        weights: fusion.weights,
+        target: fusion.target,
+        modifier: fusion.modifier,
+        scale: fusion.scale,
+        formula: fusion.formula,
+      },
+      features: {},
+    };
+    state.gate = gate;
+    renderLog();
+    renderInference();
+    renderGate();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render: Inference
+// ─────────────────────────────────────────────────────────────
+
+function confClass(c) {
+  if (c >= 0.70) return "conf-high";
+  if (c >= 0.45) return "conf-mid";
+  return "conf-low";
+}
+function confBarClass(c) {
+  if (c >= 0.70) return "high";
+  if (c >= 0.45) return "mid";
+  return "low";
+}
+function policyLabel(p) {
+  const m = { [AssistancePolicy.OBSERVE]: "静默观察", [AssistancePolicy.INTERPRET]: "静默解读", [AssistancePolicy.SOFT_SUGGEST]: "柔和建议", [AssistancePolicy.PROACTIVE]: "主动候选", [AssistancePolicy.ASK_CLARIFY]: "请求澄清" };
+  return m[p] || p;
+}
+function policyClass(p) {
+  const m = { [AssistancePolicy.OBSERVE]: "observe", [AssistancePolicy.INTERPRET]: "interpret", [AssistancePolicy.SOFT_SUGGEST]: "soft-suggest", [AssistancePolicy.PROACTIVE]: "proactive", [AssistancePolicy.ASK_CLARIFY]: "ask-clarify" };
+  return m[p] || "observe";
+}
+function scopeClass(s) { return `scope-${s}`; }
+function opClass(op) {
+  if (!op) return "";
+  if (op.includes("explore")) return "op-explore";
+  if (op.includes("refine")) return "op-refine";
+  if (op.includes("deform")) return "op-deform";
+  if (op.includes("replace")) return "op-replace";
+  return "";
+}
+
+function renderInference() {
+  const el = document.getElementById("inferenceScroll");
+  const inf = state.inference;
+
+  if (!inf) {
+    el.innerHTML = '<div class="no-inference">添加交互事件后，这里将显示推断结果…</div>';
+    return;
+  }
+
+  const hyps = inf.hypotheses || [];
+  const ir = inf.intentIR;
+  const targets = inf.semantic_targets || [];
+
+  el.innerHTML = `
+    ${inf.live ? `<div class="inference-section"><div class="inference-section-title" style="color:var(--green)">Live Planner 结果</div>
+      <div class="inference-row"><span class="key">predictor</span><span class="val">${inf.predictor}</span></div>
+      <div class="inference-row"><span class="key">primary</span><span class="val">${ir?.top_intent || "—"}</span></div>
+      <div class="inference-row"><span class="key">policy</span><span class="policy-badge ${policyClass(inf.policy)}">${policyLabel(inf.policy)}</span></div>
+    </div>` : ""}
+
+    <div class="inference-section">
+      <div class="inference-section-title">源事件</div>
+      <div class="inference-row">
+        <span class="key">event_type</span>
+        <span class="val">${inf.event_type}</span>
+      </div>
+      ${ir ? `
+        <div class="inference-row">
+          <span class="key">operation</span>
+          <span class="val ${opClass(ir.operation)}">${ir.operation || "—"}</span>
+        </div>
+        <div class="inference-row">
+          <span class="key">scope</span>
+          <span class="val ${scopeClass(ir.scope)}">${ir.scope || "—"}</span>
+        </div>
+        <div class="inference-row">
+          <span class="key">goal</span>
+          <span class="val" style="font-family:inherit;font-size:13px">${ir.goal || "—"}</span>
+        </div>
+        <div class="inference-row">
+          <span class="key">confidence</span>
+          <span class="val ${confClass(ir.confidence)}">${Number(ir.confidence).toFixed(2)}</span>
+        </div>
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar ${confBarClass(ir.confidence)}" style="width:${Number(ir.confidence) * 100}%"></div>
+        </div>
+        <div class="inference-row" style="margin-top:8px">
+          <span class="key">ambiguity</span>
+          <span class="val">${Number(ir.ambiguity || 0).toFixed(2)}</span>
+        </div>
+      ` : ""}
+    </div>
+
+    ${targets.length ? `
+    <div class="inference-section">
+      <div class="inference-section-title">Semantic Targets（Planner）</div>
+      <div class="hypothesis-list">
+        ${targets.map((t, i) => `
+          <div class="hypothesis-item ${i === 0 ? "primary" : ""}">
+            <span class="hyp-conf">${((t.confidence || 0) * 100).toFixed(0)}%</span>
+            <span class="hyp-label">${t.semantic?.label_zh || t.level || t.target_id}</span>
+            <span class="hyp-evidence">${t.operation_hint || ""} · ${t.level || ""}${t.requires_clarification ? " · needs_clarify" : ""}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>` : ""}
+
+    <div class="inference-section">
+      <div class="inference-section-title">信号通道 × 融合（本地对照）</div>
+      ${inf.fusion ? `
+        <div class="channel-bars">
+          <div class="channel-row">
+            <span class="ch-name">GUI</span>
+            <div class="ch-track"><div class="ch-fill gui" style="width:${inf.fusion.channels.gui * 100}%"></div></div>
+            <span class="ch-val">${inf.fusion.channels.gui.toFixed(2)}</span>
+          </div>
+          <div class="channel-row">
+            <span class="ch-name">Semantic</span>
+            <div class="ch-track"><div class="ch-fill semantic" style="width:${inf.fusion.channels.semantic * 100}%"></div></div>
+            <span class="ch-val">${inf.fusion.channels.semantic.toFixed(2)}</span>
+          </div>
+          <div class="channel-row">
+            <span class="ch-name">Cognition</span>
+            <div class="ch-track"><div class="ch-fill cognition" style="width:${inf.fusion.channels.cognition * 100}%"></div></div>
+            <span class="ch-val">${inf.fusion.channels.cognition.toFixed(2)}</span>
+          </div>
+          <div class="channel-row">
+            <span class="ch-name">Fused</span>
+            <div class="ch-track"><div class="ch-fill fused" style="width:${inf.fusion.scale * 100}%"></div></div>
+            <span class="ch-val">${inf.fusion.scale.toFixed(2)}</span>
+          </div>
+        </div>
+      ` : '<div class="no-inference" style="padding:8px 0">无本地融合数据</div>'}
+    </div>
+
+    <div class="inference-section">
+      <div class="inference-section-title">Hypotheses</div>
+      <div class="hypothesis-list">
+        ${hyps.map((h, i) => `
+          <div class="hypothesis-item ${i === 0 ? "primary" : ""}">
+            <span class="hyp-conf">${(h.confidence * 100).toFixed(0)}%${h.base_confidence != null && !inf.live ? `<span style="color:var(--muted);font-weight:400"> ←${(h.base_confidence * 100).toFixed(0)}</span>` : ""}</span>
+            <span class="hyp-label" style="color:${i === 0 ? "var(--accent)" : "var(--muted)"}">${h.intent}</span>
+            <span class="hyp-evidence">${(h.evidence || []).join(", ")}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="inference-section">
+      <div class="inference-section-title">Assistance Policy</div>
+      <div class="inference-row">
+        <span class="key">policy</span>
+        <span class="policy-badge ${policyClass(inf.policy)}">${policyLabel(inf.policy)}</span>
+      </div>
+    </div>
+
+    <div class="inference-section">
+      <div class="inference-section-title">${inf.live ? "Live Interpretation JSON" : "Local JSON"}</div>
+      <div class="json-view">${JSON.stringify(inf.raw || inf, null, 2)}</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render: Gate
+// ─────────────────────────────────────────────────────────────
+
+function renderGate() {
+  const el = document.getElementById("gateScroll");
+  const gate = state.gate;
+
+  if (!gate) {
+    el.innerHTML = '<div class="no-inference">推断完成后将显示 Gate 判断和确认问题…</div>';
+    return;
+  }
+
+  if (!gate.required) {
+    el.innerHTML = `
+      <div class="gate-section">
+        <div class="gate-box yes">
+          <div class="gate-label">✓ 无需 Gate</div>
+          <div class="gate-question">${gate.reason}</div>
+        </div>
+      </div>
+      <div class="gate-section">
+        <div class="inference-section-title">Gate JSON</div>
+        <div class="json-view">${JSON.stringify(gate, null, 2)}</div>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="gate-section">
+      <div class="inference-section-title">Gate 判断</div>
+      <div class="gate-box yes">
+        <div class="gate-label">✓ 需要 Gate</div>
+        <div class="gate-question">${gate.reason}</div>
+      </div>
+    </div>
+
+    <div class="gate-section">
+      <div class="inference-section-title">Gate 范围</div>
+      <div class="inference-row">
+        <span class="key">scope</span>
+        <span class="val ${scopeClass(gate.scope)}">${gate.scope}</span>
+      </div>
+    </div>
+
+    <div class="gate-section">
+      <div class="inference-section-title">确认问题</div>
+      <div class="gate-box yes">
+        <div class="gate-question">${gate.question}</div>
+      </div>
+    </div>
+
+    <div class="gate-section">
+      <div class="inference-section-title">选项</div>
+      <div class="gate-options">
+        ${gate.options.map((opt, i) => `
+          <div class="gate-option" onclick="selectGateOption(${i})">
+            <div class="opt-label">${opt.label}</div>
+            <div class="opt-text">${opt.text}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn btn-accept" onclick="resolveGate(true)">✓ 接受</button>
+      <button class="btn btn-reject" onclick="resolveGate(false)">✗ 拒绝</button>
+    </div>
+
+    <div class="gate-section" style="margin-top:16px">
+      <div class="inference-section-title">Gate JSON</div>
+      <div class="json-view">${JSON.stringify(gate, null, 2)}</div>
+    </div>
+  `;
+}
+
+// Gate resolution feedback
+let _lastResolution = null;
+
+function resolveGate(accepted) {
+  _lastResolution = { accepted, gate: state.gate, ts: new Date().toISOString() };
+  const el = document.getElementById("gateScroll");
+  const g = state.gate;
+  const color = accepted ? "var(--green)" : "var(--red)";
+  const label = accepted ? "已接受" : "已拒绝";
+  el.innerHTML += `
+    <div style="margin-top:14px;padding:10px 12px;border-radius:${10}px;background:rgba(${accepted ? "74,222,128" : "248,113,113"},0.1);border:1px solid ${color}">
+      <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px">${label}</div>
+      <div style="font-size:12px;color:var(--muted)">→ 进入 ${g?.scope || "?"} 阶段 → 语义发散</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
+
+function renderAll() {
+  renderLog();
+  renderInference();
+  renderGate();
+  syncWeightInputs();
+  document.getElementById("statusDot").className = "status-dot idle";
+}
+
+renderAll();
+checkBackend();
+
+window.onerror = function(msg, src, line, col, err) {
+  var errEl = document.createElement('div');
+  errEl.style = 'position:fixed;bottom:0;left:0;right:0;background:#f87171;color:#fff;padding:12px;font-size:12px;z-index:9999;font-family:monospace';
+  errEl.innerHTML = '<strong>JS Error:</strong> ' + (err ? err.message : msg) + ' (line ' + line + ')';
+  document.body.appendChild(errEl);
+  return true;
+};
+</script>
+</body>
+</html>

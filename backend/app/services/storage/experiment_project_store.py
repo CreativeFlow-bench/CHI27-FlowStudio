@@ -251,6 +251,7 @@ class ExperimentProjectStore:
                     seq=seq,
                     event=event,
                 )
+                self._persist_asset_refs(created)
                 self._conn.execute(
                     "UPDATE experiment_runs SET next_event_seq = ? WHERE run_id = ?",
                     (seq + 1, run_id),
@@ -321,6 +322,47 @@ class ExperimentProjectStore:
         )
         return created
 
+    def _persist_asset_refs(self, event: ExperimentEvent) -> None:
+        for raw in event.asset_refs:
+            ref = ProjectAssetReference(
+                ref_id=str(raw.get("ref_id") or f"assetref_{uuid4().hex[:14]}"),
+                project_id=event.project_id,
+                run_id=event.run_id,
+                asset_id=raw.get("asset_id"),
+                artifact_id=raw.get("artifact_id"),
+                role=str(raw.get("role") or "attachment"),
+                sha256=raw.get("sha256"),
+                byte_size=raw.get("byte_size"),
+                mime_type=raw.get("mime_type"),
+                storage_key=raw.get("storage_key"),
+                source_event_id=event.event_id,
+                metadata=raw.get("metadata") or {},
+            )
+            self._conn.execute(
+                """
+                INSERT OR IGNORE INTO project_asset_refs (
+                    ref_id, project_id, run_id, asset_id, artifact_id, role,
+                    sha256, byte_size, mime_type, storage_key, source_event_id,
+                    metadata_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ref.ref_id,
+                    ref.project_id,
+                    ref.run_id,
+                    ref.asset_id,
+                    ref.artifact_id,
+                    ref.role,
+                    ref.sha256,
+                    ref.byte_size,
+                    ref.mime_type,
+                    ref.storage_key,
+                    ref.source_event_id,
+                    _json(ref.metadata),
+                    ref.created_at.isoformat(),
+                ),
+            )
+
     def list_events(
         self,
         project_id: str,
@@ -383,6 +425,30 @@ class ExperimentProjectStore:
                 (session_id,),
             ).fetchone()
         return self.get_project(row["project_id"]) if row else None
+
+    def append_system_event(
+        self,
+        session_id: str,
+        event_type: str,
+        *,
+        actor: str = "system",
+        payload: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> ExperimentEvent | None:
+        detail = self.project_for_session(session_id)
+        if detail is None or detail.active_run is None:
+            return None
+        return self.append_event(
+            detail.active_run.run_id,
+            ProjectEventCreate(
+                event_type=event_type,
+                actor=actor,
+                correlation_id=correlation_id,
+                idempotency_key=idempotency_key or f"{event_type}:{uuid4().hex}",
+                payload=payload or {},
+            ),
+        )
 
     def update_project(self, project_id: str, request: ProjectUpdateRequest) -> ProjectFile:
         detail = self.get_project(project_id)
@@ -549,6 +615,57 @@ class ExperimentProjectStore:
             )
         return record
 
+    def get_event(self, project_id: str, event_id: str) -> ExperimentEvent:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM experiment_events WHERE project_id = ? AND event_id = ?",
+                (project_id, event_id),
+            ).fetchone()
+        if row is None:
+            raise ExperimentProjectNotFound(f"event_not_found:{event_id}")
+        return self._event_from_row(row)
+
+    def get_run(self, project_id: str, run_id: str) -> ExperimentRun:
+        run = self._run_by_id(run_id)
+        if run.project_id != project_id:
+            raise ExperimentProjectNotFound(f"run_not_found:{run_id}")
+        return run
+
+    def get_export(self, project_id: str, export_id: str) -> ProjectExportRecord:
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM project_exports WHERE project_id = ? AND export_id = ?",
+                (project_id, export_id),
+            ).fetchone()
+        if row is None:
+            raise ExperimentProjectNotFound(f"export_not_found:{export_id}")
+        return self._export_from_row(row)
+
+    def update_export(self, record: ProjectExportRecord) -> ProjectExportRecord:
+        record.updated_at = now_utc()
+        with self._lock:
+            result = self._conn.execute(
+                """
+                UPDATE project_exports
+                SET status = ?, file_url = ?, file_path = ?,
+                    missing_asset_refs_json = ?, error = ?, updated_at = ?
+                WHERE export_id = ? AND project_id = ?
+                """,
+                (
+                    record.status,
+                    record.file_url,
+                    record.file_path,
+                    _json(record.missing_asset_refs),
+                    record.error,
+                    record.updated_at.isoformat(),
+                    record.export_id,
+                    record.project_id,
+                ),
+            )
+        if result.rowcount == 0:
+            raise ExperimentProjectNotFound(f"export_not_found:{record.export_id}")
+        return record
+
     def _run_by_id(self, run_id: str) -> ExperimentRun:
         with self._lock:
             row = self._conn.execute(
@@ -623,6 +740,20 @@ class ExperimentProjectStore:
             source_event_id=row["source_event_id"],
             metadata=_loads(row["metadata_json"], {}),
             created_at=datetime.fromisoformat(row["created_at"]),
+        )
+
+    @staticmethod
+    def _export_from_row(row: sqlite3.Row) -> ProjectExportRecord:
+        return ProjectExportRecord(
+            export_id=row["export_id"],
+            project_id=row["project_id"],
+            status=row["status"],
+            file_url=row["file_url"],
+            file_path=row["file_path"],
+            missing_asset_refs=_loads(row["missing_asset_refs_json"], []),
+            error=row["error"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
         )
 
 

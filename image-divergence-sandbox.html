@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Image Divergence Prompt Sandbox — FlowStudio</title>
+<style>
+  :root {
+    --bg: #10131a;
+    --panel: #1a2030;
+    --panel2: #222a3d;
+    --border: #33405c;
+    --accent: #6c8eff;
+    --mint: #4ade80;
+    --text: #e8eefc;
+    --muted: #8490a8;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1200px 500px at 10% -10%, rgba(108,142,255,.22), transparent 60%),
+      radial-gradient(900px 420px at 90% 0%, rgba(74,222,128,.12), transparent 55%),
+      var(--bg);
+    color: var(--text);
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 16px;
+    padding: 22px 28px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .02em; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 13px; max-width: 720px; }
+  main {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 18px;
+    padding: 18px 28px 32px;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  label { display: grid; gap: 6px; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
+  input, textarea, select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #0d111a;
+    color: var(--text);
+    padding: 10px 12px;
+    font: inherit;
+  }
+  textarea { min-height: 88px; resize: vertical; font-family: var(--mono); font-size: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
+  .chip {
+    border: 1px solid var(--border);
+    background: #121826;
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .chip.selected { border-color: var(--accent); background: rgba(108,142,255,.18); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.primary, button.ghost {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #0b1020; border-color: transparent; }
+  button.ghost { background: transparent; color: var(--text); }
+  button:disabled { opacity: .55; cursor: wait; }
+  .prompt-list { display: grid; gap: 10px; }
+  .prompt-item {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #0d111a;
+  }
+  .prompt-item strong { display: block; margin-bottom: 6px; font-size: 12px; color: var(--mint); }
+  .prompt-item pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.45;
+    color: #d5def5;
+  }
+  .status { margin-top: 10px; color: var(--muted); font-size: 12px; min-height: 18px; }
+  .status.error { color: #f87171; }
+  .status.ok { color: var(--mint); }
+  .meta { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+  .source-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .source-preview {
+    width: 96px; height: 96px; object-fit: contain;
+    background: #fff; border-radius: 10px; border: 1px solid var(--border);
+  }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .gallery figure {
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0d111a;
+  }
+  .gallery img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    background: #fff;
+  }
+  .gallery figcaption {
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Image Divergence Prompt Sandbox</h1>
+      <p>点选发散关键词 → 合成正面提示词 → 调用后端生图（默认 gpt-image-2）。有 identity 图走 edits，没有则走 generations。</p>
+    </div>
+    <div class="actions">
+      <button class="ghost" type="button" id="btn-load-demo">载入示例词</button>
+      <button class="ghost" type="button" id="btn-compose">合成提示词</button>
+      <button class="primary" type="button" id="btn-generate">生图</button>
+    </div>
+  </header>
+  <main>
+    <section class="card">
+      <h2>输入</h2>
+      <p class="meta" id="model-meta">image model: …</p>
+      <label>API Base
+        <input id="api-base" value="http://127.0.0.1:18001" />
+      </label>
+      <label>物体类型 object_type
+        <input id="object-type" value="snowman" />
+      </label>
+      <label>目标部位 / scope
+        <input id="target-part" value="body" />
+      </label>
+      <label>目标描述 goal
+        <input id="goal" value="Change the selected part while preserving identity" />
+      </label>
+      <label>Identity 源图（可选，推荐；走 /images/edits）
+        <input id="source-file" type="file" accept="image/*" />
+      </label>
+      <div class="source-row">
+        <img class="source-preview" id="source-preview" alt="source" />
+        <label>或填 /files/... 路径
+          <input id="source-ref" placeholder="/files/four_stage/gen_xxx/source.png" />
+        </label>
+      </div>
+      <label>最多生几张（1–4）
+        <input id="gen-count" type="number" min="1" max="4" value="2" />
+      </label>
+      <label>发散关键词（每行一个，或用逗号分隔）
+        <textarea id="keywords-raw" placeholder="松果编织肌理&#10;立方雪块堆叠&#10;陶瓷青花质感"></textarea>
+      </label>
+      <div class="chips" id="chip-board" aria-label="可选关键词"></div>
+      <div class="actions">
+        <button class="ghost" type="button" id="btn-select-all">全选</button>
+        <button class="ghost" type="button" id="btn-clear">清空选择</button>
+        <button class="ghost" type="button" id="btn-health">探测后端</button>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+    <section class="card">
+      <h2>合成结果 / 生图</h2>
+      <div class="prompt-list" id="prompt-list"></div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+  </main>
+<script>
+const FRAMING =
+  "Front-facing studio view of one complete object only, centered with at least 5% " +
+  "clear margin on every side; camera looks straight at the front of the object " +
+  "(not a side or three-quarter angle); pure white RGB(255,255,255) background; " +
+  "no crop, no cut-off parts, no floor, no shadow, no scene, no text, no watermark, " +
+  "and no additional objects.";
+
+const AXIS = [
+  "Change only the {part} local shape; keep every non-target part unchanged",
+  "Change only the {part} attachment and transition; keep its anchors and the rest of the object unchanged",
+  "Change only the {part} local surface treatment; do not restyle the whole object",
+  "Add detail only inside the {part}; preserve body proportions, pose, camera, and rendering style",
+];
+
+const DEMO = [
+  "松果编织肌理",
+  "立方雪块堆叠",
+  "陶瓷青花质感",
+  "玻璃糖果质感",
+  "毛线针织纹路",
+];
+
+const PHRASE = {
+  "松果编织肌理": "overlay layered wooden pinecone scale pattern on body",
+  "立方雪块堆叠": "reshape round snowballs into soft-edged cubic blocks",
+  "陶瓷青花质感": "transform snow body into glazed blue-and-white porcelain",
+  "玻璃糖果质感": "convert body to glossy red-and-white spiral candy material",
+  "毛线针织纹路": "wrap body form in chunky cable-knit wool texture",
+};
+
+const state = { keywords: [], selected: new Set(), prompts: [], sourceB64: null };
+
+function $(id) { return document.getElementById(id); }
+
+function parseKeywords(raw) {
+  return [...new Set(
+    String(raw || "")
+      .split(/[\n,，;；]+/)
+      .map((s) => s.trim())
+      .filter(Boolean),
+  )];
+}
+
+function setStatus(text, kind = "") {
+  const el = $("status");
+  el.textContent = text || "";
+  el.className = `status${kind ? ` ${kind}` : ""}`;
+}
+
+function renderChips() {
+  const board = $("chip-board");
+  board.innerHTML = "";
+  for (const label of state.keywords) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `chip${state.selected.has(label) ? " selected" : ""}`;
+    btn.textContent = label;
+    btn.onclick = () => {
+      if (state.selected.has(label)) state.selected.delete(label);
+      else state.selected.add(label);
+      renderChips();
+    };
+    board.appendChild(btn);
+  }
+}
+
+function phraseFor(label) {
+  return PHRASE[label] || `apply the visual direction "${label}" while preserving object identity`;
+}
+
+function composePrompts() {
+  const objectType = $("object-type").value.trim() || "object";
+  const part = $("target-part").value.trim() || "target part";
+  const goal = $("goal").value.trim() || "explore selected divergence";
+  const selected = [...state.selected];
+  if (!selected.length) {
+    setStatus("先点选至少一个关键词", "error");
+    return [];
+  }
+  const preserve =
+    `PRESERVE: preserve ${objectType} identity, change only ${part}, ` +
+    "preserve every non-target part, preserve body proportions, pose, camera, and rendering style";
+  const count = Math.min(4, Math.max(1, Number($("gen-count").value) || 2));
+  const prompts = [];
+  for (let i = 0; i < count; i += 1) {
+    const label = selected[i % selected.length];
+    const axis = AXIS[i % AXIS.length].replaceAll("{part}", part);
+    const prompt =
+      `${objectType}: ${goal} — ${axis}; ${preserve}; ` +
+      `USER-SELECTED DIRECTION: ${phraseFor(label)}; ${FRAMING}`;
+    prompts.push({ index: i + 1, label, prompt });
+  }
+  return prompts;
+}
+
+function renderPrompts(prompts) {
+  state.prompts = prompts;
+  const list = $("prompt-list");
+  list.innerHTML = "";
+  if (!prompts.length) {
+    list.innerHTML = `<div class="prompt-item"><pre>暂无提示词。点选关键词后点「合成提示词」或直接「生图」。</pre></div>`;
+    return;
+  }
+  for (const item of prompts) {
+    const el = document.createElement("div");
+    el.className = "prompt-item";
+    el.innerHTML = `<strong>#${item.index} · ${item.label}</strong><pre></pre>`;
+    el.querySelector("pre").textContent = item.prompt;
+    list.appendChild(el);
+  }
+  setStatus(`已合成 ${prompts.length} 条正面生图提示词`, "ok");
+}
+
+function renderGallery(artifacts, base) {
+  const gallery = $("gallery");
+  gallery.innerHTML = "";
+  for (const item of artifacts || []) {
+    const fig = document.createElement("figure");
+    const img = document.createElement("img");
+    img.src = `${base}${item.url}`;
+    img.alt = item.label || `candidate ${item.index}`;
+    img.loading = "lazy";
+    const cap = document.createElement("figcaption");
+    cap.textContent = `#${item.index} · ${item.label || ""}`;
+    fig.append(img, cap);
+    gallery.appendChild(fig);
+  }
+}
+
+$("btn-load-demo").onclick = () => {
+  $("keywords-raw").value = DEMO.join("\n");
+  state.keywords = [...DEMO];
+  state.selected = new Set(DEMO.slice(0, 3));
+  renderChips();
+  renderPrompts(composePrompts());
+};
+
+$("keywords-raw").addEventListener("change", () => {
+  state.keywords = parseKeywords($("keywords-raw").value);
+  state.selected = new Set([...state.selected].filter((k) => state.keywords.includes(k)));
+  renderChips();
+});
+$("keywords-raw").addEventListener("blur", () => {
+  state.keywords = parseKeywords($("keywords-raw").value);
+  renderChips();
+});
+
+$("source-file").addEventListener("change", async () => {
+  const file = $("source-file").files?.[0];
+  if (!file) {
+    state.sourceB64 = null;
+    $("source-preview").removeAttribute("src");
+    return;
+  }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+  state.sourceB64 = dataUrl;
+  $("source-preview").src = dataUrl;
+});
+
+$("btn-select-all").onclick = () => {
+  state.selected = new Set(state.keywords);
+  renderChips();
+};
+$("btn-clear").onclick = () => {
+  state.selected.clear();
+  renderChips();
+};
+$("btn-compose").onclick = () => renderPrompts(composePrompts());
+
+$("btn-health").onclick = async () => {
+  const base = $("api-base").value.replace(/\/$/, "");
+  setStatus("探测中…");
+  try {
+    const res = await fetch(`${base}/api/v1/sandbox/defaults`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    $("model-meta").textContent =
+      `image model: ${data.image_model || "?"} · configured=${data.image_configured}`;
+    setStatus(`后端可达：${base} · image=${data.image_model}`, "ok");
+  } catch (error) {
+    setStatus(`后端不可达：${error}`, "error");
+  }
+};
+
+$("btn-generate").onclick = async () => {
+  const prompts = state.prompts.length ? state.prompts : composePrompts();
+  if (!prompts.length) return;
+  renderPrompts(prompts);
+  const base = $("api-base").value.replace(/\/$/, "");
+  const btn = $("btn-generate");
+  btn.disabled = true;
+  setStatus("生图中（gpt-image-2，可能要 30–90s/张）…");
+  try {
+    const body = {
+      prompts: prompts.map((p) => p.prompt),
+      labels: prompts.map((p) => p.label),
+    };
+    if (state.sourceB64) body.source_image_b64 = state.sourceB64;
+    const ref = $("source-ref").value.trim();
+    if (ref) body.source_image_ref = ref;
+    const res = await fetch(`${base}/api/v1/sandbox/generate-images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data));
+    }
+    renderGallery(data.artifacts, base);
+    setStatus(
+      `完成 ${data.artifacts?.length || 0} 张 · model=${data.model} · mode=${data.mode} · ${data.elapsed_sec}s`,
+      "ok",
+    );
+  } catch (error) {
+    setStatus(`生图失败：${error}`, "error");
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+// boot
+$("keywords-raw").value = DEMO.join("\n");
+state.keywords = [...DEMO];
+state.selected = new Set(DEMO.slice(0, 2));
+renderChips();
+renderPrompts(composePrompts());
+$("btn-health").click();
+</script>
+</body>
+</html>

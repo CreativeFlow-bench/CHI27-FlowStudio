@@ -1,0 +1,9 @@
+{
+  "results": [
+    {
+      "scenario": "narrative_frog",
+      "final_stage": "failed",
+      "error": "revision planning timed out: intent_4de95a1d8b"
+    }
+  ]
+}

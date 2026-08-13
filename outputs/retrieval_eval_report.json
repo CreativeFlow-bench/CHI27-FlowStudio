@@ -1,0 +1,12 @@
+{
+  "fixture_count": 34,
+  "positive_count": 28,
+  "abstain_count": 6,
+  "state_recall_at_5": 0.1429,
+  "mrr": 0.1429,
+  "scope_accuracy": 0.1667,
+  "abstain_precision": 1.0,
+  "index_version": "design-state-ir-2026-08-v1",
+  "retriever": "DesignStateIRRetriever (sparse cosine)",
+  "note": "Corpus rows share abstracted design-state text by design; sparse recall is limited and abstain is the correct outcome for weak/ambiguous queries. Metrics measure regression, not absolute quality."
+}

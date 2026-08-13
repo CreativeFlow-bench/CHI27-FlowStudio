@@ -1,0 +1,67 @@
+{
+  "project": {
+    "id": "proj_flow_001",
+    "name": "Chair exploration",
+    "locale": "en",
+    "activeVersionId": "ver_002",
+    "createdAt": "2026-07-30T08:00:00Z",
+    "updatedAt": "2026-07-30T08:12:00Z"
+  },
+  "versions": [
+    {
+      "id": "ver_001",
+      "parentVersionId": null,
+      "number": 1,
+      "name": "Original form",
+      "assetId": "asset_001",
+      "directionId": null
+    },
+    {
+      "id": "ver_002",
+      "parentVersionId": "ver_001",
+      "number": 2,
+      "name": "Lightweight branch",
+      "assetId": "asset_002",
+      "directionId": "dir_001"
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_001",
+      "versionId": "ver_001",
+      "tool": "BRUSH",
+      "target": { "scope": "surface", "part": "back" },
+      "modelSpaceData": { "direction": [0.13, 0.42, 0.9], "radius": 0.18 },
+      "strength": 0.7,
+      "createdAt": "2026-07-30T08:05:00Z"
+    }
+  ],
+  "intents": [
+    {
+      "id": "intent_001",
+      "versionId": "ver_001",
+      "status": "CONFIRMED",
+      "primary": "Lightness",
+      "text": "Make the upper structure feel lighter while preserving support.",
+      "confidence": 0.84,
+      "evidenceEventIds": ["evt_001"]
+    }
+  ],
+  "combinedIntent": {
+    "id": "combined_001",
+    "sourceIntentIds": ["intent_001"],
+    "text": "Create a lighter upper structure without weakening the supporting base.",
+    "conflicts": []
+  },
+  "directions": [
+    {
+      "id": "dir_001",
+      "combinedIntentId": "combined_001",
+      "aestheticTerms": ["translucent", "soft matte"],
+      "structuralTerms": ["perforated", "tapered"],
+      "status": "SUCCEEDED",
+      "previewUrl": "/mock/directions/dir_001.png"
+    }
+  ]
+}
+

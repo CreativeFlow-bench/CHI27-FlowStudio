@@ -92,13 +92,19 @@ def test_semantic_prompt_preserves_authoritative_material_region_reference() -> 
 
 
 def _valid_semantic_response() -> dict[str, object]:
+    groups = [
+        *(["semantic_transfer"] * 5),
+        *(["shape"] * 5),
+        *(["connection"] * 5),
+        *(["surface"] * 5),
+    ]
     return {
         "candidates": [
             {
                 "candidate_id": f"kw_{index}",
-                "display_label_zh": "熔岩流线",
-                "label_en": "lava flow lines",
-                "group": "semantic_transfer",
+                "display_label_zh": f"熔岩流线{index}",
+                "label_en": f"lava flow lines {index}",
+                "group": groups[index - 1],
                 "target_ref": {"asset_id": "asset_1", "type": "part", "id": "shade"},
                 "operation": "deform",
                 "semantic_anchor": "cooling lava",
@@ -113,7 +119,7 @@ def _valid_semantic_response() -> dict[str, object]:
                 },
                 "provenance": {"generator": "untrusted", "mode": "model_only"},
             }
-            for index in range(1, 10)
+            for index in range(1, 21)
         ]
     }
 
@@ -131,7 +137,7 @@ def test_local_vlm_uses_same_response_schema(monkeypatch: pytest.MonkeyPatch) ->
     assert result[0].provenance.generator == "qwen2.5-vl"
 
 
-def test_local_vlm_payload_requests_nine_concise_candidates() -> None:
+def test_local_vlm_payload_requests_balanced_per_group_candidates() -> None:
     generator = LocalVlmSemanticGenerator(
         endpoint_url="http://127.0.0.1:9999/v1/chat/completions", model="qwen2.5-vl"
     )
@@ -139,9 +145,44 @@ def test_local_vlm_payload_requests_nine_concise_candidates() -> None:
     payload = generator.build_payload(_request(), KnowledgeEvidence())
     content = json.loads(payload["messages"][1]["content"])
 
-    assert content["response_schema"]["candidate_count"] == 9
-    assert content["request"]["params"]["candidate_count"] == 9
-    assert "exactly 9" in content["response_schema"]["requirements"][0]
+    assert content["response_schema"]["candidate_count"] == 20
+    assert content["request"]["params"]["candidate_count"] == 20
+    assert content["response_schema"]["group_quotas"] == {
+        "shape": 5,
+        "connection": 5,
+        "surface": 5,
+        "semantic_transfer": 5,
+    }
+    assert "exactly 20" in content["response_schema"]["requirements"][0]
+
+
+def test_local_vlm_repairs_a_response_that_underfills_group_quotas(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Checking only total count would allow one semantic group to remain empty."""
+    generator = LocalVlmSemanticGenerator(
+        endpoint_url="http://127.0.0.1:9999/v1/chat/completions", model="qwen2.5-vl"
+    )
+    invalid = _valid_semantic_response()
+    for candidate in invalid["candidates"][-5:]:  # type: ignore[index]
+        candidate["group"] = "shape"
+    payloads: list[dict[str, object]] = []
+
+    def reply(payload: dict[str, object]) -> object:
+        payloads.append(payload)
+        return invalid
+
+    monkeypatch.setattr(generator, "_post_json", reply)
+
+    with pytest.raises(SemanticModelOutputError, match="after one repair"):
+        generator.generate_sync(_request(), KnowledgeEvidence())
+
+    assert len(payloads) == 2
+    repair = json.loads(payloads[1]["messages"][1]["content"])  # type: ignore[index]
+    assert any(
+        error["loc"] == ["candidates", "surface"]
+        for error in repair["previous_attempt_validation_errors"]
+    )
 
 
 def test_extract_json_accepts_complete_markdown_fence() -> None:
@@ -162,6 +203,7 @@ def test_local_vlm_normalizes_only_known_group_aliases(
     )
     response = _valid_semantic_response()
     response["candidates"][0]["group"] = "material"  # type: ignore[index]
+    response["candidates"][15]["group"] = "semantic_transfer"  # type: ignore[index]
     monkeypatch.setattr(generator, "_post_json", lambda payload: response)
 
     result = generator.generate_sync(_request(), KnowledgeEvidence())
@@ -316,7 +358,7 @@ def test_semantic_client_defaults_are_bounded() -> None:
     assert settings.semantic_divergence_enabled is True
     assert settings.semantic_divergence_timeout_sec == 25
     assert settings.semantic_divergence_vlm_timeout_sec == 35
-    assert (settings.semantic_divergence_min_candidates, settings.semantic_divergence_max_candidates) == (9, 15)
+    assert (settings.semantic_divergence_min_candidates, settings.semantic_divergence_max_candidates) == (9, 32)
 
 
 @pytest.fixture
@@ -333,7 +375,7 @@ def request_factory():
             "user_semantic_intent": "make the shade surface warmer",
             "behavior_summary": "The user selected the shade.",
             "behavior_window_id": "window_1",
-            "params": {"temperature": 0.4, "strictness": 0.6},
+            "params": {"temperature": 0.4, "strictness": 0.6, "candidate_count": 9},
         }
         target_id = overrides.pop("target_id", None)
         if target_id is not None:
@@ -454,6 +496,39 @@ def test_validator_applies_strictness_thresholds(validator, request_factory, can
     assert report.rejection_counts["identity_below_threshold"] == 1
 
 
+def test_validator_requires_requested_quota_in_every_group(
+    validator, request_factory, candidate_factory
+) -> None:
+    """Accepting a short group would surface fewer than the requested five choices."""
+    request = request_factory(
+        params={"temperature": 0.4, "strictness": 0.6, "per_group_count": 5}
+    )
+    prefixes = {
+        "shape": "形态",
+        "connection": "连接",
+        "surface": "表面",
+        "semantic_transfer": "迁移",
+    }
+    candidates = [
+        candidate_factory(
+            candidate_id=f"{group}_{index}",
+            label=f"{prefixes[group]}{index}",
+            label_en=f"{group} option {index}",
+            group=group,
+            attribute=f"{group}_{index}",
+            change=f"change_{group}_{index}",
+        )
+        for group in prefixes
+        for index in range(1, 6)
+    ]
+    candidates.pop()
+
+    report = validator.validate(request, candidates)
+
+    assert report.needs_fallback is True
+    assert report.rejection_counts["minimum_semantic_transfer"] == 1
+
+
 def test_part_scope_rejects_whole_object_operation(
     validator, request_factory, candidate_factory
 ) -> None:
@@ -564,7 +639,9 @@ def test_validator_marks_small_collections_for_fallback(
 
 def test_hot_requests_require_two_semantic_transfers(validator, request_factory, candidate_factory) -> None:
     """Ignoring temperature would allow high-diversity batches with too few transfers."""
-    request = request_factory(params={"temperature": 0.7, "strictness": 0.6})
+    request = request_factory(
+        params={"temperature": 0.7, "strictness": 0.6, "candidate_count": 9}
+    )
     candidates = [
         candidate_factory(
             candidate_id=f"kw_{index}",
@@ -1496,6 +1573,7 @@ def test_request_key_matches_the_canonical_material(
         "decision_id": "decision_1",
         "temperature": 0.4,
         "strictness": 0.6,
+        "per_group_count": None,
         "candidate_count": 9,
         "inherited_keywords": ["existing"],
     }

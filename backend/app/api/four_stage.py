@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from app.models import (
     FourStageRun,
@@ -304,6 +308,62 @@ def create_four_stage_router(
             return await orchestrator.refresh_semantic_divergence(run_id, request)
         except FourStageError as exc:
             raise _http_error(exc) from exc
+
+    @router.post("/api/v1/four-stage/runs/{run_id}/semantic-divergence/stream")
+    async def refresh_semantic_divergence_stream(
+        run_id: str,
+        request: SemanticDivergenceParams,
+    ) -> StreamingResponse:
+        """SSE stream of semantic-divergence progress events.
+
+        Each ``event: phase`` line is emitted as work progresses. The final
+        ``event: done`` carries the full ``SemanticDivergenceResponse``.
+        """
+        queue: asyncio.Queue[tuple[str, Any] | None] = asyncio.Queue()
+
+        async def on_progress(event: dict[str, Any]) -> None:
+            await queue.put(("phase", event))
+
+        async def runner() -> None:
+            try:
+                response = await orchestrator.refresh_semantic_divergence_stream(
+                    run_id, request, on_progress=on_progress
+                )
+                tail = {
+                    "phase": "final",
+                    "request_key": response.request_key,
+                    "validation_counts": response.validation_counts,
+                    "fallback_used": response.fallback_used,
+                    "fallback_reason": response.fallback_reason,
+                    "latency_ms": response.latency_ms,
+                }
+                await queue.put(("final", tail))
+                await queue.put(("done", json.loads(response.model_dump_json())))
+            except FourStageError as exc:
+                await queue.put(("error", {"phase": "error", "detail": str(exc)}))
+            finally:
+                await queue.put(None)
+
+        asyncio.create_task(runner())
+
+        async def _generator() -> Any:
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                event, data = item
+                payload = json.dumps(data, ensure_ascii=False)
+                yield f"event: {event}\ndata: {payload}\n\n"
+
+        return StreamingResponse(
+            _generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            },
+        )
 
     @router.put("/api/v1/four-stage/runs/{run_id}/divergence-selection", response_model=FourStageRun)
     async def save_divergence_selection(

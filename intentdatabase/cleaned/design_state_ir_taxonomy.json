@@ -1,0 +1,380 @@
+{
+  "schema_version": "design_state_ir.v1",
+  "generated_at": "2026-08-02T08:40:48.602726+00:00",
+  "raw_row_count": 470,
+  "case_count": 207,
+  "design_states": [
+    {
+      "code": "coarse_forming",
+      "count": 69
+    },
+    {
+      "code": "local_refinement",
+      "count": 66
+    },
+    {
+      "code": "relationship_adjustment",
+      "count": 27
+    },
+    {
+      "code": "early_exploration",
+      "count": 23
+    },
+    {
+      "code": "evaluation",
+      "count": 13
+    },
+    {
+      "code": "material_refinement",
+      "count": 9
+    }
+  ],
+  "creativeflow_routes": [
+    {
+      "code": "generate_local_variants",
+      "count": 93
+    },
+    {
+      "code": "generate_contour_variants",
+      "count": 65
+    },
+    {
+      "code": "generate_breakthrough_reference_variants",
+      "count": 19
+    },
+    {
+      "code": "no_intervention",
+      "count": 19
+    },
+    {
+      "code": "generate_material_variants",
+      "count": 11
+    }
+  ],
+  "intuitive_signals": [
+    {
+      "code": "select_part",
+      "count": 117,
+      "label": "select / focus part",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "local_zoom",
+      "count": 117,
+      "label": "local zoom-in",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "form_change",
+      "count": 110,
+      "label": "form / silhouette change",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "multi_view_check",
+      "count": 108,
+      "label": "multi-view inspection",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "match_reference",
+      "count": 102,
+      "label": "matching a reference",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "global_orbit",
+      "count": 100,
+      "label": "global orbit",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "repeated_micro_edit",
+      "count": 95,
+      "label": "repeated micro-adjustment",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "zoom_out",
+      "count": 92,
+      "label": "zoom out for whole object",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "small_brush",
+      "count": 79,
+      "label": "small brush / mask region",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "pause_hover",
+      "count": 71,
+      "label": "pause / hover",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "rapid_tool_switch",
+      "count": 65,
+      "label": "rapid tool switching",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "select_object",
+      "count": 62,
+      "label": "select whole object",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "surface_change",
+      "count": 56,
+      "label": "surface / material change",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "long_compare",
+      "count": 53,
+      "label": "long comparison",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "large_brush",
+      "count": 34,
+      "label": "large brush / broad mask",
+      "group": "spatial_viewport"
+    },
+    {
+      "code": "preserve_structure",
+      "count": 28,
+      "label": "preserve existing structure",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "undo_redo_loop",
+      "count": 17,
+      "label": "undo / redo loop",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "seek_alternative",
+      "count": 13,
+      "label": "seeking alternatives",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "accept_reject",
+      "count": 10,
+      "label": "accept / reject candidate",
+      "group": "temporal_behavior"
+    },
+    {
+      "code": "concept_change",
+      "count": 7,
+      "label": "conceptual direction change",
+      "group": "semantic_cognitive"
+    },
+    {
+      "code": "stuck_uncertain",
+      "count": 5,
+      "label": "hesitation / possible fixation",
+      "group": "semantic_cognitive"
+    }
+  ],
+  "frontend_signal_mapping": {
+    "schema_version": "flowstudio_frontend_signal_mapping.v1",
+    "signals": {
+      "accept_reject": {
+        "label": "accept / reject candidate",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "recent_accept_count",
+          "recent_reject_count"
+        ]
+      },
+      "concept_change": {
+        "label": "conceptual direction change",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "semantic_distance",
+          "intent_text"
+        ]
+      },
+      "form_change": {
+        "label": "form / silhouette change",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "intent_scope=contour",
+          "drawing_content",
+          "drag_count"
+        ]
+      },
+      "global_orbit": {
+        "label": "global orbit",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "viewport_orbit_count"
+        ]
+      },
+      "large_brush": {
+        "label": "large brush / broad mask",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "brush_count",
+          "mask_coverage"
+        ]
+      },
+      "local_zoom": {
+        "label": "local zoom-in",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "local_zoom_count",
+          "viewport_zoom_count"
+        ]
+      },
+      "long_compare": {
+        "label": "long comparison",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "compare_dwell_ms",
+          "dwell_ms"
+        ]
+      },
+      "match_reference": {
+        "label": "matching a reference",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "reference_match_count",
+          "ref_image_id",
+          "ref_model_id"
+        ]
+      },
+      "multi_view_check": {
+        "label": "multi-view inspection",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "viewport_orbit_count",
+          "viewport_zoom_count"
+        ]
+      },
+      "pause_hover": {
+        "label": "pause / hover",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "hover_count",
+          "dwell_ms"
+        ]
+      },
+      "preserve_structure": {
+        "label": "preserve existing structure",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "protected_region_count",
+          "boundary_lock"
+        ]
+      },
+      "rapid_tool_switch": {
+        "label": "rapid tool switching",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "tool_switch_count"
+        ]
+      },
+      "repeated_micro_edit": {
+        "label": "repeated micro-adjustment",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "same_event_type_recent_count",
+          "brush_count",
+          "drag_count"
+        ]
+      },
+      "seek_alternative": {
+        "label": "seeking alternatives",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "new_case_attempt_rate",
+          "recent_reject_count"
+        ]
+      },
+      "select_object": {
+        "label": "select whole object",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "selection_type=object",
+          "active_object_id"
+        ]
+      },
+      "select_part": {
+        "label": "select / focus part",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "selection_type=part",
+          "part_id",
+          "hovered_part_id"
+        ]
+      },
+      "small_brush": {
+        "label": "small brush / mask region",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "brush_count",
+          "mask_coverage"
+        ]
+      },
+      "stuck_uncertain": {
+        "label": "hesitation / possible fixation",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "dwell_ms",
+          "low_activity_ms",
+          "new_case_attempt_rate"
+        ]
+      },
+      "surface_change": {
+        "label": "surface / material change",
+        "group": "semantic_cognitive",
+        "frontend_features": [
+          "intent_scope=material",
+          "material_token_count"
+        ]
+      },
+      "undo_redo_loop": {
+        "label": "undo / redo loop",
+        "group": "temporal_behavior",
+        "frontend_features": [
+          "recent_undo_count"
+        ]
+      },
+      "zoom_out": {
+        "label": "zoom out for whole object",
+        "group": "spatial_viewport",
+        "frontend_features": [
+          "viewport_zoom_count"
+        ]
+      }
+    },
+    "derived_scope_rules": {
+      "contour": [
+        "form_change",
+        "select_object",
+        "global_orbit",
+        "multi_view_check",
+        "zoom_out"
+      ],
+      "part": [
+        "select_part",
+        "local_zoom",
+        "small_brush",
+        "repeated_micro_edit"
+      ],
+      "material": [
+        "surface_change",
+        "match_reference"
+      ]
+    },
+    "intervention_timing_rules": {
+      "observe_only": "Do not show an intent bubble.",
+      "ask_scope": "Ask only whether the user is changing contour, part, or material.",
+      "offer_divergence": "Show More Creative directions after typed intent or confirmed scope."
+    }
+  }
+}

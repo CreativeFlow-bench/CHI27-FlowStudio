@@ -1,0 +1,102 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createServer } from "vite";
+
+test("AI Behavior keeps the approved insight hierarchy around More Creative", async () => {
+  const originalWindow = globalThis.window;
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { location: { protocol: "http:", hostname: "localhost" } },
+  });
+  const server = await createServer({
+    configFile: false,
+    root: fileURLToPath(new URL("..", import.meta.url)),
+    optimizeDeps: { noDiscovery: true },
+    server: { middlewareMode: true },
+  });
+
+  try {
+    const { AIBehaviorPanel } = await server.ssrLoadModule(
+      "/src/components/panels/AIBehaviorPanel.tsx",
+    );
+    const groups = ["shape", "connection", "surface", "semantic_transfer"];
+    const divergenceKeywords = groups.flatMap((group, groupIndex) =>
+      Array.from({ length: 5 }, (_, index) => ({
+        token_id: `${group}-${index}`,
+        candidate_id: `${group}-${index}`,
+        label: `Choice ${groupIndex + 1}.${index + 1}`,
+        group_key: group,
+      })),
+    );
+    const html = renderToStaticMarkup(createElement(AIBehaviorPanel, {
+      presentation: { narrative: "Ready", details: null, creativeState: "ready" },
+      projectNotice: null,
+      onDismissNotice: () => undefined,
+      intentBubble: { scope: "Snowman", phase: "confirmed" },
+      divergenceKeywords,
+      selectedPromptTokens: [divergenceKeywords[0]],
+      interpretation: null,
+      session: {},
+      asset: {},
+      generationBusy: false,
+      solutionSpaceGenerating: false,
+      onTogglePromptToken: () => undefined,
+      onGenerate: () => undefined,
+      divergenceTemperature: 0.5,
+      onDivergenceTemperatureChange: () => undefined,
+      divergencePerGroupCount: 5,
+      onDivergencePerGroupCountChange: () => undefined,
+      onDivergenceParametersCommit: () => undefined,
+      semanticDivergence: null,
+      semanticDivergenceLoading: false,
+      semanticDivergenceError: null,
+      selectionPersistenceError: null,
+      inheritedKeywords: [],
+    }));
+
+    assert.match(html, /More Creative\?/);
+    assert.match(html, />AI BEHAVIOR</);
+    assert.match(html, />CURRENT PHENOMENON</);
+    assert.match(html, />NEXT ACTION</);
+    assert.match(html, />MODEL DETAILS</);
+    assert.match(html, />DIVERGENCE</);
+    assert.match(html, />CONTENT</);
+    assert.match(html, />SHAPE</);
+    assert.match(html, />CONNECTION</);
+    assert.match(html, />SURFACE</);
+    assert.match(html, />TRANSFER</);
+    assert.equal((html.match(/>Generate<\/button>/g) ?? []).length, 1);
+    assert.match(html, /class="more-creative-card"/);
+
+    const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
+    const layoutCss = await readFile(new URL("../src/workspaceLayout.css", import.meta.url), "utf8");
+    assert.match(
+      layoutCss,
+      /--ai-behavior-width:\s*clamp\(320px,\s*25vw,\s*380px\)/,
+    );
+    assert.match(
+      css,
+      /\.ai-behavior-header\s*\{[^}]*min-height:\s*68px[^}]*padding:\s*18px 20px/s,
+    );
+    assert.match(
+      css,
+      /\.ai-insight-card\s*\{[^}]*padding:\s*14px 16px[^}]*border-radius:\s*16px/s,
+    );
+    assert.match(
+      css,
+      /\.more-creative-card \.more-creative-title\s*\{[^}]*font-size:\s*23px/s,
+    );
+  } finally {
+    await server.close();
+    if (originalWindow === undefined) {
+      Reflect.deleteProperty(globalThis, "window");
+    } else {
+      Object.defineProperty(globalThis, "window", { configurable: true, value: originalWindow });
+    }
+  }
+});

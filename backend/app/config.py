@@ -3,16 +3,25 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# backend/app/config.py -> repo root (…/flowstudio_app)
+# backend/app/config.py -> repo root
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_ENV_FILE = _REPO_ROOT / ".env"
+
+
+def _env_files() -> tuple[str, ...]:
+    """General `.env` first, then isolated model credentials (later wins)."""
+    ordered = (
+        _REPO_ROOT / ".env",
+        _REPO_ROOT / ".env.model_api",
+    )
+    existing = tuple(str(path) for path in ordered if path.exists())
+    return existing or (".env",)
 
 
 class Settings(BaseSettings):
-    """Runtime settings. Prefers process env, then absolute repo-root `.env`."""
+    """Runtime settings. Prefers process env, then repo `.env` / `.env.model_api`."""
 
     model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE) if _ENV_FILE.exists() else ".env",
+        env_file=_env_files(),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -41,7 +50,7 @@ class Settings(BaseSettings):
     semantic_divergence_timeout_sec: float = 25
     semantic_divergence_vlm_timeout_sec: float = 35
     semantic_divergence_min_candidates: int = 9
-    semantic_divergence_max_candidates: int = 15
+    semantic_divergence_max_candidates: int = 32
     system_services_auto_bootstrap: bool = False
     system_services_enabled: bool = True
     gemini_rerepresentation_enabled: bool = False
@@ -56,6 +65,8 @@ class Settings(BaseSettings):
     model_api_key: str | None = None
     model_fast_text: str = "gemini-3.6-flash"
     model_reasoning_text: str = "gpt-5.5"
+    # Semantic divergence spare model (quality retry after fast primary).
+    model_semantic_fallback: str = "gemini-3.1-pro"
     model_image: str = "gpt-image-2"
     model_api_timeout_sec: float = 60
     model_api_max_retries: int = 2
