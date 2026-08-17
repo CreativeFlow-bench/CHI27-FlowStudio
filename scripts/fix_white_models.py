@@ -45,14 +45,21 @@ for asset in src_manifest.get("assets", []):
         category = asset["category"]
         name = asset["name"]
         
-        dest_manifest["assets"].append({
+        asset_info = {
             "benchmark_id": f"white:{category}:{name.replace(' ', '-').lower()}",
             "label": name,
             "category": category,
             "object_type": name.lower(),
             "obj_url": f"/files/white-models/{rel_path}",
             "file_size_bytes": asset.get("file_size_bytes", 0)
-        })
+        }
+        
+        # Check if thumbnail exists
+        jpg_path = dest_dir / rel_path.replace(".obj", ".jpg")
+        if jpg_path.exists():
+            asset_info["thumbnail_url"] = asset_info["obj_url"].replace(".obj", ".jpg")
+            
+        dest_manifest["assets"].append(asset_info)
 
 (dest_dir / "manifest.json").write_text(json.dumps(dest_manifest, indent=2))
 print("Fixed white models manifest and copied models into backend storage.")
