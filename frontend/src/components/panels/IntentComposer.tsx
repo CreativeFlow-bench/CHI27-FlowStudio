@@ -129,30 +129,30 @@ export function IntentComposer({
           <button
             type="button"
             className={`icon-tool ${hoverMode ? "is-active" : ""}`}
-            aria-label={hoverMode ? "Commit hover mode" : "Hover mode"}
-            title={hoverMode ? "Commit hover focus / toggle off" : "Hover mode"}
+            aria-label={hoverMode ? "Hover mode" : "Hover mode"}
+            title={hoverMode ? "Hover Mode (Active)" : "Hover Mode"}
             disabled={!asset}
             onClick={onToggleHoverMode}
           >
             <MousePointer2 size={17} />
           </button>
-          <button type="button" aria-label="Brush sculpt" className={`icon-tool ${sculptTool === "brush" ? "is-active" : ""}`} title="Brush (web sculpt)" disabled={!canShowBrush || generationBusy} onClick={() => onToggleSculptTool("brush")}>
+          <button type="button" aria-label="Brush sculpt" className={`icon-tool ${sculptTool === "brush" ? "is-active" : ""}`} title="Brush Sculpt" disabled={!canShowBrush || generationBusy} onClick={() => onToggleSculptTool("brush")}>
             <Paintbrush size={17} />
           </button>
           <button type="button" aria-label="Annotation" className={`icon-tool ${annotationMode ? "is-active" : ""}`} title="Annotation" disabled={!asset} onClick={onToggleAnnotationMode}>
             <Pencil size={17} />
           </button>
-          <button type="button" aria-label="Drag sculpt" className={`icon-tool tool-asset ${sculptTool === "drag" ? "is-active" : ""}`} title="Drag (grab sculpt)" disabled={!canShowDrag || generationBusy} onClick={() => onToggleSculptTool("drag")}>
+          <button type="button" aria-label="Drag sculpt" className={`icon-tool tool-asset ${sculptTool === "drag" ? "is-active" : ""}`} title="Drag/Deform" disabled={!canShowDrag || generationBusy} onClick={() => onToggleSculptTool("drag")}>
             <img src={`${import.meta.env.BASE_URL}icons/drag.svg`} alt="" width={34} height={38} draggable={false} />
           </button>
-          <button type="button" aria-label="Smooth sculpt" className={`icon-tool tool-asset ${sculptTool === "smooth" ? "is-active" : ""}`} title="Smooth (web sculpt)" disabled={!canShowSculpt} onClick={() => onToggleSculptTool("smooth")}>
+          <button type="button" aria-label="Smooth sculpt" className={`icon-tool tool-asset ${sculptTool === "smooth" ? "is-active" : ""}`} title="Smooth Sculpt" disabled={!canShowSculpt} onClick={() => onToggleSculptTool("smooth")}>
             <img src={`${import.meta.env.BASE_URL}icons/smooth.svg`} alt="" width={34} height={38} draggable={false} />
           </button>
           <button
             type="button"
             className="icon-tool tool-pink"
             aria-label="Add primitive"
-            title="Add primitive"
+            title="Add Primitive"
             disabled={!asset && !canvasPrimitive}
             onClick={onToggleAddMenu}
           >
@@ -162,7 +162,7 @@ export function IntentComposer({
             type="button"
             className={`icon-tool tool-asset${divergenceBusy ? " is-active" : ""}`}
             aria-label="Keyword divergence"
-            title={divergenceBusy ? "关键词发散中…" : "关键词发散（无需 Gate / 观测）"}
+            title={divergenceBusy ? "Diverging..." : "Keyword Divergence"}
             disabled={!canTriggerDivergence || divergenceBusy || generationBusy}
             onClick={() => onTriggerDivergence?.()}
           >
