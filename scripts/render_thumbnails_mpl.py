@@ -30,25 +30,54 @@ def render_obj_mpl(obj_path, out_path):
         fig = plt.figure(figsize=(2.56, 2.56), dpi=100)
         ax = fig.add_subplot(111, projection='3d')
         
-        # Plot vertices (simplest rendering without taking too long)
-        # For a better look, we can plot the faces
+        import numpy as np
+        
+        # Center the mesh
+        center = mesh.centroid
+        mesh.apply_translation(-center)
+        
+        # Scale to fit nicely
+        extents = mesh.extents
+        max_extent = max(extents)
+        mesh.apply_scale(2.0 / max_extent)
+        
         vertices = mesh.vertices
         faces = mesh.faces
         
-        # Subsample faces if too large to render fast
-        if len(faces) > 5000:
-            import numpy as np
-            indices = np.random.choice(len(faces), 5000, replace=False)
-            faces = faces[indices]
-            
-        mesh_3d = Poly3DCollection(vertices[faces], alpha=0.8, facecolor='#c0c0c8', edgecolor='none')
+        # Don't subsample, render all faces but with proper shading
+        mesh_3d = Poly3DCollection(
+            vertices[faces], 
+            alpha=1.0,
+            facecolor='#8A95A5',  # A nice solid matte blue-grey
+            edgecolor='none',
+            linewidths=0,
+            antialiaseds=False
+        )
         ax.add_collection3d(mesh_3d)
         
-        # Auto scale
-        scale = mesh.vertices.flatten()
-        ax.auto_scale_xyz(scale, scale, scale)
+        # Add basic lighting/shading
+        # We compute face normals for flat shading
+        normals = mesh.face_normals
+        # Simple directional light from top-front-right
+        light_dir = np.array([1.0, -1.0, 1.0])
+        light_dir = light_dir / np.linalg.norm(light_dir)
         
-        ax.view_init(elev=20, azim=45)
+        # Calculate dot product of normals with light direction
+        intensity = np.dot(normals, light_dir)
+        # Normalize to [0.2, 1.0] to avoid pure black shadows
+        intensity = np.clip((intensity + 1.0) / 2.0, 0.2, 1.0)
+        
+        # Apply intensity to base color
+        base_color = np.array([138/255, 149/255, 165/255])
+        face_colors = np.outer(intensity, base_color)
+        mesh_3d.set_facecolor(face_colors)
+        
+        # Set fixed axes limits for consistent sizing
+        ax.set_xlim([-1.2, 1.2])
+        ax.set_ylim([-1.2, 1.2])
+        ax.set_zlim([-1.2, 1.2])
+        
+        ax.view_init(elev=30, azim=-45)
         ax.axis('off')
         
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
