@@ -3,17 +3,21 @@ import os
 import shutil
 from pathlib import Path
 
-root = Path("/Users/bytedance/Desktop/creative flow/CHI27-FlowStudio")
+root = Path(__file__).resolve().parent.parent
 src_dir = root / "whiteModel"
 dest_dir = root / "backend/storage/files/white-models"
 
 dest_dir.mkdir(parents=True, exist_ok=True)
 
-# Link extracted models
+# Copy extracted models (FastAPI StaticFiles rejects symlinks resolving outside its root)
 extracted_src = src_dir / "extracted"
 extracted_dest = dest_dir / "extracted"
+
+if extracted_dest.is_symlink():
+    extracted_dest.unlink()
+
 if not extracted_dest.exists():
-    os.symlink(extracted_src, extracted_dest)
+    shutil.copytree(extracted_src, extracted_dest)
 
 # Parse the source manifest
 src_manifest = json.loads((src_dir / "WHITE_MODEL_CONTENT_MANIFEST.json").read_text())
@@ -51,4 +55,4 @@ for asset in src_manifest.get("assets", []):
         })
 
 (dest_dir / "manifest.json").write_text(json.dumps(dest_manifest, indent=2))
-print("Fixed white models manifest and created symlinks.")
+print("Fixed white models manifest and copied models into backend storage.")
