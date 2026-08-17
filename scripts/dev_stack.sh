@@ -49,6 +49,12 @@ API_PID_FILE="$ROOT_DIR/.flowstudio-run/backend.pid"
 WEB_PID_FILE="$ROOT_DIR/.flowstudio-run/frontend.pid"
 TUNNEL_PID_FILE="$ROOT_DIR/.flowstudio-run/tunnel.pid"
 
+# Bootstrap white models for local development
+if [[ -f "$ROOT_DIR/scripts/fix_white_models.py" ]]; then
+  echo "Bootstrapping white models..."
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/fix_white_models.py"
+fi
+
 cleanup() {
   if [[ "${FLOWSTUDIO_KEEP_RUNNING:-0}" != "1" ]]; then
     [[ -f "$WEB_PID_FILE" ]] && kill "$(cat "$WEB_PID_FILE")" >/dev/null 2>&1 || true
