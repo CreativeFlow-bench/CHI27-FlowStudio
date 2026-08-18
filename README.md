@@ -1,6 +1,7 @@
 # FlowStudio
 
-CHI27 interaction-aware CreativeFlow prototype：本地 FastAPI + React/Three.js，云端文本/图片模型走中继。
+CHI27 interaction-aware CreativeFlow prototype：FastAPI + React/Three.js。  
+文本/图片默认走云端 `MODEL_API`；GPU 单机跑 backend / worker / Hunyuan。
 
 ## Setup
 
@@ -9,9 +10,9 @@ cp .env.example .env
 cp .env.model_api.example .env.model_api   # 只在这里填 MODEL_API_KEY
 ```
 
-`.env` / `.env.model_api` 不要提交。
+`.env` / `.env.model_api` 不要提交。Qwen planner 已退役（规则兜底）。
 
-## Run
+## Run（本机）
 
 ```bash
 FLOWSTUDIO_KEEP_RUNNING=1 scripts/dev_stack.sh
@@ -20,26 +21,23 @@ FLOWSTUDIO_KEEP_RUNNING=1 scripts/dev_stack.sh
 - Frontend: http://127.0.0.1:5184  
 - Backend:  http://127.0.0.1:18001  
 
-或分开起：
+## GPU 单机
+
+当前主 GPU：`connect.westb.seetacloud.com:36536`。  
+旧 westd 已替换；weste 上的 Qwen planner **不再接入**。
+
+服务器：
 
 ```bash
-# backend
-cd backend && PYTHONPATH=..:. uvicorn app.main:app --host 127.0.0.1 --port 18001
-
-# frontend
-cd frontend && npm install && npm run dev
+cd /root/flowstudio_app
+FLOWSTUDIO_CLOUD_ROOT=/root/flowstudio_app \
+FLOWSTUDIO_WORKER_DIR=/root/flowstudio_app/remote_worker \
+FLOWSTUDIO_START_VLM=0 \
+bash scripts/cloud_start.sh
 ```
 
-## Models
-
-默认：`gemini-3.6-flash`（文本）/ `gpt-image-2`（图片），配置见 `.env.model_api`。
-
-探测：
-
-```bash
-curl -s 'http://127.0.0.1:18001/api/v1/model-api/probe?include_image=true'
-```
+公网入口由 `8080` gateway + `cloudflared` quick tunnel 提供（URL 见 `logs/cloudflared-quick.log`，重启会变）。
 
 ## Docs
 
-设计与协议细节在 `docs/`，不要把运行说明堆进本文件。
+细节在 `docs/`。

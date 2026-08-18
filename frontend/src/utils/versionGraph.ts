@@ -7,6 +7,27 @@ const HISTORY_NODE_SIZE = 220;
 const SIBLING_ROW_PITCH = 240;
 const SIBLING_ACTIVE_CLEARANCE = ACTIVE_NODE_SIZE + 40;
 
+/** Pan so the active editor's box center lands on the free-area center. */
+export function computeCenteredActiveCanvasPan(input: {
+  shellWidth: number;
+  shellHeight: number;
+  /** Target center X inside the shell (defaults to geometric mid). */
+  targetCenterX?: number;
+  /** Target center Y inside the shell (defaults to geometric mid). */
+  targetCenterY?: number;
+  nodeX: number;
+  nodeY: number;
+  nodeWidth: number;
+  nodeHeight: number;
+}) {
+  const centerX = input.targetCenterX ?? input.shellWidth / 2;
+  const centerY = input.targetCenterY ?? input.shellHeight / 2;
+  return {
+    x: Math.round(centerX - (input.nodeX + input.nodeWidth / 2)),
+    y: Math.round(centerY - (input.nodeY + input.nodeHeight / 2)),
+  };
+}
+
 export function compactVersionLabel(label: string): string {
   const parts = label
     .split("·")

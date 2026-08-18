@@ -20,33 +20,9 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-# The Qwen3 planner runs on the second GPU host (connect.weste.seetacloud.com:
-# 10980) as a transformers FastAPI server on :18084, reached through the SSH
-# tunnel below (local :18085). This host (backend + Qwen-Image) must not try to
-# host the planner locally.
-_PLANNER_TUNNEL_CMD = [
-    "ssh",
-    "-N",
-    "-i",
-    "/root/.ssh/flowstudio_gpu2_planner",
-    "-o",
-    "ServerAliveInterval=30",
-    "-o",
-    "ServerAliveCountMax=3",
-    "-o",
-    "ExitOnForwardFailure=yes",
-    "-o",
-    "StrictHostKeyChecking=accept-new",
-    "-L",
-    "18085:127.0.0.1:18084",
-    "-p",
-    "10980",
-    "root@connect.weste.seetacloud.com",
-]
-
-
 # id -> definition.  `start` is optional; when present, all paths inside the
 # command/cwd must exist before the service is offered as "startable".
+# Single-host deploy (westb): no Qwen planner / second-GPU tunnel.
 _SERVICE_DEFS: list[dict[str, Any]] = [
     {
         "id": "backend",
@@ -110,25 +86,13 @@ _SERVICE_DEFS: list[dict[str, Any]] = [
         "start_timeout_sec": 30,
     },
     {
-        "id": "planner_llm",
-        "name": "Planner LLM (Qwen3)",
-        "name_zh": "规划 LLM（KG 方向）",
-        "port": 18085,
-        "group": "gpu",
-        "required": True,
-        "description": "weste 机 (10980) 隧道转发的 qwen3-planner（OpenAI 兼容 :18084 -> 本地 :18085），用于知识图谱方向规划与意图理解。",
-        "health_url": "http://127.0.0.1:18085/health",
-        "start": {"cmd": _PLANNER_TUNNEL_CMD},
-        "start_timeout_sec": 60,
-    },
-    {
         "id": "qwen_image",
         "name": "Qwen-Image",
         "name_zh": "文生图模型",
         "port": 18082,
         "group": "gpu",
         "required": True,
-        "description": "Qwen-Image 生成/编辑服务（GPU，显式启动）。",
+        "description": "Qwen-Image 生成/编辑服务（GPU，显式启动）。默认关闭；云端图片走 MODEL_API。",
         "health_url": "http://127.0.0.1:18082/health",
         "start": {
             "cwd": "/root/creativeflow_image_service",
@@ -142,8 +106,6 @@ _SERVICE_DEFS: list[dict[str, Any]] = [
             ],
             "env": {
                 "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
-                # Keep the model resident: four-stage GPU scheduler is the only
-                # owner of model phase switches, so reload-per-request is wasted.
                 "QWEN_IMAGE_UNLOAD_AFTER_GENERATE": "0",
             },
         },
@@ -184,33 +146,6 @@ _SERVICE_DEFS: list[dict[str, Any]] = [
         },
         "start_timeout_sec": 60,
     },
-    {
-        "id": "intent_vlm",
-        "name": "Intent VLM (Qwen2.5-VL)",
-        "name_zh": "意图理解 VLM",
-        "port": 18085,
-        "group": "gpu",
-        "required": False,
-        "description": "weste 机 (10980) 的 Qwen2.5-VL-7B 多模态意图规划（OpenAI 兼容 :18084 -> 本地 :18085）；Gemini-3.5-flash 作为 fallback。",
-        "health_url": "http://127.0.0.1:18085/health",
-        "start": {
-            "cmd": [
-                "ssh",
-                "-o",
-                "StrictHostKeyChecking=no",
-                "-o",
-                "ConnectTimeout=15",
-                "-i",
-                "/root/.ssh/flowstudio_gpu2_planner",
-                "-p",
-                "10980",
-                "root@connect.weste.seetacloud.com",
-                "kill $(pgrep -f '^/root/miniconda3/bin/python /root/flowstudio_vl_planner_server.py') 2>/dev/null; sleep 1; cd /root && nohup /root/miniconda3/bin/python /root/flowstudio_vl_planner_server.py > /root/vl_planner.log 2>&1 < /dev/null &",
-            ],
-            "requires_paths": ["/root/.ssh/flowstudio_gpu2_planner"],
-        },
-        "start_timeout_sec": 180,
-    },
 ]
 
 
@@ -222,7 +157,8 @@ _LOCK = asyncio.Lock()
 _ENABLE_LEGACY_MODELS = False
 _ENABLE_3D = False
 
-_LEGACY_MODEL_SERVICE_IDS = {"planner_llm", "qwen_image", "intent_vlm"}
+# Retired: planner_llm / intent_vlm (second-GPU Qwen). Optional local image model remains gated.
+_LEGACY_MODEL_SERVICE_IDS = {"qwen_image"}
 _THREE_D_SERVICE_IDS = {"remote_worker", "creativeflow_api"}
 
 

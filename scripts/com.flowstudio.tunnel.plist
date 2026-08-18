@@ -23,8 +23,8 @@
     <string>-L</string>
         <string>8000:127.0.0.1:18000</string>
     <string>-p</string>
-    <string>34333</string>
-    <string>root@connect.westd.seetacloud.com</string>
+    <string>36536</string>
+    <string>root@connect.westb.seetacloud.com</string>
   </array>
   <key>RunAtLoad</key>
   <true/>

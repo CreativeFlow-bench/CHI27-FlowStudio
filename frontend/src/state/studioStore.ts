@@ -82,7 +82,7 @@ import {
   reduceSolutionSpaceVisibility,
 } from "../utils/solutionSpaceVisibility";
 import { mergeRealtimeRevisions } from "../utils/optimisticRevisions";
-import { layoutVersionGraph } from "../utils/versionGraph";
+import { computeCenteredActiveCanvasPan, layoutVersionGraph } from "../utils/versionGraph";
 import { createExperimentEventRecorder } from "../utils/experimentProject";
 import {
   buildSemanticDivergenceParameters,
@@ -138,19 +138,50 @@ const EMPTY_LIVE_SIGNALS: LiveSignals = {
 
 
 
-function centeredActiveCanvasPan(shell?: { clientWidth: number; clientHeight: number } | null) {
-  // Active node is laid out at x=640 with size 520 (see layoutVersionGraph).
+function centeredActiveCanvasPan(shell?: HTMLElement | null) {
   const width = shell?.clientWidth
     ?? (typeof window === "undefined" ? 1440 : window.innerWidth);
   const height = shell?.clientHeight
     ?? (typeof window === "undefined" ? 900 : window.innerHeight);
-  const nodeX = 640;
-  const nodeSize = 520;
-  const metaOffset = 28;
-  return {
-    x: Math.round(width / 2 - (nodeX + nodeSize / 2)),
-    y: Math.round(height / 2 - nodeSize / 2 - metaOffset),
-  };
+
+  const active = shell?.querySelector<HTMLElement>(".version-node.active");
+  const nodeX = active ? Number.parseFloat(active.style.left || "") || 640 : 640;
+  const nodeY = active ? Number.parseFloat(active.style.top || "") || 0 : 0;
+  // CSS overrides layout 520 with --active-editor-* — always prefer measured box.
+  const nodeWidth = active?.offsetWidth || Math.max(320, width - 48);
+  const nodeHeight = active?.offsetHeight || Math.max(360, height - 64);
+
+  // Free band between Perception (left float) and AI Behavior (right float).
+  let targetCenterX = width / 2;
+  let targetCenterY = height / 2;
+  if (shell && typeof window !== "undefined") {
+    const shellRect = shell.getBoundingClientRect();
+    const perception = document.querySelector<HTMLElement>(".perception-float");
+    const ai = document.querySelector<HTMLElement>(".ai-behavior-float");
+    const composer = document.querySelector<HTMLElement>(".canvas-composer-shell, .intent-composer-shell, .composer-float");
+    const solution = document.querySelector<HTMLElement>(".solution-space-rail");
+    const leftBound = Math.max(shellRect.left, perception?.getBoundingClientRect().right ?? shellRect.left);
+    const rightBound = Math.min(shellRect.right, ai?.getBoundingClientRect().left ?? shellRect.right);
+    const topBound = Math.max(shellRect.top, solution?.getBoundingClientRect().bottom ?? shellRect.top);
+    const bottomBound = Math.min(shellRect.bottom, composer?.getBoundingClientRect().top ?? shellRect.bottom);
+    if (rightBound > leftBound + 80) {
+      targetCenterX = (leftBound + rightBound) / 2 - shellRect.left;
+    }
+    if (bottomBound > topBound + 80) {
+      targetCenterY = (topBound + bottomBound) / 2 - shellRect.top;
+    }
+  }
+
+  return computeCenteredActiveCanvasPan({
+    shellWidth: width,
+    shellHeight: height,
+    targetCenterX,
+    targetCenterY,
+    nodeX,
+    nodeY,
+    nodeWidth,
+    nodeHeight,
+  });
 }
 
 // Gate is a single transient scope question.  Ignoring it closes the bubble;
@@ -5895,8 +5926,7 @@ export function useStudioStore() {
     });
   };
 
-  // Keep the focused 3D node centered when Solution Space / drawer / window
-  // changes the canvas-column size.
+  // Keep the focused 3D node centered when panels / window / editor size change.
   useEffect(() => {
     if (versionViewMode !== "active") return undefined;
     const shell = versionCanvasShellRef.current;
@@ -5911,13 +5941,19 @@ export function useStudioStore() {
     recenter();
     const observer = new ResizeObserver(() => recenter());
     observer.observe(shell);
+    const active = shell.querySelector(".version-node.active");
+    if (active) observer.observe(active);
+    for (const sel of [".perception-float", ".ai-behavior-float", ".solution-space-rail", ".canvas-composer-shell", ".intent-composer-shell"]) {
+      const el = document.querySelector(sel);
+      if (el) observer.observe(el);
+    }
     window.addEventListener("resize", recenter);
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", recenter);
     };
-  }, [versionViewMode, liveSolutionSpaceVisible, studioDrawerOpen, menuWidth]);
+  }, [versionViewMode, liveSolutionSpaceVisible, studioDrawerOpen, menuWidth, activeVersionId]);
 
   const zoomCanvasBy = (factor: number) => {
     const current = canvasZoomRef.current;

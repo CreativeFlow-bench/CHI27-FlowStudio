@@ -113,6 +113,25 @@ test("keeps the active node at the main editing anchor", () => {
   );
 });
 
+test("centers the active editor on the free-area midpoint", () => {
+  const { computeCenteredActiveCanvasPan } = versionGraph as typeof versionGraph & {
+    computeCenteredActiveCanvasPan: typeof versionGraph.computeCenteredActiveCanvasPan;
+  };
+  assert.deepEqual(
+    computeCenteredActiveCanvasPan({
+      shellWidth: 1000,
+      shellHeight: 800,
+      targetCenterX: 500,
+      targetCenterY: 400,
+      nodeX: 640,
+      nodeY: 0,
+      nodeWidth: 720,
+      nodeHeight: 600,
+    }),
+    { x: -500, y: 100 },
+  );
+});
+
 
 test("returns one parent link per non-root node", () => {
   const result = layoutVersionGraph([source, v2, v3, sibling], "v3");

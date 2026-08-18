@@ -8,7 +8,7 @@ import textwrap
 import paramiko
 
 
-HOST = os.getenv("FLOWSTUDIO_REMOTE_HOST", "connect.westd.seetacloud.com")
+HOST = os.getenv("FLOWSTUDIO_REMOTE_HOST", "connect.westb.seetacloud.com")
 PORT = int(os.getenv("FLOWSTUDIO_REMOTE_SSH_PORT", "47501"))
 USER = os.getenv("FLOWSTUDIO_REMOTE_USER", "root")
 PASSWORD = os.environ["FLOWSTUDIO_REMOTE_PASSWORD"]

@@ -1,8 +1,8 @@
 #!/usr/bin/env expect
 set timeout -1
 
-set host [expr {[info exists env(FLOWSTUDIO_REMOTE_HOST)] ? $env(FLOWSTUDIO_REMOTE_HOST) : "connect.westd.seetacloud.com"}]
-set port [expr {[info exists env(FLOWSTUDIO_REMOTE_SSH_PORT)] ? $env(FLOWSTUDIO_REMOTE_SSH_PORT) : "34333"}]
+set host [expr {[info exists env(FLOWSTUDIO_REMOTE_HOST)] ? $env(FLOWSTUDIO_REMOTE_HOST) : "connect.westb.seetacloud.com"}]
+set port [expr {[info exists env(FLOWSTUDIO_REMOTE_SSH_PORT)] ? $env(FLOWSTUDIO_REMOTE_SSH_PORT) : "36536"}]
 set user [expr {[info exists env(FLOWSTUDIO_REMOTE_USER)] ? $env(FLOWSTUDIO_REMOTE_USER) : "root"}]
 set local_backend_port [expr {[info exists env(FLOWSTUDIO_LOCAL_CLOUD_BACKEND_PORT)] ? $env(FLOWSTUDIO_LOCAL_CLOUD_BACKEND_PORT) : "18000"}]
 

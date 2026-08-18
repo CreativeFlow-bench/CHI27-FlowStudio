@@ -12,7 +12,7 @@
 ssh -p 50575 \
   -L 5173:127.0.0.1:5173 \
   -L 8000:127.0.0.1:8000 \
-  root@connect.westd.seetacloud.com
+  root@connect.westb.seetacloud.com
 ```
 
 - 前端预览：`http://127.0.0.1:5173`

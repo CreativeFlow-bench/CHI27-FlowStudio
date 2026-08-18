@@ -1,9 +1,9 @@
 # FlowStudio 四阶段后端 DeepSeek 开发实施策略 V1
 
-状态：Phase 0–4 已实现并已在双机拓扑真实部署验收（2026-08-04）：planner 在 `connect.weste.seetacloud.com:30320`（Qwen3-8B，transformers FastAPI :18084，隧道映射本机 :18085），主后端/Qwen-Image/worker 在 `connect.westd.seetacloud.com:34333`；teapot/snowman/water gun 三案例全部 Gate → 真实 Qwen 编码 + 真实 Gemini + 真实 Qwen-Image 产物；Hy3D 3D 链验收通过（teapot `run_hy3d=true`，132.8s 产出非空 `mesh.glb` 1.3MB / `mesh.obj` 2.6MB / PNG）。146 passed；3 个失败为环境相关既有问题。OSS/case/website 同步为 CreativeFlow 主线的独立环节，前端状态管理为下一阶段。  
+状态：Phase 0–4 已实现并已在双机拓扑真实部署验收（2026-08-04）：planner 在 `connect.weste.seetacloud.com:30320`（Qwen3-8B，transformers FastAPI :18084，隧道映射本机 :18085），主后端/Qwen-Image/worker 在 `connect.westb.seetacloud.com:34333`；teapot/snowman/water gun 三案例全部 Gate → 真实 Qwen 编码 + 真实 Gemini + 真实 Qwen-Image 产物；Hy3D 3D 链验收通过（teapot `run_hy3d=true`，132.8s 产出非空 `mesh.glb` 1.3MB / `mesh.obj` 2.6MB / PNG）。146 passed；3 个失败为环境相关既有问题。OSS/case/website 同步为 CreativeFlow 主线的独立环节，前端状态管理为下一阶段。  
 适用仓库：`CHI27-FlowStudio`  
 实施形式：由 DeepSeek 作为编码 Agent，在当前代码基础上分阶段修改、测试和交付  
-目标运行环境：主后端/Qwen-Image `connect.westd.seetacloud.com:34333`；Qwen3 Planner 应运行在新 GPU 实例本机 `127.0.0.1:18084`（`qwen3.5-27b`，与 `backend/.env` 一致）。旧文档中 `connect.weste.seetacloud.com:30320` 已失效（该主机上无 planner 服务，2026-08-04 实测确认）。
+目标运行环境：主后端/Qwen-Image `connect.westb.seetacloud.com:34333`；Qwen3 Planner 应运行在新 GPU 实例本机 `127.0.0.1:18084`（`qwen3.5-27b`，与 `backend/.env` 一致）。旧文档中 `connect.weste.seetacloud.com:30320` 已失效（该主机上无 planner 服务，2026-08-04 实测确认）。
 修订：2026-08-04 V1.1 —— 按评审收敛：不引入向量库、Gemini 模型确认为 `gemini-3.5-flash`、持久化精简为三张表、GPU scheduler 为唯一开关、补充双盲审发布约束。
 
 ## 0. 必须完整保留的总体定义

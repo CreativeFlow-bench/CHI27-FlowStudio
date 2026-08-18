@@ -1,11 +1,11 @@
 #!/usr/bin/env expect -f
 # Sync local frontend/dist to AutoDL /root/flowstudio_app/frontend/dist
 # (frontend-only; leaves backend/remote_worker untouched)
-# Usage: REMOTE_PORT=34333 REMOTE_PASS=... ./scripts/sync_frontend_dist.expect
+# Usage: REMOTE_PORT=36536 REMOTE_PASS=... ./scripts/sync_frontend_dist.expect
 
 set timeout 300
-set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "34333"}]
-set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westd.seetacloud.com"}]
+set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "36536"}]
+set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westb.seetacloud.com"}]
 set user [expr {[info exists env(REMOTE_USER)] ? $env(REMOTE_USER) : "root"}]
 set pass $env(REMOTE_PASS)
 set root [expr {[info exists env(REPO_ROOT)] ? $env(REPO_ROOT) : [exec pwd]}]

@@ -21,9 +21,7 @@ import {
 } from "./viewport/scene";
 import { createBrushCursor, createMeshSelectionHandlers, SculptPointerController, SculptSession } from "./viewport/sculptEngine";
 
-const VIEWPORT_BUFFER_WIDTH = 2400;
-const VIEWPORT_BUFFER_HEIGHT = 1900;
-const VIEWPORT_BUFFER_ASPECT = VIEWPORT_BUFFER_WIDTH / VIEWPORT_BUFFER_HEIGHT;
+const VIEWPORT_FALLBACK_ASPECT = 16 / 10;
 
 export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewportProps>(function ThreeViewport({
   asset,
@@ -314,15 +312,15 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     const mount = mountRef.current;
     const scene = new THREE.Scene();
     scene.background = null;
-    const camera = new THREE.PerspectiveCamera(45, VIEWPORT_BUFFER_ASPECT, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(45, VIEWPORT_FALLBACK_ASPECT, 0.1, 100);
     camera.position.set(0, 1.2, 5.2);
     camera.lookAt(0, 0.4, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     rendererRef.current = renderer;
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(1);
-    renderer.setSize(VIEWPORT_BUFFER_WIDTH, VIEWPORT_BUFFER_HEIGHT, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(Math.max(1, mount.clientWidth || 960), Math.max(1, mount.clientHeight || 600), false);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95;
@@ -501,6 +499,18 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     selection.attach();
     sculptPointer.attach();
 
+    const syncRendererSize = () => {
+      const nextWidth = Math.max(1, Math.round(mount.clientWidth));
+      const nextHeight = Math.max(1, Math.round(mount.clientHeight));
+      camera.aspect = nextWidth / Math.max(1, nextHeight);
+      camera.updateProjectionMatrix();
+      // Keep a sharp backing store while letting CSS fill the adaptive frame.
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      renderer.setPixelRatio(pixelRatio);
+      renderer.setSize(nextWidth, nextHeight, false);
+    };
+    syncRendererSize();
+
     let frame = 0;
     const animate = () => {
       frame = requestAnimationFrame(animate);
@@ -510,16 +520,16 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     };
     animate();
 
-    const onResize = () => {
-      camera.aspect = VIEWPORT_BUFFER_ASPECT;
-      camera.updateProjectionMatrix();
-      renderer.setSize(VIEWPORT_BUFFER_WIDTH, VIEWPORT_BUFFER_HEIGHT, false);
-    };
-    window.addEventListener("resize", onResize);
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => syncRendererSize())
+      : null;
+    resizeObserver?.observe(mount);
+    window.addEventListener("resize", syncRendererSize);
 
     return () => {
       cancelAnimationFrame(frame);
-      window.removeEventListener("resize", onResize);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", syncRendererSize);
       rendererRef.current = null;
       sceneRef.current = null;
       cameraRef.current = null;

@@ -4013,24 +4013,30 @@ textarea:focus-visible,
   .semantic-keyword-skeleton i { animation: none; }
 }
 
-/* Interaction orchestration workspace contract: the editor is a full safe-area
- * surface, while the history graph only supplies navigation thumbnails. */
+/* Active editor fills the free band between side panels; grows with the window. */
 .version-node.active {
-  width: min(720px, calc(100vw - 48px)) !important;
+  width: var(--active-editor-width) !important;
   height: var(--active-editor-height) !important;
-  max-width: calc(100vw - 48px);
-  max-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 16px);
+  max-width: var(--active-editor-width);
+  max-height: var(--active-editor-height);
   border-color: transparent;
   background: transparent;
   box-shadow: none;
 }
 
-.version-node.active .version-node-frame {
+.version-node.active .version-node-frame,
+.version-node.active .viewport-wrap,
+.version-node.active .viewport {
+  width: 100%;
   height: 100%;
   min-height: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+}
+
+.version-node.active .viewport canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none;
+  object-fit: contain;
 }
 
 .perception-float {
@@ -4041,13 +4047,22 @@ textarea:focus-visible,
 @media (max-width: 900px) {
   :root {
     --workspace-safe-right: 0px;
+    --workspace-safe-left: 0px;
     --workspace-safe-bottom: 154px;
+    --active-editor-width: calc(100vw - 24px);
+    --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 12px);
+  }
+
+  .studio-shell {
+    --workspace-safe-left: 0px;
+    --workspace-safe-right: 0px;
     --active-editor-width: calc(100vw - 24px);
     --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 12px);
   }
 
   .workspace {
     padding-right: 0;
+    padding-left: 0;
   }
 
   .perception-float {
@@ -4055,7 +4070,8 @@ textarea:focus-visible,
   }
 
   .version-node.active {
-    max-width: calc(100vw - 24px);
+    width: var(--active-editor-width) !important;
+    max-width: var(--active-editor-width);
   }
 }
 

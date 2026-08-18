@@ -13,6 +13,9 @@
   --workspace-safe-top: 64px;
   --workspace-safe-right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
   --workspace-safe-bottom: var(--composer-reserve);
+  --workspace-safe-left: calc(var(--perception-width) + var(--workspace-edge) + var(--workspace-gap));
+  --active-editor-width: calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right) - 24px);
+  --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 24px);
   width: 100vw;
   height: 100dvh;
   min-height: 0;

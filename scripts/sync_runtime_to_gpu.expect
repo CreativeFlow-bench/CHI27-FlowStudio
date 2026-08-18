@@ -1,10 +1,10 @@
 #!/usr/bin/env expect -f
 # Sync FlowStudio runtime packages to AutoDL /root/flowstudio_app
-# Usage: REMOTE_PORT=34333 REMOTE_PASS=... ./scripts/sync_runtime_to_gpu.expect
+# Usage: REMOTE_PORT=36536 REMOTE_PASS=... ./scripts/sync_runtime_to_gpu.expect
 
 set timeout 600
-set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "34333"}]
-set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westd.seetacloud.com"}]
+set port [expr {[info exists env(REMOTE_PORT)] ? $env(REMOTE_PORT) : "36536"}]
+set host [expr {[info exists env(REMOTE_HOST)] ? $env(REMOTE_HOST) : "connect.westb.seetacloud.com"}]
 set user [expr {[info exists env(REMOTE_USER)] ? $env(REMOTE_USER) : "root"}]
 set pass $env(REMOTE_PASS)
 set root [expr {[info exists env(REPO_ROOT)] ? $env(REPO_ROOT) : [exec pwd]}]
