@@ -125,73 +125,78 @@ export function IntentComposer({
         placeholder="Make this snowman cuter…"
       />
       <div className="canvas-composer-row">
-        <div className="composer-tools" aria-label="Intent composer tools">
-          <div className="composer-tool-group">
-            <span className="tool-group-label">2D</span>
-            <button
-              type="button"
-              className={`icon-tool ${hoverMode ? "is-active" : ""}`}
-              aria-label={hoverMode ? "Commit hover mode" : "Hover mode"}
-              title="Hover Mode (Arrow)"
-              disabled={!asset}
-              onClick={onToggleHoverMode}
-            >
-              <MousePointer2 size={17} />
-            </button>
-            <button type="button" aria-label="Brush sculpt" className={`icon-tool ${sculptTool === "brush" ? "is-active" : ""}`} title="Brush Sculpt (Brush)" disabled={!canShowBrush || generationBusy} onClick={() => onToggleSculptTool("brush")}>
-              <Paintbrush size={17} />
-            </button>
-            <button type="button" aria-label="Annotation" className={`icon-tool ${annotationMode ? "is-active" : ""}`} title="Annotation (Pencil)" disabled={!asset} onClick={onToggleAnnotationMode}>
-              <Pencil size={17} />
-            </button>
-          </div>
-          
-          <div className="composer-tool-divider" />
-          
-          <div className="composer-tool-group">
-            <span className="tool-group-label">3D</span>
-            <button type="button" aria-label="Drag sculpt" className={`icon-tool tool-asset ${sculptTool === "drag" ? "is-active" : ""}`} title="Drag Sculpt (3D Deformation)" disabled={!canShowDrag || generationBusy} onClick={() => onToggleSculptTool("drag")}>
-              <img src={`${import.meta.env.BASE_URL}icons/drag.svg`} alt="" width={34} height={38} draggable={false} />
-            </button>
-            <button type="button" aria-label="Smooth sculpt" className={`icon-tool tool-asset ${sculptTool === "smooth" ? "is-active" : ""}`} title="Smooth Sculpt (3D Brush)" disabled={!canShowSculpt} onClick={() => onToggleSculptTool("smooth")}>
-              <img src={`${import.meta.env.BASE_URL}icons/smooth.svg`} alt="" width={34} height={38} draggable={false} />
-            </button>
-            <button
-              type="button"
-              className="icon-tool tool-pink"
-              aria-label="Add primitive"
-              title="Add Primitive (Plus)"
-              disabled={!asset && !canvasPrimitive}
-              onClick={onToggleAddMenu}
-            >
-              <Plus size={18} />
-            </button>
-          </div>
-          
-          <div className="composer-tool-divider" />
+        <div className="composer-tools-container">
+          <div className="composer-section-title">工具栏</div>
+          <div className="composer-tools-layout">
+            <div className="composer-tools" aria-label="Intent composer tools">
+              <div className="composer-tool-group">
+                <span className="tool-group-label">2D</span>
+              <button
+                type="button"
+                className={`icon-tool ${hoverMode ? "is-active" : ""}`}
+                aria-label={hoverMode ? "Commit hover mode" : "Hover mode"}
+                title="Hover Mode (Arrow)"
+                disabled={!asset}
+                onClick={onToggleHoverMode}
+              >
+                <MousePointer2 size={17} />
+              </button>
+              <button type="button" aria-label="Brush sculpt" className={`icon-tool ${sculptTool === "brush" ? "is-active" : ""}`} title="Brush Sculpt (Brush)" disabled={!canShowBrush || generationBusy} onClick={() => onToggleSculptTool("brush")}>
+                <Paintbrush size={17} />
+              </button>
+              <button type="button" aria-label="Annotation" className={`icon-tool ${annotationMode ? "is-active" : ""}`} title="Annotation (Pencil)" disabled={!asset} onClick={onToggleAnnotationMode}>
+                <Pencil size={17} />
+              </button>
+            </div>
+            
+            <div className="composer-tool-divider" />
+            
+            <div className="composer-tool-group">
+              <span className="tool-group-label">3D</span>
+              <button type="button" aria-label="Drag sculpt" className={`icon-tool tool-asset ${sculptTool === "drag" ? "is-active" : ""}`} title="Drag Sculpt (3D Deformation)" disabled={!canShowDrag || generationBusy} onClick={() => onToggleSculptTool("drag")}>
+                <img src={`${import.meta.env.BASE_URL}icons/drag.svg`} alt="" width={34} height={38} draggable={false} />
+              </button>
+              <button type="button" aria-label="Smooth sculpt" className={`icon-tool tool-asset ${sculptTool === "smooth" ? "is-active" : ""}`} title="Smooth Sculpt (3D Brush)" disabled={!canShowSculpt} onClick={() => onToggleSculptTool("smooth")}>
+                <img src={`${import.meta.env.BASE_URL}icons/smooth.svg`} alt="" width={34} height={38} draggable={false} />
+              </button>
+              <button
+                type="button"
+                className="icon-tool tool-pink"
+                aria-label="Add primitive"
+                title="Add Primitive (Plus)"
+                disabled={!asset && !canvasPrimitive}
+                onClick={onToggleAddMenu}
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+            
+            <div className="composer-tool-divider" />
 
-          <button
-            type="button"
-            className={`icon-tool tool-asset${divergenceBusy ? " is-active" : ""}`}
-            aria-label="Keyword divergence"
-            title="Keyword Divergence (Magic Potion)"
-            disabled={!canTriggerDivergence || divergenceBusy || generationBusy}
-            onClick={() => onTriggerDivergence?.()}
-          >
-            <img src={`${import.meta.env.BASE_URL}icons/mana.svg`} alt="" width={38} height={38} draggable={false} />
-          </button>
-        </div>
-        <div className="composer-actions">
-          <button
-            type="button"
-            className="composer-action send"
-            aria-label="Send intent"
-            title="提交到四阶段管线（推进方向决策 / 触发生成）"
-            disabled={sendDisabled}
-            onClick={onSend}
-          >
-            <Send size={17} />
-          </button>
+            <button
+                type="button"
+                className={`icon-tool tool-asset${divergenceBusy ? " is-active" : ""}`}
+                aria-label="Keyword divergence"
+                title="Keyword Divergence (Magic Potion)"
+                disabled={!canTriggerDivergence || divergenceBusy || generationBusy}
+                onClick={() => onTriggerDivergence?.()}
+              >
+                <img src={`${import.meta.env.BASE_URL}icons/mana.svg`} alt="" width={38} height={38} draggable={false} />
+              </button>
+            </div>
+            <div className="composer-actions">
+              <button
+                type="button"
+                className="composer-action send"
+                aria-label="Send intent"
+                title="提交到四阶段管线（推进方向决策 / 触发生成）"
+                disabled={sendDisabled}
+                onClick={onSend}
+              >
+                <Send size={17} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       {addMenuOpen ? (
@@ -282,9 +287,10 @@ export function IntentComposer({
       ) : null}
 
       {behaviors.length ? (
-        <div className="behavior-history-rail" aria-label="Behavior history">
-          <div className="behavior-history-label">Action History</div>
-          <div className="behavior-dot-list">
+        <div className="behavior-history-container">
+          <div className="composer-section-title">操作记录</div>
+          <div className="behavior-history-rail" aria-label="Behavior history">
+            <div className="behavior-dot-list">
             {behaviors.map((behavior) => (
               <div className="behavior-dot-wrap" key={behavior.behavior_id}>
                 <button
@@ -309,6 +315,7 @@ export function IntentComposer({
                 ) : null}
               </div>
             ))}
+            </div>
           </div>
         </div>
       ) : null}

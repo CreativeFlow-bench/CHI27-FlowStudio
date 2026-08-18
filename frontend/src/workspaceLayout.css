@@ -185,6 +185,43 @@
   max-height: calc(100dvh - 48px);
 }
 
+.composer-tools-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.composer-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.composer-tools-container,
+.behavior-history-container {
+  background: #d8d8d8;
+  padding: 16px;
+  width: 100%;
+}
+
+.behavior-history-container {
+  margin-top: 12px;
+}
+
+.canvas-composer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .ai-behavior-float.float-panel {
   padding: 0;
   overflow-x: hidden;
