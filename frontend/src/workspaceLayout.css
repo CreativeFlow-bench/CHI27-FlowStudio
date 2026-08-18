@@ -185,43 +185,6 @@
   max-height: calc(100dvh - 48px);
 }
 
-.composer-tools-layout {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.composer-section-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #1a1a1a;
-  margin-bottom: 12px;
-}
-
-.composer-tools-container,
-.behavior-history-container {
-  background: #d8d8d8;
-  padding: 16px;
-  width: 100%;
-}
-
-.behavior-history-container {
-  margin-top: 12px;
-}
-
-.canvas-composer-row {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.composer-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .ai-behavior-float.float-panel {
   padding: 0;
   overflow-x: hidden;
@@ -365,4 +328,42 @@
   .ai-behavior-float {
     transition: none;
   }
+}
+/* Just in case, add it to workspaceLayout.css too to ensure it loads if there are any overrides */
+.composer-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  padding: 0;
+}
+
+.tool-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8892a0;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.composer-tool-divider {
+  width: 1px;
+  height: 24px;
+  background: #c6d0df;
+  margin: 0 4px;
+}
+
+.behavior-history-rail {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.behavior-history-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8892a0;
+  margin-right: 12px;
+  user-select: none;
+  white-space: nowrap;
 }

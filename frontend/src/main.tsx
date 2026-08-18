@@ -270,7 +270,7 @@ function App() {
     selectedPromptTokens,
     setSelectedPromptTokens,
     annotationMode,
-    setAnnotationMode,
+    setAnnotationMode, toggleAnnotationMode,
     hoverMode,
     setHoverMode,
     hoverLabel,
@@ -284,7 +284,7 @@ function App() {
     setMenuWidth,
     menuDragRef,
     addMenuOpen,
-    setAddMenuOpen,
+    setAddMenuOpen, toggleAddMenu,
     canvasPan,
     setCanvasPan,
     canvasZoom,
@@ -891,9 +891,9 @@ function App() {
               canShowDrag={canShowDrag}
               canShowSculpt={canShowSculpt}
               annotationMode={annotationMode}
-              onToggleAnnotationMode={() => setAnnotationMode((value) => !value)}
+              onToggleAnnotationMode={toggleAnnotationMode}
               addMenuOpen={addMenuOpen}
-              onToggleAddMenu={() => setAddMenuOpen((value) => !value)}
+              onToggleAddMenu={toggleAddMenu}
               canvasPrimitive={canvasPrimitive}
               asset={asset}
               generationBusy={generationBusy}

@@ -794,7 +794,7 @@ export function useStudioStore() {
           status: "committed",
           started_at: atom.created_at,
           ended_at: atom.created_at,
-          stroke_count: Number(atom.evidence.stroke_count ?? 1) || 1,
+          stroke_count: Number((atom.evidence as any).stroke_count ?? 1) || 1,
           operation_summary: atom.evidence,
           start_views: {},
           end_views: {},
@@ -978,24 +978,7 @@ export function useStudioStore() {
 
   /** Exit / toggle-off: drop the active sculpt reservation without committing. */
   const cancelSculptBehavior = async (): Promise<void> => {
-    const behavior = sculptBehaviorRef.current;
-    sculptBehaviorRef.current = null;
-    if (!behavior) return;
-    const reserved = await behavior.reservation;
-    const ids = [behavior.localBehaviorId, reserved?.behavior_id].filter(
-      (value): value is string => Boolean(value),
-    );
-    if (ids.length) {
-      setBehaviorSessions((current) =>
-        current.filter((item) => !ids.includes(item.behavior_id)),
-      );
-    }
-    if (session && reserved?.behavior_id && !reserved.behavior_id.startsWith("local_beh_")) {
-      void api(`/api/v1/sessions/${session.session_id}/behaviors/${reserved.behavior_id}`, {
-        method: "DELETE",
-      }).catch(() => undefined);
-    }
-    addLog("observation", `cancelled sculpt · ${behavior.tool}`);
+    await finalizeSculptBehavior(false);
   };
 
   const finalizeSculptBehavior = async (
@@ -1011,23 +994,7 @@ export function useStudioStore() {
     if (behavior.strokeCount === 0 && editorScene.editOps().length > 0) {
       behavior.strokeCount = editorScene.editOps().length;
     }
-    if (behavior.strokeCount === 0) {
-      const reserved = await behavior.reservation;
-      const ids = [behavior.localBehaviorId, reserved?.behavior_id].filter(
-        (value): value is string => Boolean(value),
-      );
-      if (ids.length) {
-        setBehaviorSessions((current) =>
-          current.filter((item) => !ids.includes(item.behavior_id)),
-        );
-      }
-      if (reserved?.behavior_id && !reserved.behavior_id.startsWith("local_beh_")) {
-        void api(`/api/v1/sessions/${session.session_id}/behaviors/${reserved.behavior_id}`, {
-          method: "DELETE",
-        });
-      }
-      return { behavior: null, endViews };
-    }
+    // Ensure 0-stroke behaviors are still committed so that every tool click leaves a history record.
     const reserved = await behavior.reservation;
     if (behavior.localBehaviorId) {
       setBehaviorSessions((current) =>
@@ -1096,7 +1063,8 @@ export function useStudioStore() {
     }
     if (sculptBehaviorRef.current) void cancelSculptBehavior();
     setAnnotationMode(false);
-    setHoverMode(false);
+    setAddMenuOpen(false);
+    deactivateHoverMode();
     sculptBehaviorRef.current = beginSculptBehavior(
       next,
       threeViewportRef.current?.captureThreeViews?.() ?? {},
@@ -1980,7 +1948,7 @@ export function useStudioStore() {
             headers: { "Content-Type": "application/json" },
             signal: controller.signal,
             body: JSON.stringify({
-              object_type: asset?.title || asset?.asset_id || "object",
+              object_type: asset?.label || asset?.asset_id || "object",
               part_label: partLabel,
               part_id: activeSelectedPart?.part_id ?? null,
               intent_text: intentText.trim() || null,
@@ -2011,7 +1979,7 @@ export function useStudioStore() {
     };
   }, [
     session?.session_id,
-    asset?.title,
+    asset?.label,
     asset?.asset_id,
     behaviorSessions,
     activeSelectedPart?.label,
@@ -3277,6 +3245,7 @@ export function useStudioStore() {
   // Composer Mana button: direct sandbox keyword diverge (no Gate / observation).
   const triggerPostGateDivergence = async () => {
     if (!session || semanticDivergenceLoading) return null;
+    recordActionAtom("text", { asset_id: asset?.asset_id ?? null }, { action: "trigger_divergence" });
     const invocationToken = ++divergenceCommitInvocationRef.current;
     const genericObjectNames = new Set([
       "",
@@ -4666,25 +4635,66 @@ export function useStudioStore() {
     }
   };
 
+  const toggleAddMenu = () => {
+    if (!addMenuOpen) {
+      if (sculptBehaviorRef.current) void cancelSculptBehavior();
+      setSculptTool(null);
+      setAnnotationMode(false);
+      deactivateHoverMode();
+    }
+    setAddMenuOpen((v) => {
+      const next = !v;
+      recordActionAtom("add", { asset_id: asset?.asset_id ?? null }, { action: next ? "menu_open" : "menu_close" });
+      return next;
+    });
+  };
+
+  const toggleAnnotationMode = () => {
+    if (!annotationMode) {
+      if (sculptBehaviorRef.current) void cancelSculptBehavior();
+      setSculptTool(null);
+      setAddMenuOpen(false);
+      deactivateHoverMode();
+    }
+    setAnnotationMode((v) => {
+      const next = !v;
+      recordActionAtom("annotation", { asset_id: asset?.asset_id ?? null }, { action: next ? "mode_on" : "mode_off" });
+      return next;
+    });
+  };
+
+  const deactivateHoverMode = () => {
+    setHoverMode((currentHoverMode) => {
+      if (!currentHoverMode) return currentHoverMode;
+      setHoverMaskDataUrl(null);
+      if (hoverLabelRef.current || activeSelectedPart) {
+        void commitHoverFocus("toolbar_click");
+      } else {
+        setHoverLabel(null);
+        hoverLabelRef.current = null;
+        hoverCommittedRef.current = null;
+        addLog("hover", "mode off");
+      }
+      return false;
+    });
+  };
+
   const toggleHoverMode = () => {
     if (!asset) return;
     if (!hoverMode) {
+      if (sculptBehaviorRef.current) void cancelSculptBehavior();
+      setSculptTool(null);
+      setAnnotationMode(false);
+      setAddMenuOpen(false);
+
       setHoverMode(true);
       setHoverMaskDataUrl(null);
       incrementLiveSignal("tool_switch_count");
+      recordActionAtom("hover", { asset_id: asset.asset_id }, { action: "mode_on" });
       addLog("hover", "mode on — raycast tentative labels; click again or dwell to commit");
       return;
     }
-    setHoverMaskDataUrl(null);
-    if (hoverLabelRef.current || activeSelectedPart) {
-      void commitHoverFocus("toolbar_click");
-      return;
-    }
-    setHoverMode(false);
-    setHoverLabel(null);
-    hoverLabelRef.current = null;
-    hoverCommittedRef.current = null;
-    addLog("hover", "mode off");
+    deactivateHoverMode();
   };
 
   const recordAnnotation = async (
@@ -6314,7 +6324,7 @@ export function useStudioStore() {
     selectedPromptTokens,
     setSelectedPromptTokens,
     annotationMode,
-    setAnnotationMode,
+    setAnnotationMode, toggleAnnotationMode,
     hoverMode,
     setHoverMode,
     hoverLabel,
@@ -6328,7 +6338,7 @@ export function useStudioStore() {
     setMenuWidth,
     menuDragRef,
     addMenuOpen,
-    setAddMenuOpen,
+    setAddMenuOpen, toggleAddMenu,
     canvasPan,
     setCanvasPan,
     canvasZoom,

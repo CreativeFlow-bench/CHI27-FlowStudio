@@ -1568,7 +1568,7 @@ button.design-db-card strong {
 .solution-space-scroll {
   display: flex;
   gap: 10px;
-  overflow-x: auto;
+  overflow: visible;
   padding-bottom: 2px;
   scrollbar-width: thin;
 }
@@ -2374,7 +2374,7 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   flex: 1;
   min-width: 0;
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow: visible;
   scrollbar-width: none;
   padding: 4px 6px;
   border-radius: 999px;
@@ -2822,14 +2822,15 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   text-align: center;
 }
 
-.behavior-dot.annotation,
-.behavior-dot.text {
-  background: var(--accent-pink);
-}
-
+/* 3D tools */
 .behavior-dot.drag,
 .behavior-dot.smooth,
 .behavior-dot.add {
+  background: var(--accent-pink);
+}
+
+/* Keyword Divergence */
+.behavior-dot.text {
   background: #111827;
 }
 
@@ -3484,7 +3485,7 @@ textarea:focus-visible,
 .reference-model-strip {
   display: flex;
   gap: 8px;
-  overflow-x: auto;
+  overflow: visible;
   margin-bottom: 10px;
 }
 
@@ -5941,3 +5942,95 @@ textarea:focus-visible,
   animation: spin 0.75s linear infinite;
 }
 
+
+/* Appended for horizontal layout */
+.composer-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  padding: 0;
+}
+
+.tool-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8892a0;
+  margin-right: 2px;
+  user-select: none;
+}
+
+.composer-tool-divider {
+  width: 1px;
+  height: 24px;
+  background: #c6d0df;
+  margin: 0 4px;
+}
+
+.behavior-history-rail {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.behavior-history-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8892a0;
+  margin-right: 12px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* Custom fast tooltip for toolbar */
+:where([data-tooltip]:not([style*="position"])) {
+  position: relative;
+}
+/* Ensure absolute positioned elements stay absolute */
+.behavior-dot-delete[data-tooltip] {
+  position: absolute;
+}
+
+
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 41, 59, 0.95);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+}
+
+[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px 4px 0;
+  border-style: solid;
+  border-color: rgba(30, 41, 59, 0.95) transparent transparent transparent;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 9999;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
