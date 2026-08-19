@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -182,6 +183,15 @@ class FourStageStore:
             self._conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_behaviors_session_seq "
                 "ON behavior_sessions(session_id, behavior_seq)"
+            )
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS session_history_epoch (
+                    session_id TEXT PRIMARY KEY,
+                    epoch INTEGER NOT NULL,
+                    cleared_at TEXT NOT NULL
+                )
+                """
             )
             self._conn.execute(
                 """
@@ -601,7 +611,46 @@ class FourStageStore:
                 "DELETE FROM interaction_outbox WHERE event_id NOT IN "
                 "(SELECT event_id FROM interaction_domain_events)"
             )
+            row = self._conn.execute(
+                "SELECT epoch FROM session_history_epoch WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+            epoch = int(row["epoch"]) + 1 if row else 1
+            self._conn.execute(
+                """
+                INSERT INTO session_history_epoch (session_id, epoch, cleared_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(session_id) DO UPDATE SET
+                    epoch = excluded.epoch,
+                    cleared_at = excluded.cleared_at
+                """,
+                (session_id, epoch, now_utc().isoformat()),
+            )
             self._conn.commit()
+
+    def is_stale_history(self, session_id: str, started_at: object | None) -> bool:
+        """True when a behavior started before the last history-clear."""
+        if started_at is None:
+            return False
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT cleared_at FROM session_history_epoch WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+        if row is None:
+            return False
+        cleared_raw = str(row["cleared_at"])
+        started_raw = started_at.isoformat() if hasattr(started_at, "isoformat") else str(started_at)
+        try:
+            cleared = datetime.fromisoformat(cleared_raw)
+            started = datetime.fromisoformat(started_raw.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+        if cleared.tzinfo is None:
+            cleared = cleared.replace(tzinfo=UTC)
+        if started.tzinfo is None:
+            started = started.replace(tzinfo=UTC)
+        return started < cleared
 
     def next_behavior_seq(self, session_id: str) -> int:
         with self._lock:

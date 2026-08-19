@@ -240,6 +240,18 @@ def test_reset_session_clears_realtime_and_four_stage_history() -> None:
     reset = client.post(f"/api/v1/sessions/{sid}/reset", json={})
     assert reset.status_code == 200
 
+    stale = client.post(
+        f"/api/v1/sessions/{sid}/behaviors",
+        json={
+            "tool": "brush",
+            "target": {"asset_id": "asset_snowman", "part_id": "hat"},
+            "stroke_count": 3,
+            "started_at": "2020-01-01T00:00:00+00:00",
+            "operation_summary": {"radius": 0.35},
+        },
+    )
+    assert stale.status_code == 409, stale.text
+
     after = client.get(f"/api/v1/sessions/{sid}/realtime-observation")
     assert after.status_code == 200
     assert after.json()["behaviors"] == []

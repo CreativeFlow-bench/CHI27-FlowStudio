@@ -292,6 +292,9 @@ class RealtimeObservationService:
                 raise FourStageConflict("behavior belongs to another session")
             if reserved and reserved.status == BehaviorStatus.committed:
                 return reserved
+            started_at = request.started_at or (reserved.started_at if reserved else now_utc())
+            if self.store.is_stale_history(session_id, started_at):
+                raise FourStageConflict("history cleared")
             behavior = BehaviorSession(
                 behavior_id=reserved.behavior_id if reserved else request.behavior_id or f"behavior_{uuid4().hex[:10]}",
                 session_id=session_id,
@@ -299,7 +302,7 @@ class RealtimeObservationService:
                 tool=request.tool,
                 target=request.target,
                 status=BehaviorStatus.committed,
-                started_at=request.started_at or (reserved.started_at if reserved else now_utc()),
+                started_at=started_at,
                 ended_at=request.ended_at or now_utc(),
                 stroke_count=request.stroke_count,
                 operation_summary=request.operation_summary,
@@ -329,6 +332,9 @@ class RealtimeObservationService:
                 if existing.session_id != session_id:
                     raise FourStageConflict("behavior belongs to another session")
                 return existing
+            started_at = request.started_at or now_utc()
+            if self.store.is_stale_history(session_id, started_at):
+                raise FourStageConflict("history cleared")
             behavior = BehaviorSession(
                 behavior_id=request.behavior_id or f"behavior_{uuid4().hex[:10]}",
                 session_id=session_id,
@@ -336,7 +342,7 @@ class RealtimeObservationService:
                 tool=request.tool,
                 target=request.target,
                 status=BehaviorStatus.active,
-                started_at=request.started_at or now_utc(),
+                started_at=started_at,
             )
             self.store.save_behavior(behavior)
         return behavior

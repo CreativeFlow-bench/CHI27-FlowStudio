@@ -647,6 +647,12 @@ export function useStudioStore() {
     setHy3dCandidateIds([]);
     setFittingCandidateIds([]);
     setSelectedBenchmarkId("");
+    sculptBehaviorRef.current = null;
+    primitiveBehaviorRef.current = null;
+    pendingBehaviorCommitsRef.current.clear();
+    latestCommittedBehaviorSeqRef.current = 0;
+    latestIntentSeqRef.current = 0;
+    interactionCursorRef.current = 0;
     setDiscoveringParts(false);
     setAutoDiscoverParts(true);
     setUploading(false);
@@ -807,8 +813,10 @@ export function useStudioStore() {
   };
 
   const trackBehaviorCommit = (promise: Promise<BehaviorSession>): Promise<BehaviorSession | null> => {
+    const epoch = sourceSwitchSeqRef.current;
     const tracked = promise
       .then((behavior) => {
+        if (sourceSwitchSeqRef.current !== epoch) return null;
         latestCommittedBehaviorSeqRef.current = Math.max(
           latestCommittedBehaviorSeqRef.current,
           behavior.behavior_seq,
@@ -1031,6 +1039,7 @@ export function useStudioStore() {
   };
 
   const beginSculptBehavior = (tool: SculptTool | "annotation", startViews: BehaviorViewSet) => {
+    const epoch = sourceSwitchSeqRef.current;
     const startedAt = new Date().toISOString();
     const optimisticId = `local_beh_${crypto.randomUUID().slice(0, 8)}`;
     const nextSeq =
@@ -1078,6 +1087,7 @@ export function useStudioStore() {
             },
           }),
         }).then((behavior) => {
+          if (sourceSwitchSeqRef.current !== epoch) return null;
           setBehaviorSessions((current) => [
             ...current.filter(
               (item) => item.behavior_id !== behavior.behavior_id && item.behavior_id !== optimisticId,
@@ -2612,6 +2622,7 @@ export function useStudioStore() {
     const ws = new WebSocket(`${WS_BASE}/ws/sessions/${targetSessionId}`);
     socketRef.current = ws;
     ws.onmessage = (event) => {
+      if (socketRef.current !== ws) return;
       const message = JSON.parse(event.data);
       addLog(message.type, message.payload?.primary_intent ?? message.payload?.message ?? "received");
       if (message.type?.startsWith("four_stage.")) {
@@ -2746,10 +2757,12 @@ export function useStudioStore() {
 
   const refreshRealtimeObservation = async (sessionId = session?.session_id) => {
     if (!sessionId) return null;
+    const epoch = sourceSwitchSeqRef.current;
     try {
       const snapshot = await api<RealtimeObservationSnapshot>(
         `/api/v1/sessions/${sessionId}/realtime-observation`,
       );
+      if (sourceSwitchSeqRef.current !== epoch) return null;
       setLiveObservation(snapshot.observation);
       const cutoff = Math.max(
         0,

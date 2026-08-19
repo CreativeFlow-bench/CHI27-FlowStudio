@@ -174,6 +174,15 @@ test("version graph is persisted and upgrades the same node in place", async () 
   assert.doesNotMatch(store, /const branchCandidates = acceptedCandidateIds/);
 });
 
+test("clearing history drops stale observation snapshots and in-flight behavior commits", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  assert.match(store, /const clearCurrentHistory/);
+  assert.match(store, /if \(sourceSwitchSeqRef\.current !== epoch\) return null;/);
+  assert.match(store, /if \(socketRef\.current !== ws\) return;/);
+  assert.match(store, /latestCommittedBehaviorSeqRef\.current = 0/);
+  assert.match(store, /interactionCursorRef\.current = 0/);
+});
+
 test("source-node bootstrap waits for the persisted version graph snapshot", async () => {
   const store = await read("../src/state/studioStore.ts");
   assert.match(store, /versionGraphHydrated/);
