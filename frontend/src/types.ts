@@ -1136,6 +1136,7 @@ export type ThreeViewportHandle = {
   /** Axis-aligned model bounds in CSS pixels relative to the viewport mount. */
   getModelScreenBounds: () => ModelScreenBounds | null;
   getPrimitiveTransform?: () => { position: number[]; rotation: number[]; scale: number[] } | null;
+  setPrimitiveTransformMode?: (mode: "translate" | "rotate" | "scale") => void;
 };
 
 export type ThreeViewportProps = {
@@ -1145,7 +1146,8 @@ export type ThreeViewportProps = {
   onClearPreview: () => void;
   selectedPart: string;
   hoverLabel: string | null;
-  primitive: CanvasPrimitive;
+  primitive?: CanvasPrimitive;
+  primitiveLocked?: boolean;
   tool: CanvasTool;
   displayMode: CanvasDisplayMode;
   parts: PartRecord[];

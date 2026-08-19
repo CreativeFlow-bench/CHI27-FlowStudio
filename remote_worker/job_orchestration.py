@@ -308,6 +308,98 @@ def _normalize_transfer_result_for_hy3d(source_path: Path, target_path: Path) ->
     return target_path
 
 
+def _normalized_image_key(path: str) -> str:
+    raw = Path(path)
+    try:
+        return str(raw.resolve())
+    except OSError:
+        return str(raw)
+
+
+def _hy3d_item_mesh_path(item: dict[str, Any]) -> str | None:
+    for key in ("mesh_pbr_glb", "mesh_glb", "glb_path", "mesh_path"):
+        value = item.get(key)
+        if value:
+            return str(value)
+    return None
+
+
+def _job_hy3d_images(job: WorkerJob) -> set[str]:
+    keys: set[str] = set()
+    result = job.result if isinstance(job.result, dict) else {}
+    summary = result.get("result_json") if isinstance(result, dict) else None
+    if isinstance(summary, dict):
+        for item in summary.get("items") or []:
+            if isinstance(item, dict) and item.get("input_image"):
+                keys.add(_normalized_image_key(str(item["input_image"])))
+    request = job.request if isinstance(job.request, dict) else {}
+    staged = request.get("staged_result_path")
+    if staged:
+        path = Path(str(staged))
+        if path.exists():
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, UnicodeError):
+                payload = None
+            if isinstance(payload, dict):
+                for direction in payload.get("directions") or []:
+                    if isinstance(direction, dict) and direction.get("preview_image_path"):
+                        keys.add(_normalized_image_key(str(direction["preview_image_path"])))
+    transfer = Path(job.work_dir) / "staged_transfer_for_hy3d.json"
+    if transfer.exists():
+        try:
+            payload = json.loads(transfer.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            payload = None
+        if isinstance(payload, dict):
+            for target in payload.get("generated_targets") or []:
+                if isinstance(target, dict) and target.get("canonical_image"):
+                    keys.add(_normalized_image_key(str(target["canonical_image"])))
+    return keys
+
+
+def _completed_hy3d_mesh_exists(job: WorkerJob) -> bool:
+    result = job.result if isinstance(job.result, dict) else {}
+    summary = result.get("result_json") if isinstance(result, dict) else None
+    if not isinstance(summary, dict):
+        return False
+    for item in summary.get("items") or []:
+        if not isinstance(item, dict) or item.get("ok") is False:
+            continue
+        mesh = _hy3d_item_mesh_path(item)
+        if mesh and Path(mesh).exists():
+            return True
+    for key in ("mesh_pbr_glb", "mesh_glb", "glb_path", "mesh_path"):
+        value = summary.get(key)
+        if value and Path(str(value)).exists():
+            return True
+    return False
+
+
+def find_reusable_hy3d_job(
+    image_paths: set[str],
+    store: dict[str, WorkerJob] | None = None,
+) -> WorkerJob | None:
+    """Return a completed (or still-running) hy3d_from_staged job for the same input image."""
+    wanted = {_normalized_image_key(path) for path in image_paths if path}
+    if not wanted:
+        return None
+    completed: WorkerJob | None = None
+    running: WorkerJob | None = None
+    for job in (jobs if store is None else store).values():
+        if job.kind != "hy3d_from_staged":
+            continue
+        if not (_job_hy3d_images(job) & wanted):
+            continue
+        if _completed_hy3d_mesh_exists(job):
+            if completed is None or job.updated_at > completed.updated_at:
+                completed = job
+            continue
+        if running is None and job.status in {"queued", "running"}:
+            running = job
+    return completed or running
+
+
 def _read_env_exports(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}

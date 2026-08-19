@@ -57,6 +57,43 @@ def _hy3d_artifact_paths(
     )
 
 
+def _hy3d_job_payload(status: dict[str, Any], remote_job_id: str) -> dict[str, Any]:
+    from urllib.parse import quote as _quote
+
+    mesh_url: str | None = None
+    obj_url: str | None = None
+    preview_url: str | None = None
+    mesh_path: str | None = None
+    obj_path: str | None = None
+    preview_path: str | None = None
+    summary = (
+        (status.get("result") or {}).get("result_json")
+        if isinstance(status.get("result"), dict)
+        else None
+    )
+    if isinstance(summary, dict):
+        mesh_path, obj_path, preview_path = _hy3d_artifact_paths(summary)
+        if mesh_path:
+            mesh_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(mesh_path), safe='')}"
+        if obj_path:
+            obj_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(obj_path), safe='')}"
+        if preview_path:
+            preview_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(preview_path), safe='')}"
+    return {
+        "status": str(status.get("status") or "running"),
+        "remote_job_id": remote_job_id,
+        "message": status.get("message"),
+        "progress": status.get("progress"),
+        "stage": status.get("stage"),
+        "mesh_url": mesh_url,
+        "obj_url": obj_url,
+        "preview_url": preview_url,
+        "mesh_path": mesh_path,
+        "obj_path": obj_path,
+        "detail": status,
+    }
+
+
 def _http_error(exc: FourStageError) -> HTTPException:
     if isinstance(exc, FourStageConflict):
         return HTTPException(status_code=409, detail=str(exc))
@@ -82,7 +119,6 @@ def create_four_stage_router(
         request: dict,
     ) -> dict:
         """四阶段候选 PNG -> Hy3D mesh（PaintPBR 材质）。"""
-        import asyncio
         import json as _json
         from pathlib import Path as _Path
         from uuid import uuid4 as _uuid4
@@ -140,6 +176,10 @@ def create_four_stage_router(
         remote_job_id = str(hy3d_job.get("job_id") or "")
         if not remote_job_id:
             raise HTTPException(status_code=502, detail="Hy3D worker did not return a job id")
+        payload = _hy3d_job_payload(hy3d_job, remote_job_id)
+        if payload.get("mesh_url") or payload.get("obj_url"):
+            payload["status"] = "completed"
+            return payload
         session_id = str(request.get("session_id") or run.session_id or "")
         manager = getattr(orchestrator, "websocket_manager", None)
         if manager and session_id:
@@ -147,68 +187,40 @@ def create_four_stage_router(
                 session_id,
                 "hy3d_progress",
                 {
-                    "message": "已提交 Hunyuan3D",
-                    "progress": 0.08,
-                    "stage": "queued",
-                    "status": "running",
+                    "message": str(hy3d_job.get("message") or "排队等待 GPU"),
+                    "progress": hy3d_job.get("progress") or 0.08,
+                    "stage": hy3d_job.get("stage") or "queued",
+                    "status": str(hy3d_job.get("status") or "running"),
                     "remote_job_id": remote_job_id,
                 },
             )
-        # 轮询等待
-        result: dict[str, object] = {"status": "running", "remote_job_id": remote_job_id}
-        mesh_url: str | None = None
-        obj_url: str | None = None
-        preview_url: str | None = None
-        for _ in range(120):  # ponytail: ~10 min; Hy3D on this card is 2–5 min
-            await asyncio.sleep(5)
-            status = await remote_worker_adapter.get_job(remote_job_id)
-            if manager and session_id:
-                await manager.broadcast(
-                    session_id,
-                    "hy3d_progress",
-                    {
-                        "message": str(status.get("message") or "").strip() or "Hunyuan3D 运行中",
-                        "progress": float(status.get("progress") or 0),
-                        "stage": status.get("stage"),
-                        "status": status.get("status"),
-                        "remote_job_id": remote_job_id,
-                    },
-                )
-            if status.get("status") == "completed":
-                summary = (
-                    (status.get("result") or {}).get("result_json")
-                    if isinstance(status.get("result"), dict)
-                    else None
-                )
-                if isinstance(summary, dict):
-                    mesh_path, obj_path, preview_path = _hy3d_artifact_paths(summary)
-                    if mesh_path:
-                        from urllib.parse import quote as _quote
+        # ponytail: return immediately; Cloudflare/browser would kill a 3–10 min wait
+        # and the UI used to paint mesh_failed while GPU was still working.
+        return {
+            "status": str(hy3d_job.get("status") or "running"),
+            "remote_job_id": remote_job_id,
+            "message": hy3d_job.get("message") or "排队等待 GPU",
+            "progress": hy3d_job.get("progress") or 0.08,
+            "stage": hy3d_job.get("stage") or "queued",
+            "mesh_url": None,
+            "obj_url": None,
+            "preview_url": None,
+        }
 
-                        mesh_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(mesh_path), safe='')}"
-                    if obj_path:
-                        from urllib.parse import quote as _quote
-
-                        obj_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(obj_path), safe='')}"
-                    if preview_path:
-                        from urllib.parse import quote as _quote
-
-                        preview_url = f"/api/v1/remote-worker/artifact-file?path={_quote(str(preview_path), safe='')}"
-                result = {
-                    "status": "completed",
-                    "remote_job_id": remote_job_id,
-                    "mesh_url": mesh_url,
-                    "obj_url": obj_url,
-                    "preview_url": preview_url,
-                    "mesh_path": mesh_path,
-                    "obj_path": obj_path,
-                    "detail": status,
-                }
-                break
-            if status.get("status") in {"failed", "cancelled"}:
-                result = {"status": str(status.get("status")), "remote_job_id": remote_job_id, "detail": status}
-                break
-        return result
+    @router.get("/api/v1/four-stage/hy3d-jobs/{job_id}")
+    async def hy3d_job_status(job_id: str) -> dict:
+        if not enable_3d_generation:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "3D_GENERATION_DISABLED",
+                    "message": "3D generation is disabled for this runtime",
+                },
+            )
+        if remote_worker_adapter is None or not getattr(remote_worker_adapter, "is_configured", False):
+            raise HTTPException(status_code=503, detail="Remote worker is not configured")
+        status = await remote_worker_adapter.get_job(job_id)
+        return _hy3d_job_payload(status, job_id)
 
     @router.post("/api/v1/four-stage/runs", response_model=FourStageRun)
     async def create_run(request: FourStageRunCreateRequest) -> FourStageRun:

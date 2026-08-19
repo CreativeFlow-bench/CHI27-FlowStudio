@@ -44,6 +44,7 @@
 .ai-behavior-float-shell,
 .canvas-composer-shell-resizable,
 .canvas-nav,
+.canvas-tool-dock,
 .solution-space-rail,
 .solution-space-launcher,
 .planner-clarification-overlay,
@@ -283,6 +284,18 @@
   position: fixed;
   left: var(--workspace-edge);
   bottom: 24px;
+}
+
+.canvas-tool-dock {
+  position: fixed;
+  left: calc(var(--workspace-safe-left) + 10px);
+  top: 50%;
+  z-index: 18;
+  transform: translateY(-50%);
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .clear-history-fab {

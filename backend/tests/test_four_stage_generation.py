@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from app.api.four_stage import _hy3d_artifact_paths
+from app.api.four_stage import _hy3d_artifact_paths, _hy3d_job_payload
 from app.models import (
     DecisionIR,
     DecisionOption,
@@ -130,6 +130,25 @@ def test_hy3d_artifact_paths_accept_current_worker_item_schema() -> None:
         "/runs/candidate/mesh_pbr.obj",
         "/runs/candidate/multiview_grid.png",
     )
+
+
+def test_hy3d_job_payload_returns_mesh_when_completed() -> None:
+    payload = _hy3d_job_payload(
+        {
+            "status": "completed",
+            "message": "done",
+            "result": {
+                "result_json": {
+                    "items": [{"ok": True, "mesh_pbr_glb": "/runs/m.glb", "mesh_pbr_obj": "/runs/m.obj"}],
+                }
+            },
+        },
+        "rw_done",
+    )
+    assert payload["status"] == "completed"
+    assert payload["remote_job_id"] == "rw_done"
+    assert payload["mesh_url"]
+    assert payload["obj_url"]
 
 
 def test_image_batch_retries_rejections_and_returns_only_accepted_artifacts() -> None:

@@ -198,10 +198,48 @@ test("Hy3D success adopts the mesh and forces SAM3D part discovery", async () =>
   assert.match(store, /remote_asset: remotePath \? \{ path: remotePath \}/);
   assert.match(store, /discoverPartsForAsset\(adopted, "hy3d"\)/);
   assert.match(store, /sam3d_real: true/);
-  assert.match(store, /wait_timeout_sec: 480/);
+  assert.match(store, /wait_timeout_sec: 120/);
   assert.match(canvas, /partSegmentationUrl\(parts\) \?\? node\.meshUrl/);
   assert.match(helpers, /export function remoteWorkerPathFromUrl/);
   assert.match(helpers, /export function partViewportMatchName/);
+});
+
+test("add primitive has Done, scale handle, screenshots, and a left tool dock", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const canvas = await read("../src/components/StudioCanvas.tsx");
+  const main = await read("../src/main.tsx");
+  const viewport = await read("../src/components/ThreeViewport.tsx");
+  const layout = await read("../src/workspaceLayout.css");
+  assert.match(store, /trigger: "primitive_add_done"/);
+  assert.match(store, /viewport_screenshot_url: screenshotUrl/);
+  assert.match(store, /const cancelPrimitiveBehavior/);
+  assert.match(store, /endViews,/);
+  assert.match(canvas, /Add primitive controls/);
+  assert.match(canvas, /busy \? "…" : "Done"/);
+  assert.match(canvas, /已保存截图/);
+  assert.match(canvas, /aria-label="Scale"/);
+  assert.match(canvas, /behaviorViewSrc/);
+  assert.match(canvas, /onTransformMode/);
+  assert.match(main, /PrimitiveControlsPanel/);
+  assert.match(main, /finalizePrimitiveBehavior/);
+  assert.match(main, /canvas-tool-dock/);
+  assert.match(main, /setPrimitiveTransformMode/);
+  assert.match(layout, /\.canvas-tool-dock/);
+  assert.match(viewport, /scale: new Set\(\["XY", "YZ", "XZ"\]\)/);
+  assert.match(viewport, /setPrimitiveTransformMode/);
+});
+
+test("version cards keep their own mesh and retry does not replace earlier versions", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const canvas = await read("../src/components/StudioCanvas.tsx");
+  const composer = await read("../src/components/panels/IntentComposer.tsx");
+  assert.doesNotMatch(store, /isSource \? asset\?\.mesh_url/);
+  assert.match(store, /editingThisNode/);
+  assert.match(store, /targetId && versionViewModeRef\.current === "overview"/);
+  assert.match(store, /item\.parent_node_id !== null/);
+  assert.match(canvas, /asset=\{null\}/);
+  assert.match(canvas, /const liveMesh = Boolean\(node\.meshUrl \|\| node\.objUrl\)/);
+  assert.match(composer, /!asset && !canvasPrimitive && !activeVersionMeshReady/);
 });
 
 test("version overview keeps the focused node highlighted and re-enters on double-click", async () => {
@@ -211,7 +249,10 @@ test("version overview keeps the focused node highlighted and re-enters on doubl
   const css = await read("../src/styles.css");
   assert.match(canvas, /aria-label="查看全部版本"/);
   assert.match(canvas, /onHighlightVersion/);
+  assert.match(canvas, /event.detail >= 2 \|\| versionViewMode !== "overview"/);
   assert.match(canvas, /onDoubleClick=\{\(\) => onActivateVersion/);
+  assert.match(canvas, /\.version-node, \.version-node-frame/);
+  assert.match(css, /\.version-node\.thumbnail \.version-thumb-viewport \*/);
   assert.match(canvas, /单击高亮接入点/);
   assert.match(main, /onShowOverview=\{\(\) => focusVersionCanvas\("all"\)\}/);
   assert.match(main, /onHighlightVersion=\{\(nodeId, candidate\) => void highlightVersionNode/);

@@ -2,7 +2,7 @@
  * Intent composer float panel: prompt input, sculpt/annotation tool bar,
  * primitive menu and pending behavior atom tray (refactor plan P1a).
  */
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MousePointer2, Paintbrush, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { absoluteUrl } from "../../api";
 import type {
@@ -42,6 +42,7 @@ export function IntentComposer({
   onToggleAddMenu,
   canvasPrimitive,
   asset,
+  activeVersionMeshReady = false,
   generationBusy,
   session,
   visibleBehaviorAtoms,
@@ -53,7 +54,6 @@ export function IntentComposer({
   divergenceBusy = false,
   canTriggerDivergence = false,
   onTriggerDivergence,
-  sculptSlot = null,
 }: {
   intentText: string;
   onIntentChange: (value: string) => void;
@@ -72,6 +72,7 @@ export function IntentComposer({
   onToggleAddMenu: () => void;
   canvasPrimitive: CanvasPrimitive;
   asset: AssetRecord | null;
+  activeVersionMeshReady?: boolean;
   generationBusy: boolean;
   session: SessionRecord | null;
   visibleBehaviorAtoms: ActionAtom[];
@@ -83,7 +84,6 @@ export function IntentComposer({
   divergenceBusy?: boolean;
   canTriggerDivergence?: boolean;
   onTriggerDivergence?: () => void;
-  sculptSlot?: ReactNode;
 }) {
   const intentRef = useRef<HTMLTextAreaElement>(null);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | null>(null);
@@ -111,7 +111,6 @@ export function IntentComposer({
 
   return (
     <div className="canvas-composer-shell">
-      {sculptSlot}
       <div
         className={`canvas-composer float-panel${addMenuOpen ? " has-menu" : " is-compact"}`}
         aria-label="Intent composer"
@@ -168,10 +167,10 @@ export function IntentComposer({
             </button>
             <button
               type="button"
-              className="icon-tool tool-pink"
+              className={`icon-tool tool-pink${canvasPrimitive ? " is-active" : ""}`}
               aria-label="Add primitive"
               data-tooltip="Add Primitive (Plus)"
-              disabled={!asset && !canvasPrimitive}
+              disabled={!asset && !canvasPrimitive && !activeVersionMeshReady}
               onClick={onToggleAddMenu}
             >
               <Plus size={18} />

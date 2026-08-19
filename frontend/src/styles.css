@@ -2237,7 +2237,8 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   aspect-ratio: auto;
 }
 
-.version-node.thumbnail .version-thumb-viewport {
+.version-node.thumbnail .version-thumb-viewport,
+.version-node.thumbnail .version-thumb-viewport * {
   pointer-events: none;
 }
 
@@ -4460,9 +4461,9 @@ textarea:focus-visible,
   bottom: auto;
   z-index: 1;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px;
   border: 1px solid rgba(215, 223, 236, 0.94);
-  border-radius: 22px;
+  border-radius: 16px;
   background: rgba(247, 248, 250, 0.94);
   box-shadow: 0 8px 20px rgba(50, 65, 90, 0.07);
   backdrop-filter: blur(14px);
@@ -4471,24 +4472,20 @@ textarea:focus-visible,
 .sculpt-panel-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .sculpt-panel-title {
   color: var(--ink-mute);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .sculpt-panel-meta {
-  flex: 1;
-  min-width: 0;
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 600;
+  display: none;
 }
 
 .sculpt-exit {
@@ -4513,9 +4510,9 @@ textarea:focus-visible,
 
 .sculpt-sliders {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
-  margin-bottom: 8px;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .sculpt-sliders label {
@@ -4551,8 +4548,44 @@ textarea:focus-visible,
 
 .sculpt-actions {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.sculpt-actions.is-toolbar {
+  gap: 6px;
+}
+
+.transform-mode-row {
+  display: flex;
+  gap: 4px;
+}
+
+.transform-mode-row button {
+  flex: 1;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(210, 216, 228, 0.95);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.transform-mode-row button.is-active,
+.transform-mode-row button:hover {
+  color: var(--ink);
+  border-color: rgba(148, 163, 184, 0.95);
+  background: #fff;
+}
+
+.sculpt-hint {
+  display: none;
 }
 
 .sculpt-save {
@@ -4585,22 +4618,13 @@ textarea:focus-visible,
   cursor: not-allowed;
 }
 
-.sculpt-hint {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-size: 11px;
-  color: var(--ink-mute);
-  font-style: normal;
-}
-
 .sculpt-done-summary {
   display: grid;
   gap: 8px;
 }
 
 .sculpt-done-summary strong {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--ink);
 }
 
@@ -4612,16 +4636,16 @@ textarea:focus-visible,
 
 .sculpt-done-views {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr;
+  gap: 4px;
 }
 
 .sculpt-done-views img,
 .sculpt-done-views span {
   width: 100%;
-  height: 48px;
+  height: 40px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid rgba(210, 216, 228, 0.9);
   background: rgba(244, 246, 250, 0.9);
 }
@@ -4639,13 +4663,13 @@ textarea:focus-visible,
   left: auto;
   bottom: auto;
   z-index: 1;
-  width: fit-content;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px 6px 12px;
-  border-radius: 999px;
+  padding: 6px 8px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--panel-border);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);

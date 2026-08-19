@@ -43,7 +43,7 @@ import { AIBehaviorPanel } from "./components/panels/AIBehaviorPanel";
 import { selectActiveDecision } from "./utils/uiBrief";
 import { buildAiBehaviorPresentation } from "./utils/workspacePresentation";
 import { IntentComposer } from "./components/panels/IntentComposer";
-import { SculptControlsPanel, VersionCanvas } from "./components/StudioCanvas";
+import { PrimitiveControlsPanel, SculptControlsPanel, VersionCanvas } from "./components/StudioCanvas";
 import { ThreeViewport } from "./components/ThreeViewport";
 import { StudioMenu } from "./components/menu/StudioMenu";
 import { PerceptionPanel } from "./components/panels/PerceptionPanel";
@@ -246,6 +246,7 @@ function App() {
     creativeFidelity,
     setCreativeFidelity,
     canvasPrimitive,
+    primitiveLocked,
     setCanvasPrimitive,
     canvasTool,
     setCanvasTool,
@@ -477,6 +478,8 @@ function App() {
     finalizeSculptBehavior,
     cancelSculptBehavior,
     resumeSculptBehavior,
+    finalizePrimitiveBehavior,
+    cancelPrimitiveBehavior,
     deleteBehavior,
     createFourStageRun,
     advanceFourStageRun,
@@ -614,6 +617,7 @@ function App() {
             hoverLabel={hoverLabel}
             hoverMaskDataUrl={hoverMaskDataUrl}
             canvasPrimitive={canvasPrimitive}
+            primitiveLocked={primitiveLocked}
             canvasTool={canvasTool}
             canvasDisplayMode={canvasDisplayMode}
             parts={parts}
@@ -854,6 +858,38 @@ function App() {
             />
           </ResizableShell>
 
+          {(sculptTool && activeVersionMeshReady) || canvasPrimitive ? (
+            <div className="canvas-tool-dock" aria-label="Canvas tools">
+              {sculptTool && activeVersionMeshReady ? (
+                <SculptControlsPanel
+                  sculptTool={sculptTool}
+                  onExit={() => {
+                    void cancelSculptBehavior();
+                    setSculptTool(null);
+                  }}
+                  onContinueSculpt={resumeSculptBehavior}
+                  sculptRadius={sculptRadius}
+                  onRadiusChange={setSculptRadius}
+                  sculptStrength={sculptStrength}
+                  onStrengthChange={setSculptStrength}
+                  onCommitVersion={() => void commitSculptedMesh()}
+                  onDoneBehavior={() => finalizeSculptBehavior(false)}
+                  editorScene={editorScene}
+                  asset={asset}
+                />
+              ) : null}
+              {canvasPrimitive ? (
+                <PrimitiveControlsPanel
+                  primitive={canvasPrimitive}
+                  locked={primitiveLocked}
+                  onDone={() => finalizePrimitiveBehavior()}
+                  onCancel={cancelPrimitiveBehavior}
+                  onTransformMode={(mode) => threeViewportRef.current?.setPrimitiveTransformMode?.(mode)}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
           <ResizableShell
             className="canvas-composer-shell-resizable"
             ariaLabel="Intent composer"
@@ -890,6 +926,7 @@ function App() {
               onToggleAddMenu={toggleAddMenu}
               canvasPrimitive={canvasPrimitive}
               asset={asset}
+              activeVersionMeshReady={activeVersionMeshReady}
               generationBusy={generationBusy}
               session={session}
               visibleBehaviorAtoms={visibleBehaviorAtoms}
@@ -901,26 +938,6 @@ function App() {
               divergenceBusy={semanticDivergenceLoading}
               canTriggerDivergence={canTriggerKeywordDivergence}
               onTriggerDivergence={() => void triggerPostGateDivergence()}
-              sculptSlot={
-                sculptTool && activeVersionMeshReady ? (
-                  <SculptControlsPanel
-                    sculptTool={sculptTool}
-                    onExit={() => {
-                      void cancelSculptBehavior();
-                      setSculptTool(null);
-                    }}
-                    onContinueSculpt={resumeSculptBehavior}
-                    sculptRadius={sculptRadius}
-                    onRadiusChange={setSculptRadius}
-                    sculptStrength={sculptStrength}
-                    onStrengthChange={setSculptStrength}
-                    onCommitVersion={() => void commitSculptedMesh()}
-                    onDoneBehavior={() => finalizeSculptBehavior(false)}
-                    editorScene={editorScene}
-                    asset={asset}
-                  />
-                ) : null
-              }
             />
           </ResizableShell>
           </div>

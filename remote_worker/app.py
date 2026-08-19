@@ -54,6 +54,7 @@ from job_orchestration import (
     _run_job,
     _sanitize_for_json,
     _v1_job_response,
+    find_reusable_hy3d_job,
     jobs,
     now_iso,
     processes,
@@ -2900,6 +2901,15 @@ async def submit_hy3d_from_staged(req: Hy3DFromStagedJobRequest) -> WorkerJob:
     transfer_result = _staged_transfer_result(staged_payload)
     if not transfer_result.get("generated_targets"):
         raise HTTPException(status_code=400, detail="No staged preview image is available for Hy3D")
+    if not req.dry_run:
+        reuse_images = {
+            str(target["canonical_image"])
+            for target in transfer_result.get("generated_targets") or []
+            if isinstance(target, dict) and target.get("canonical_image")
+        }
+        reused = find_reusable_hy3d_job(reuse_images)
+        if reused is not None:
+            return reused
 
     job = _create_job("hy3d_from_staged", req.flowstudio_job_id, req.model_dump())
     out_dir = Path(job.work_dir) / "hy3d"

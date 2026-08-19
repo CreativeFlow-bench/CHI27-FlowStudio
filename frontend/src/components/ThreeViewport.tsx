@@ -28,7 +28,7 @@ const VIEWPORT_FALLBACK_ASPECT = 16 / 10;
 const BLOCKED_TRANSFORM_HANDLES: Record<"translate" | "rotate" | "scale", Set<string>> = {
   translate: new Set(["XY", "YZ", "XZ", "XYZ"]),
   rotate: new Set(["E", "XYZE"]),
-  scale: new Set(["XY", "YZ", "XZ", "XYZ"]),
+  scale: new Set(["XY", "YZ", "XZ"]),
 };
 
 export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewportProps>(function ThreeViewport({
@@ -39,6 +39,7 @@ export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewport
   selectedPart,
   hoverLabel,
   primitive,
+  primitiveLocked = false,
   tool,
   displayMode,
   parts,
@@ -64,6 +65,7 @@ export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewport
       selectedPart={selectedPart}
       hoverLabel={hoverLabel}
       primitive={primitive}
+      primitiveLocked={primitiveLocked}
       tool={tool}
       displayMode={displayMode}
       parts={parts}
@@ -90,6 +92,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
   selectedPart,
   hoverLabel,
   primitive,
+  primitiveLocked = false,
   tool,
   displayMode,
   parts,
@@ -215,11 +218,19 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       renderer.render(scene, camera);
       return captureCanvasJpeg(renderer.domElement, width, quality);
     };
+    const transformControl = transformControlRef.current;
+    const helper =
+      transformControl && typeof transformControl.getHelper === "function"
+        ? (transformControl.getHelper() as THREE.Object3D)
+        : null;
+    const helperWasVisible = Boolean(helper?.visible);
+    if (helper) helper.visible = false;
     const views = {
       front: renderAt(new THREE.Vector3(0, 0, 1)),
       side: renderAt(new THREE.Vector3(1, 0, 0)),
       top: renderAt(new THREE.Vector3(0, 1, 0)),
     };
+    if (helper) helper.visible = helperWasVisible;
     camera.position.copy(savedPosition);
     camera.up.copy(savedUp);
     controls.target.copy(savedTarget);
@@ -314,6 +325,13 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     return true;
   };
 
+  const setPrimitiveTransformMode = (mode: "translate" | "rotate" | "scale") => {
+    transformModeRef.current = mode;
+    const transformControl = transformControlRef.current;
+    if (transformControl) transformControl.setMode(mode);
+    attachPrimitiveTransformControls();
+  };
+
   const enforceTransformHandleFilter = (helper: THREE.Object3D | null, mode: "translate" | "rotate" | "scale") => {
     if (!helper) return;
     const blocked = BLOCKED_TRANSFORM_HANDLES[mode];
@@ -363,6 +381,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     exportMeshOBJ,
     getModelScreenBounds,
     getPrimitiveTransform,
+    setPrimitiveTransformMode,
   }));
 
   useEffect(() => {
@@ -788,6 +807,20 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       primitiveObjectRef.current = null;
     };
   }, [primitive]);
+
+  useEffect(() => {
+    const control = transformControlRef.current;
+    if (!control) return;
+    if (primitiveLocked) {
+      control.detach();
+      control.visible = false;
+      return;
+    }
+    if (primitiveObjectRef.current) {
+      control.attach(primitiveObjectRef.current);
+      control.visible = true;
+    }
+  }, [primitiveLocked]);
 
   return (
     <div className="viewport-wrap">

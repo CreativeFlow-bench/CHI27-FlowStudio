@@ -261,6 +261,7 @@ export function useStudioStore() {
   const [creativeStage, setCreativeStage] = useState("silhouette");
   const [creativeFidelity, setCreativeFidelity] = useState("low");
   const [canvasPrimitive, setCanvasPrimitive] = useState<CanvasPrimitive>(null);
+  const [primitiveLocked, setPrimitiveLocked] = useState(false);
   const [canvasTool, setCanvasTool] = useState<CanvasTool>("select");
   const [sculptTool, setSculptTool] = useState<SculptTool | null>(null);
   const [sculptRadius, setSculptRadius] = useState(0.28);
@@ -480,6 +481,8 @@ export function useStudioStore() {
   const sourceSwitchSeqRef = useRef(0);
   const jobSourceSeqRef = useRef<Record<string, number>>({});
   const versionGraphRef = useRef<VersionGraphState>({ active_node_id: null, nodes: [] });
+  const versionViewModeRef = useRef<"active" | "overview">(versionViewMode);
+  versionViewModeRef.current = versionViewMode;
   const sourceVersionCreationRef = useRef<Promise<VersionGraphState> | null>(null);
   const projectRef = useRef<ExperimentProjectDetail | null>(project);
   projectRef.current = project;
@@ -925,22 +928,70 @@ export function useStudioStore() {
     return { ...behavior, localBehaviorId: id, primitive };
   };
 
-  const finalizePrimitiveBehavior = async () => {
+  const cancelPrimitiveBehavior = () => {
     const behavior = primitiveBehaviorRef.current;
-    if (!behavior || !session) return null;
     primitiveBehaviorRef.current = null;
-    
+    if (behavior) {
+      setBehaviorSessions((current) => current.filter((item) => item.behavior_id !== behavior.localBehaviorId));
+    }
+    setCanvasPrimitive(null);
+    setPrimitiveLocked(false);
+  };
+
+  const finalizePrimitiveBehavior = async (): Promise<{
+    behavior: BehaviorSession | null;
+    endViews: BehaviorViewSet;
+  }> => {
+    const empty = { behavior: null as BehaviorSession | null, endViews: {} as BehaviorViewSet };
+    const pending = primitiveBehaviorRef.current;
+    if (!pending || !session) return empty;
+    primitiveBehaviorRef.current = null;
+    setPrimitiveLocked(true);
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+    });
+    const captured = threeViewportRef.current?.captureThreeViews?.(960, 0.82) ?? {};
+    const fallback = threeViewportRef.current?.captureJpeg?.(960, 0.82) ?? null;
+    const endViews = {
+      front: captured.front ?? fallback,
+      side: captured.side ?? fallback,
+      top: captured.top ?? fallback,
+    };
     setBehaviorSessions((current) =>
-      current.filter((item) => item.behavior_id !== behavior.localBehaviorId),
+      current.filter((item) => item.behavior_id !== pending.localBehaviorId),
     );
-    
-    // Call recordAddPrimitive which will create the committed ActionAtom and BehaviorSession
-    await recordAddPrimitive(behavior.primitive);
-    
-    // return the newly created behavior session by looking at the last one
-    // wait, recordAddPrimitive creates an ActionAtom, which triggers syncActionAtom and pushes a committed behavior
-    // let's just return a dummy behavior with the right seq to satisfy cutoff logic
-    return { behavior_seq: behavior.behavior_seq };
+    const endViewRefs = await uploadBehaviorViews(endViews, "end", "add");
+    const screenshot = await captureAndUploadViewport(threeViewportRef.current, {
+      sessionId: session.session_id,
+      assetId: asset?.asset_id ?? null,
+      partId: selectedPart || null,
+      metadata: { trigger: "primitive_add_done", primitive: pending.primitive },
+    });
+    const screenshotUrl = screenshot?.url ?? endViewRefs.front ?? endViews.front ?? null;
+    await recordAddPrimitive(pending.primitive, null, {
+      viewport_screenshot_url: screenshotUrl,
+      viewport_screenshot_artifact_id: screenshot?.artifact_id ?? null,
+      end_views: endViewRefs,
+    });
+    addLog("add", screenshotUrl ? "primitive saved · screenshot" : "primitive saved");
+    return {
+      behavior: {
+        behavior_id: pending.localBehaviorId,
+        session_id: session.session_id,
+        behavior_seq: pending.behavior_seq,
+        tool: "add",
+        target: { asset_id: asset?.asset_id ?? null, part_id: selectedPart || null, label: pending.primitive },
+        status: "committed",
+        started_at: new Date().toISOString(),
+        ended_at: new Date().toISOString(),
+        stroke_count: 1,
+        operation_summary: { primitive: pending.primitive, viewport_screenshot_url: screenshotUrl },
+        start_views: {},
+        end_views: endViewRefs,
+        evidence_refs: screenshotUrl ? [screenshotUrl] : [],
+      },
+      endViews,
+    };
   };
 
   const beginSculptBehavior = (tool: SculptTool, startViews: BehaviorViewSet) => {
@@ -1018,7 +1069,7 @@ export function useStudioStore() {
   const uploadBehaviorViews = async (
     views: BehaviorViewSet,
     phase: "start" | "end",
-    tool: SculptTool,
+    tool: string,
   ): Promise<BehaviorViewSet> => {
     if (!session) return {};
     const entries = await Promise.all(
@@ -2711,12 +2762,13 @@ export function useStudioStore() {
           return views.front ?? threeViewportRef.current?.captureJpeg?.(960, 0.82) ?? null;
         })();
     const currentToolCommit = finalizeSculptBehavior(Boolean(sculptTool)).then((result) => result.behavior);
-    const primitiveCommit = finalizePrimitiveBehavior();
+    const primitiveCommit = finalizePrimitiveBehavior().then((result) => result.behavior);
     // Register the whole tool-finalization promise immediately. A second rapid
     // Send can therefore include this first cutoff even while view uploads run.
     pendingBehaviorCommitsRef.current.add(currentToolCommit);
-    pendingBehaviorCommitsRef.current.add(primitiveCommit as any);
+    pendingBehaviorCommitsRef.current.add(primitiveCommit);
     void currentToolCommit.finally(() => pendingBehaviorCommitsRef.current.delete(currentToolCommit));
+    void primitiveCommit.finally(() => pendingBehaviorCommitsRef.current.delete(primitiveCommit));
     const intentTextAtClick = trigger === "idle" ? "" : intentText.trim();
     const annotationEvidenceAtClick = (() => {
       if (trigger === "idle") return null;
@@ -5048,6 +5100,7 @@ export function useStudioStore() {
   const recordAddPrimitive = async (
     primitiveOverride?: Exclude<CanvasPrimitive, null>,
     response?: GeometryWorkerResponse | null,
+    screenshotEvidence: Record<string, unknown> = {},
   ) => {
     const primitive = primitiveOverride ?? canvasPrimitive ?? "sphere";
     if (!asset && !primitiveOverride && !canvasPrimitive) return;
@@ -5091,6 +5144,7 @@ export function useStudioStore() {
         transform: primitivePayload.transform,
         relation: primitivePayload.relation,
         constraints: primitivePayload.constraints,
+        ...screenshotEvidence,
       },
     );
     sendEvent("primitive_add_intent", {
@@ -5105,6 +5159,8 @@ export function useStudioStore() {
       primitive_relation: primitivePayload.relation,
       primitive_constraints: primitivePayload.constraints,
       intent_text: intentText,
+      viewport_screenshot_url: screenshotEvidence.viewport_screenshot_url ?? null,
+      viewport_screenshot_artifact_id: screenshotEvidence.viewport_screenshot_artifact_id ?? null,
     });
     addLog("add", primitiveArtifact?.artifact_id ?? `${primitive} intent`);
   };
@@ -5112,11 +5168,31 @@ export function useStudioStore() {
   const createPrimitive = async (primitive: Exclude<CanvasPrimitive, null>) => {
     incrementLiveSignal("new_case_attempt_rate");
     incrementLiveSignal("tool_switch_count");
-    const sourceMeshUrl = asset?.mesh_url ?? asset?.obj_url;
-    
-    // Allow adding primitive into current scene without clearing it or forcing a backend preview
+    const graph = versionGraphRef.current;
+    const targetId = graph.active_node_id;
+    const target = targetId ? graph.nodes.find((item) => item.node_id === targetId) : undefined;
+    const targetCandidate = target?.candidate_id
+      ? allCandidates.find((item) => item.candidate_id === target.candidate_id) ?? null
+      : null;
+    const targetHasMesh = Boolean(
+      target?.mesh_url || target?.obj_url || asset?.mesh_url || asset?.obj_url,
+    );
+    if (targetId && versionViewModeRef.current === "overview") {
+      setActiveVersionId(targetId);
+      setVersionViewMode("active");
+      applyVersionGraph({ ...graph, active_node_id: targetId });
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setCanvasPan(centeredActiveCanvasPan(versionCanvasShellRef.current));
+        });
+      });
+      if (targetCandidate) {
+        setSelectedCandidateId(targetCandidate.candidate_id);
+      }
+    }
     setCanvasPrimitive(primitive);
-    if (!session || !asset || !sourceMeshUrl || !geometryReady) {
+    setPrimitiveLocked(false);
+    if (!targetHasMesh) {
       setAsset(null);
       setParts([]);
       setSelectedPart("");
@@ -5124,7 +5200,6 @@ export function useStudioStore() {
       setPreviewCandidate(null);
       setCanvasPreview(null);
     }
-    
     handleDisplayModeChange("clay");
     setCanvasTool("clay");
     if (primitiveBehaviorRef.current) {
@@ -5282,7 +5357,7 @@ export function useStudioStore() {
             granularity: "medium",
             max_parts: 8,
             ...(trigger === "hy3d"
-              ? { sam3d_real: true, segmentation_real: true, wait_timeout_sec: 480 }
+              ? { sam3d_real: true, segmentation_real: true, wait_timeout_sec: 120 }
               : {}),
           },
         }),
@@ -5692,6 +5767,7 @@ export function useStudioStore() {
     objUrl: string | null | undefined,
     previewUrl: string | null | undefined,
     remotePath: string | null | undefined,
+    versionNodeId?: string,
   ) => {
     if (!session || (!meshUrl && !objUrl)) return null;
     try {
@@ -5712,13 +5788,24 @@ export function useStudioStore() {
           },
         }),
       });
-      setAsset(adopted);
-      setParts(adopted.parts);
-      addLog("hy3d", `mesh adopted as ${adopted.asset_id}`);
-      const discovered = await discoverPartsForAsset(adopted, "hy3d");
-      const segmented = partSegmentationUrl(discovered?.parts ?? adopted.parts);
-      if (segmented) {
-        setAsset((current) => (current ? { ...current, mesh_url: segmented, parts: discovered?.parts ?? current.parts } : current));
+      const editingThisNode = !versionNodeId
+        || (
+          versionViewModeRef.current === "active"
+          && versionGraphRef.current.active_node_id === versionNodeId
+        );
+      if (editingThisNode) {
+        setAsset(adopted);
+        setParts(adopted.parts);
+        addLog("hy3d", `mesh adopted as ${adopted.asset_id}`);
+        void discoverPartsForAsset(adopted, "hy3d").then((discovered) => {
+          const segmented = partSegmentationUrl(discovered?.parts ?? adopted.parts);
+          if (!segmented) return;
+          setAsset((current) => (
+            current && current.asset_id === adopted.asset_id
+              ? { ...current, mesh_url: segmented, parts: discovered?.parts ?? current.parts }
+              : current
+          ));
+        });
       }
       return adopted;
     } catch (error) {
@@ -5767,6 +5854,7 @@ export function useStudioStore() {
           updated.obj_url,
           candidatePreviewUrl(updated),
           remotePath,
+          versionNodeId,
         );
       }
     } catch (error) {
@@ -5991,8 +6079,11 @@ export function useStudioStore() {
     setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
     setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
     try {
-      const updated = await api<{
+      const started = await api<{
         status: string;
+        remote_job_id?: string | null;
+        message?: string | null;
+        progress?: number | null;
         mesh_url?: string | null;
         obj_url?: string | null;
         preview_url?: string | null;
@@ -6010,6 +6101,24 @@ export function useStudioStore() {
           }),
         },
       );
+      let updated = started;
+      const remoteJobId = String(started.remote_job_id || "").trim();
+      if (versionNodeId && remoteJobId) {
+        await patchVersionNode(versionNodeId, { hy3d_job_id: remoteJobId }).catch(() => undefined);
+      }
+      for (let i = 0; i < 120; i += 1) {
+        setHy3dProgress({
+          message: String(updated.message || "").trim() || "Hunyuan3D 运行中",
+          progress: Number(updated.progress ?? 0.08),
+        });
+        if (updated.mesh_url || updated.obj_url) break;
+        if (updated.status === "failed" || updated.status === "cancelled") {
+          throw new Error(updated.status);
+        }
+        if (!remoteJobId) break;
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        updated = await api(`/api/v1/four-stage/hy3d-jobs/${encodeURIComponent(remoteJobId)}`);
+      }
       if (updated.mesh_url || updated.obj_url) {
         // 把候选升级为带 mesh 的版本节点（用户已选中并拖入，mesh 回到画布）。
         const upgraded: Candidate = {
@@ -6044,6 +6153,7 @@ export function useStudioStore() {
           upgraded.obj_url,
           candidatePreviewUrl(upgraded),
           remotePath,
+          versionNodeId,
         );
       } else if (updated.status === "running" || updated.status === "queued") {
         addLog("hy3d", "Hunyuan3D 仍在生成，未标记失败");
@@ -6051,13 +6161,17 @@ export function useStudioStore() {
         throw new Error(updated.status || "Hy3D completed without a mesh URL");
       }
     } catch (error) {
-      if (versionNodeId) {
+      const message = String(error);
+      const transient = /failed to fetch|networkerror|timeout|504|524/i.test(message);
+      if (versionNodeId && !transient) {
         await patchVersionNode(versionNodeId, {
           status: "mesh_failed",
-          error: String(error).slice(0, 500),
+          error: message.slice(0, 500),
         }).catch(() => undefined);
+      } else if (transient) {
+        addLog("hy3d", "请求中断，3D 任务仍在 GPU 上跑，未标记失败");
       }
-      addLog("hy3d", `四阶段候选 hy3d: ${String(error).slice(0, 160)}`);
+      addLog("hy3d", `四阶段候选 hy3d: ${message.slice(0, 160)}`);
     } finally {
       setHy3dCandidateIds((current) => current.filter((id) => id !== candidate.candidate_id));
     }
@@ -6077,6 +6191,29 @@ export function useStudioStore() {
         ?? "",
     );
     const imageUrl = live?.thumbnail_url ?? (live ? candidatePreviewUrl(live) : null) ?? node.preview_url;
+    const existingMesh = live?.mesh_url ?? node.mesh_url;
+    const existingObj = live?.obj_url ?? node.obj_url;
+    const sibling = versionGraphRef.current.nodes.find((item) => (
+      item.node_id !== nodeId
+      && item.parent_node_id !== null
+      && item.status === "mesh_ready"
+      && Boolean(item.mesh_url || item.obj_url)
+      && Boolean(node.candidate_id)
+      && item.candidate_id === node.candidate_id
+    ));
+    if (existingMesh || existingObj || sibling) {
+      const meshUrl = existingMesh ?? sibling?.mesh_url ?? null;
+      const objUrl = existingObj ?? sibling?.obj_url ?? null;
+      await patchVersionNode(nodeId, {
+        status: "mesh_ready",
+        preview_url: imageUrl ?? sibling?.preview_url ?? node.preview_url,
+        mesh_url: meshUrl,
+        obj_url: objUrl,
+        error: null,
+      });
+      addLog("hy3d", "复用已完成的 3D，不再重新生成");
+      return;
+    }
     const retryCandidate: Candidate = live ?? {
       candidate_id: node.candidate_id ?? `retry_${node.node_id}`,
       job_id: "",
@@ -6178,8 +6315,8 @@ export function useStudioStore() {
         width: layoutNode.width,
         height: layoutNode.height,
         previewUrl,
-        meshUrl: graphNode.mesh_url || candidate?.mesh_url || (isSource ? asset?.mesh_url : null) || null,
-        objUrl: graphNode.obj_url || candidate?.obj_url || (isSource ? asset?.obj_url : null) || (
+        meshUrl: graphNode.mesh_url || candidate?.mesh_url || null,
+        objUrl: graphNode.obj_url || candidate?.obj_url || (
           previewUrl && /\.preview\.png(?:\?|$)/i.test(previewUrl)
             ? previewUrl.replace(/\.preview\.png/i, ".obj")
             : null
@@ -6190,7 +6327,7 @@ export function useStudioStore() {
         candidate,
       };
     }),
-    [versionLayout.nodes, allCandidates, asset],
+    [versionLayout.nodes, allCandidates],
   );
 
   const versionLinks = useMemo(
@@ -6580,6 +6717,7 @@ export function useStudioStore() {
     creativeFidelity,
     setCreativeFidelity,
     canvasPrimitive,
+    primitiveLocked,
     setCanvasPrimitive,
     canvasTool,
     setCanvasTool,
@@ -6803,6 +6941,8 @@ export function useStudioStore() {
     finalizeSculptBehavior,
     cancelSculptBehavior,
     resumeSculptBehavior,
+    finalizePrimitiveBehavior,
+    cancelPrimitiveBehavior,
     deleteBehavior,
     createFourStageRun,
     appendFourStageEvents,

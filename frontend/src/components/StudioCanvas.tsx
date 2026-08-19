@@ -4,7 +4,8 @@
  */
 import { cloneElement, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
-import { Box, GripHorizontal, Maximize2, RotateCcw, Trash2, X } from "lucide-react";
+import { Box, GripHorizontal, Maximize2, Move, RotateCcw, RotateCw, Trash2, X } from "lucide-react";
+import { absoluteUrl } from "../api";
 import type {
   AnnotationStroke,
   AssetRecord,
@@ -25,6 +26,11 @@ import { ThreeViewport } from "./ThreeViewport";
 import { AnnotationCanvasOverlay } from "./overlays/AnnotationCanvasOverlay";
 import { compactVersionLabel, FLOWSTUDIO_CANDIDATE_MIME } from "../utils/versionGraph";
 import { partSegmentationUrl } from "../utils/appHelpers";
+
+function behaviorViewSrc(raw?: string | null): string | null {
+  if (!raw) return null;
+  return raw.startsWith("data:") || raw.startsWith("blob:") ? raw : absoluteUrl(raw);
+}
 
 // Native drag payload: application/x-flowstudio-candidate.
 
@@ -173,6 +179,7 @@ export function VersionCanvas({
   hoverLabel,
   hoverMaskDataUrl,
   canvasPrimitive,
+  primitiveLocked = false,
   canvasTool,
   canvasDisplayMode,
   parts,
@@ -220,6 +227,7 @@ export function VersionCanvas({
   hoverLabel: string | null;
   hoverMaskDataUrl?: string | null;
   canvasPrimitive: CanvasPrimitive;
+  primitiveLocked?: boolean;
   canvasTool: CanvasTool;
   canvasDisplayMode: CanvasDisplayMode;
   parts: PartRecord[];
@@ -357,7 +365,7 @@ export function VersionCanvas({
         // canvas pan hijacks the stroke into a drag.
         if (
           target?.closest(
-            ".viewport, .viewport-wrap, .version-node-frame, .annotation-canvas-overlay, .canvas-drag-handle, button, a, input, textarea, select",
+            ".viewport, .viewport-wrap, .version-node, .version-node-frame, .annotation-canvas-overlay, .canvas-drag-handle, button, a, input, textarea, select",
           )
         ) {
           return;
@@ -421,11 +429,7 @@ export function VersionCanvas({
         </svg>
 
         {versionNodes.map((node) => {
-          const liveMesh = Boolean(
-            node.meshUrl
-            || node.objUrl
-            || (node.kind === "source" && (asset?.mesh_url || asset?.obj_url)),
-          );
+          const liveMesh = Boolean(node.meshUrl || node.objUrl);
           return node.id === activeVersionId && versionViewMode === "active" ? (
             <div
               className={`version-node active status-${node.status}${node.isActivePath ? " is-active-path" : ""}`}
@@ -461,6 +465,7 @@ export function VersionCanvas({
                   hoverLabel={hoverLabel}
                   hoverMaskDataUrl={hoverMaskDataUrl}
                   primitive={canvasPrimitive}
+                  primitiveLocked={primitiveLocked}
                   tool={canvasTool}
                   displayMode={canvasDisplayMode}
                   parts={parts}
@@ -546,12 +551,12 @@ export function VersionCanvas({
                 width: node.width,
                 height: node.height,
               }}
-              onClick={() => {
-                if (versionViewMode === "overview") {
-                  onHighlightVersion(node.id, node.candidate);
+              onClick={(event) => {
+                if (event.detail >= 2 || versionViewMode !== "overview") {
+                  onActivateVersion(node.id, node.candidate);
                   return;
                 }
-                onActivateVersion(node.id, node.candidate);
+                onHighlightVersion(node.id, node.candidate);
               }}
               onDoubleClick={() => onActivateVersion(node.id, node.candidate)}
               onKeyDown={(event) => {
@@ -574,7 +579,7 @@ export function VersionCanvas({
               {liveMesh ? (
                 <div className="version-thumb-viewport">
                   <ThreeViewport
-                    asset={node.kind === "source" ? asset : null}
+                    asset={null}
                     previewMeshUrl={node.meshUrl ?? node.objUrl}
                     previewLabel={null}
                     onClearPreview={() => undefined}
@@ -764,9 +769,9 @@ export function SculptControlsPanel({
             <strong>已保存 {donePreview.strokes} 笔 · Behavior</strong>
             <div className="sculpt-done-views">
               {(["front", "side", "top"] as const).map((view) => {
-                const src = donePreview.views[view];
+                const src = behaviorViewSrc(donePreview.views[view]);
                 return src ? (
-                  <img key={view} src={src} alt={view} width={72} height={48} />
+                  <img key={view} src={src} alt={`${view} view`} width={72} height={48} />
                 ) : (
                   <span key={view}>{view}</span>
                 );
@@ -805,5 +810,98 @@ export function SculptControlsPanel({
         </div>
       ) : null}
     </>
+  );
+}
+
+export function PrimitiveControlsPanel({
+  primitive,
+  locked,
+  onDone,
+  onCancel,
+  onTransformMode,
+}: {
+  primitive: Exclude<CanvasPrimitive, null>;
+  locked: boolean;
+  onDone: () => Promise<{
+    behavior: BehaviorSession | null;
+    endViews: BehaviorViewSet;
+  }>;
+  onCancel: () => void;
+  onTransformMode: (mode: "translate" | "rotate" | "scale") => void;
+}) {
+  const [donePreview, setDonePreview] = useState<BehaviorViewSet | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"translate" | "rotate" | "scale">("translate");
+  const label = primitive.replaceAll("_", " ");
+
+  const handleMode = (next: "translate" | "rotate" | "scale") => {
+    setMode(next);
+    onTransformMode(next);
+  };
+
+  const handleDone = async () => {
+    if (busy || donePreview) return;
+    setBusy(true);
+    try {
+      const result = await onDone();
+      if (!result.behavior) return;
+      setDonePreview(result.endViews);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="sculpt-float-panel" aria-label="Add primitive controls">
+      <div className="sculpt-panel-head">
+        <span className="sculpt-panel-title">Add · {label}</span>
+        <button
+          className="sculpt-exit"
+          type="button"
+          title="取消添加"
+          aria-label="取消添加"
+          onClick={onCancel}
+        >
+          <X size={13} />
+        </button>
+      </div>
+      {!donePreview && !locked ? (
+        <div className="sculpt-actions is-toolbar">
+          <div className="transform-mode-row" role="group" aria-label="Transform mode">
+            <button type="button" className={mode === "translate" ? "is-active" : ""} title="Move" aria-label="Move" onClick={() => handleMode("translate")}>
+              <Move size={14} />
+            </button>
+            <button type="button" className={mode === "rotate" ? "is-active" : ""} title="Rotate" aria-label="Rotate" onClick={() => handleMode("rotate")}>
+              <RotateCw size={14} />
+            </button>
+            <button type="button" className={mode === "scale" ? "is-active" : ""} title="Scale" aria-label="Scale" onClick={() => handleMode("scale")}>
+              <Maximize2 size={14} />
+            </button>
+          </div>
+          <button
+            className="sculpt-done"
+            type="button"
+            disabled={busy}
+            onClick={() => void handleDone()}
+          >
+            {busy ? "…" : "Done"}
+          </button>
+        </div>
+      ) : (
+        <div className="sculpt-done-summary">
+          <strong>已保存截图</strong>
+          <div className="sculpt-done-views">
+            {(["front", "side", "top"] as const).map((view) => {
+              const src = behaviorViewSrc(donePreview?.[view]);
+              return src ? (
+                <img key={view} src={src} alt={`${view} view`} width={72} height={48} />
+              ) : (
+                <span key={view}>{view}</span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
