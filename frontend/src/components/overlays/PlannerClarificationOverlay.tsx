@@ -22,29 +22,26 @@ export type GateBubbleMode = {
 
 function bubblePlacement(anchor: ModelAnchor | null | undefined, index: number) {
   if (!anchor) {
-    const side = index % 3 === 1 ? "left" : index % 3 === 2 ? "top" : "right";
+    const side = index % 3 === 1 ? "right" : index % 3 === 2 ? "top" : "left";
     return { side, style: undefined as CSSProperties | undefined };
   }
   const bubbleWidth = 220;
-  const gap = 12;
+  const gap = 16;
   const top = Math.max(12, Math.min(
     anchor.columnHeight - 120,
     anchor.top + anchor.height * 0.35 - 24 + index * 96,
   ));
+  // Frame-local coords: hang beside the mesh, never clamp back onto it.
   const rightLeft = anchor.left + anchor.width + gap;
   const leftLeft = anchor.left - bubbleWidth - gap;
-  const fitsRight = rightLeft + bubbleWidth <= anchor.columnWidth - 8;
-  const fitsLeft = leftLeft >= 8;
-  const preferRight = fitsRight && (!fitsLeft || (anchor.left + anchor.width / 2) < anchor.columnWidth * 0.55);
-  const left = preferRight
-    ? Math.min(anchor.columnWidth - bubbleWidth - 8, Math.max(8, rightLeft))
-    : Math.max(8, Math.min(anchor.columnWidth - bubbleWidth - 8, leftLeft));
+  const preferLeft = anchor.left >= anchor.columnWidth - (anchor.left + anchor.width);
+  const left = preferLeft ? leftLeft : rightLeft;
   return {
-    side: preferRight ? "right" : "left",
+    side: preferLeft ? "left" : "right",
     style: {
       position: "absolute",
-      left,
-      top,
+      left: `${Math.round(left)}px`,
+      top: `${Math.round(top)}px`,
       right: "auto",
       bottom: "auto",
       transform: "none",

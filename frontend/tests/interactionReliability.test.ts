@@ -62,6 +62,21 @@ test("canvas navigation stays viewport-anchored instead of covering top workspac
   assert.match(layout, /--active-editor-width:\s*calc\(100vw - var\(--workspace-safe-left\) - var\(--workspace-safe-right\)\)/);
 });
 
+test("open chrome panels reflow siblings through workspace safe-area tokens", async () => {
+  const layout = await read("../src/workspaceLayout.css");
+  const overlay = await read("../src/components/overlays/PlannerClarificationOverlay.tsx");
+  assert.match(layout, /\.studio-shell\.has-solution-space\s*\{[^}]*--ai-behavior-top:\s*calc\(var\(--solution-space-height\)/s);
+  assert.match(layout, /\.studio-shell:has\(\.canvas-tool-dock\)\s*\{[^}]*--workspace-safe-left:/s);
+  assert.match(layout, /\.canvas-tool-dock\s*\{[^}]*left:\s*var\(--chrome-left\)/s);
+  assert.match(layout, /\.ai-behavior-float\s*\{[^}]*max-height:\s*calc\(100dvh - var\(--ai-behavior-top\) - var\(--workspace-safe-bottom\)\)/s);
+  assert.match(
+    layout,
+    /\.planner-clarification-overlay\.is-anchored,\s*\.version-node-frame > \.planner-clarification-overlay\s*\{[^}]*inset:\s*0/s,
+  );
+  assert.match(overlay, /preferLeft \? leftLeft : rightLeft/);
+  assert.doesNotMatch(overlay, /workspace-safe-left/);
+});
+
 test("collapsing Perception does not shift the rest of the workspace", async () => {
   const layout = await read("../src/workspaceLayout.css");
   assert.match(layout, /\.studio-shell\.perception-collapsed \.perception-float\s*\{/);

@@ -11,10 +11,12 @@
   --perception-top: 68px;
   --ai-behavior-top: var(--panel-top);
   --composer-reserve: 132px;
+  --tool-dock-width: 132px;
+  --chrome-left: calc(var(--perception-width) + var(--workspace-edge) + var(--workspace-gap));
   --workspace-safe-top: 64px;
   --workspace-safe-right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
   --workspace-safe-bottom: var(--composer-reserve);
-  --workspace-safe-left: calc(var(--perception-width) + var(--workspace-edge) + var(--workspace-gap));
+  --workspace-safe-left: var(--chrome-left);
   --active-editor-width: calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right));
   --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom));
   width: 100vw;
@@ -24,8 +26,18 @@
 }
 
 .studio-shell.has-solution-space {
+  --workspace-safe-top: var(--solution-space-height);
+  --ai-behavior-top: calc(var(--solution-space-height) + 8px);
   --solution-space-left: calc(var(--workspace-edge) + 52px + var(--workspace-gap));
   --solution-space-right: var(--workspace-safe-right);
+}
+
+.studio-shell:has(.canvas-tool-dock) {
+  --workspace-safe-left: calc(var(--chrome-left) + var(--tool-dock-width) + var(--workspace-gap));
+}
+
+.studio-shell:has(.behavior-history-rail) {
+  --composer-reserve: 176px;
 }
 
 .workspace,
@@ -263,7 +275,7 @@
   z-index: 24;
   width: var(--shell-width, var(--ai-behavior-width));
   min-height: 220px;
-  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge));
+  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-safe-bottom));
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -282,20 +294,28 @@
 
 .canvas-nav {
   position: fixed;
-  left: var(--workspace-edge);
+  left: calc(var(--chrome-left) + 8px);
   bottom: 24px;
 }
 
 .canvas-tool-dock {
   position: fixed;
-  left: 16px;
-  top: 50%;
+  left: var(--chrome-left);
+  top: calc(var(--workspace-safe-top) + (100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom)) / 2);
   z-index: 18;
   transform: translateY(-50%);
-  width: 132px;
+  width: var(--tool-dock-width);
+  max-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 16px);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: auto;
+}
+
+.planner-clarification-overlay.is-anchored,
+.version-node-frame > .planner-clarification-overlay {
+  inset: 0;
+  overflow: visible;
 }
 
 .clear-history-fab {
@@ -335,11 +355,6 @@
     calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right) - 32px)
   );
   max-height: calc(100dvh - 48px);
-}
-
-/* Keep the composer where it is; Action History sits above it. */
-.canvas-composer-shell:has(.behavior-history-rail) {
-  bottom: 72px;
 }
 
 .ai-behavior-float.float-panel {
@@ -400,9 +415,19 @@
 @media (max-width: 899px) {
   .studio-shell,
   .studio-shell.has-solution-space {
-    --workspace-safe-top: 64px;
+    --chrome-left: 12px;
+    --workspace-safe-left: 12px;
     --workspace-safe-right: 0px;
     --workspace-safe-bottom: 148px;
+  }
+
+  .studio-shell {
+    --workspace-safe-top: 64px;
+  }
+
+  .studio-shell.has-solution-space {
+    --workspace-safe-top: var(--solution-space-height);
+    --ai-behavior-top: calc(var(--solution-space-height) + 8px);
   }
 
   .perception-float {

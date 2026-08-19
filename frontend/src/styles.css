@@ -3027,9 +3027,9 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
 }
 
 /* Multiple immutable intent revisions occupy stable slots around the subject. */
-.multi-gate .revision-slot-0 { right: 7%; top: 28%; left: auto; }
-.multi-gate .revision-slot-1 { left: 7%; top: 52%; right: auto; }
-.multi-gate .revision-slot-2 { left: 50%; top: 12%; right: auto; transform: translateX(-50%); }
+.multi-gate .revision-slot-0 { left: 7%; top: 28%; right: auto; }
+.multi-gate .revision-slot-1 { right: 7%; top: 52%; left: auto; }
+.multi-gate .revision-slot-2 { left: 50%; top: 28%; right: auto; transform: translateX(-50%); }
 .multi-gate .revision-slot-3 { right: 11%; top: 64%; left: auto; }
 .multi-gate .revision-slot-4 { left: 10%; top: 16%; right: auto; }
 .multi-gate .revision-slot-5 { left: 50%; top: 76%; right: auto; transform: translateX(-50%); }
@@ -3093,10 +3093,10 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
 
 .intent-bead-overlay {
   position: absolute;
-  right: 360px;
-  top: 360px;
+  right: calc(var(--workspace-safe-right) + 16px);
+  top: calc(var(--workspace-safe-top) + 24px);
   z-index: 19;
-  width: min(220px, calc(100% - 380px));
+  width: min(220px, calc(100% - var(--workspace-safe-left) - var(--workspace-safe-right) - 32px));
   pointer-events: none;
 }
 
