@@ -250,7 +250,9 @@ class InteractionOrchestrator:
                 IntentRevisionStatus.completed,
             }
         ]
-        base = list(prior[-1].effective_keywords) if prior else list(revision.base_keywords)
+        excluded = set(selection.excluded_inherited_keywords or [])
+        prior_effective = list(prior[-1].effective_keywords) if prior else list(revision.base_keywords)
+        base = [keyword for keyword in prior_effective if keyword not in excluded]
         delta = list(dict.fromkeys(selection.selected_keywords))
         revision.base_keywords = base
         revision.delta_keywords = delta

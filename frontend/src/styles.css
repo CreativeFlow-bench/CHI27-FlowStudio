@@ -1393,6 +1393,20 @@ button.design-db-card strong {
   cursor: pointer;
   white-space: nowrap;
   min-height: 28px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.15;
+}
+
+.solution-space-round-chip small {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0;
+  max-width: 148px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .solution-space-round-chip:last-child {
@@ -5443,6 +5457,10 @@ textarea:focus-visible,
   box-shadow: none;
 }
 
+.ai-behavior-float .prompt-token.is-inherited {
+  opacity: 0.78;
+}
+
 .ai-behavior-float span.prompt-token {
   cursor: default;
   pointer-events: none;
@@ -5573,7 +5591,7 @@ textarea:focus-visible,
 .ai-behavior-float .ai-behavior-panel-body {
   display: flex;
   min-height: 0;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 12px;
   padding: 14px 16px 18px;
@@ -5636,7 +5654,7 @@ textarea:focus-visible,
 }
 
 .more-creative-card {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   overflow: visible;
   border: 0;
   border-radius: 0;

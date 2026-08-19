@@ -142,8 +142,8 @@ def main() -> int:
     parser.add_argument("--image", required=True)
     parser.add_argument("--mesh", required=True)
     parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--max-views", type=int, default=4)
-    parser.add_argument("--texture-resolution", type=int, default=512)
+    parser.add_argument("--max-views", type=int, default=6)
+    parser.add_argument("--texture-resolution", type=int, default=1024)
     args = parser.parse_args()
 
     sys.path[:0] = [

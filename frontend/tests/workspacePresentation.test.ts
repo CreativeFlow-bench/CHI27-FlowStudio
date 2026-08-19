@@ -178,6 +178,10 @@ test("Gate acknowledgement keeps divergence visibly loading until candidates hyd
     { loading: false, error: null },
   );
   assert.deepEqual(
+    derive?.({ revisionStatus: "completed", revisionError: null, resultStatus: "completed", hasCandidates: false }),
+    { loading: false, error: "no keywords returned" },
+  );
+  assert.deepEqual(
     derive?.({ revisionStatus: "failed", revisionError: "model timeout", resultStatus: null, hasCandidates: false }),
     { loading: false, error: "model timeout" },
   );

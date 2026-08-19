@@ -24,12 +24,9 @@ export function SolutionSpaceRail({
   job,
   loading,
   onCollapse,
-  onPreview,
   onAcceptDirection,
-  onCommit3D,
   onReject,
-  onGenerate3D,
-  selectedCandidateId,
+  selectedCandidateId: _selectedCandidateId,
   onSelectCandidate,
   onDropCandidate,
   progressLabel,
@@ -45,13 +42,9 @@ export function SolutionSpaceRail({
   acceptedCandidateIds: string[];
   job: JobRecord | null;
   loading: boolean;
-  hy3dCandidateIds: string[];
   onCollapse: () => void;
-  onPreview: (candidate: Candidate) => void;
   onAcceptDirection: (candidate: Candidate) => void;
-  onCommit3D: (candidate: Candidate) => void;
   onReject: (candidate: Candidate) => void;
-  onGenerate3D: (candidate: Candidate) => void;
   selectedCandidateId: string | null;
   onSelectCandidate: (candidate: Candidate) => void;
   onDropCandidate: (candidate: Candidate) => void;
@@ -59,7 +52,7 @@ export function SolutionSpaceRail({
   errorMessage?: string | null;
   height?: number;
   onHeightChange?: (height: number) => void;
-  roundChips?: Array<{ intentSeq: number; count: number }>;
+  roundChips?: Array<{ intentSeq: number; count: number; summary?: string; live?: boolean }>;
   displayIntentSeq?: number | null;
   onSelectRound?: (intentSeq: number) => void;
 }) {
@@ -133,17 +126,24 @@ export function SolutionSpaceRail({
             <div className="solution-space-round-pages" role="tablist" aria-label="Generation pages">
               {roundChips.map((chip) => {
                 const selected = chip.intentSeq === displayIntentSeq;
+                const title = [
+                  `Gen${chip.intentSeq}`,
+                  chip.summary,
+                  chip.count ? `${chip.count} 张` : null,
+                  chip.live ? "正在生成" : null,
+                ].filter(Boolean).join(" · ");
                 return (
                   <button
                     type="button"
                     role="tab"
                     aria-selected={selected}
-                    className={`solution-space-round-chip${selected ? " is-active" : ""}`}
+                    className={`solution-space-round-chip${selected ? " is-active" : ""}${chip.live ? " is-live" : ""}`}
                     key={chip.intentSeq}
-                    title={`Gen${chip.intentSeq}${chip.count ? ` · ${chip.count}` : ""}`}
+                    title={title}
                     onClick={() => onSelectRound?.(chip.intentSeq)}
                   >
-                    Gen{chip.intentSeq}
+                    <span>Gen{chip.intentSeq}</span>
+                    {chip.summary ? <small>{chip.summary}</small> : null}
                   </button>
                 );
               })}
@@ -208,7 +208,11 @@ export function SolutionSpaceRail({
                 )}
                 <div className="solution-card-body">
                   <strong>{candidate.label}</strong>
-                  <span>{candidateStage(candidate)} · {candidateArtifactLevel(candidate)}</span>
+                  <span>
+                    {Array.isArray(candidate.metadata?.delta_keywords) && candidate.metadata.delta_keywords.length
+                      ? (candidate.metadata.delta_keywords as string[]).slice(0, 3).join(" · ")
+                      : `${candidateStage(candidate)} · ${candidateArtifactLevel(candidate)}`}
+                  </span>
                   <em>{accepted ? "accepted · 再点取消" : candidate.decision}</em>
                 </div>
               </article>

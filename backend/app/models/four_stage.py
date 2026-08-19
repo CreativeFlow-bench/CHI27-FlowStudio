@@ -113,12 +113,13 @@ class DivergenceSelection(BaseModel):
     user_text: str | None = None
     dimensions: dict[str, list[str]] = Field(default_factory=dict)
     system_keywords: list[str] = Field(default_factory=list, max_length=12)
+    excluded_inherited_keywords: list[str] = Field(default_factory=list, max_length=24)
     command_id: str | None = None
     idempotency_key: str | None = None
     expected_version: int | None = Field(default=None, ge=1)
     expected_selection_version: int | None = Field(default=None, ge=0)
 
-    @field_validator("selected_keywords", "system_keywords")
+    @field_validator("selected_keywords", "system_keywords", "excluded_inherited_keywords")
     @classmethod
     def _dedupe_keywords(cls, values: list[str]) -> list[str]:
         result: list[str] = []

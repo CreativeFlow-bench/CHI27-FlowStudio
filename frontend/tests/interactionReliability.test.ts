@@ -54,8 +54,11 @@ test("canvas navigation stays viewport-anchored instead of covering top workspac
   const layout = await read("../src/workspaceLayout.css");
   const css = await read("../src/styles.css");
   const canvas = await read("../src/components/StudioCanvas.tsx");
+  const main = await read("../src/main.tsx");
 
-  assert.match(layout, /\.canvas-nav\s*\{[^}]*position:\s*fixed;[^}]*bottom:/s);
+  assert.match(layout, /\.canvas-nav\s*\{[^}]*left:\s*var\(--workspace-edge\)/s);
+  assert.match(main, /Zoom out[\s\S]*?zoomCanvasBy\(0\.9\)/);
+  assert.match(layout, /\.ai-behavior-float \.ai-behavior-panel-body\s*\{[^}]*flex:\s*1 1 auto/s);
   assert.match(layout, /@media \(max-width:\s*1149px\)[\s\S]*?\.canvas-nav\s*\{[^}]*--workspace-safe-bottom/s);
   assert.match(css, /\.version-canvas-shell\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0/s);
   assert.match(canvas, /createPortal\(shell, shellHost\)/);

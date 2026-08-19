@@ -60,6 +60,7 @@ export function AIBehaviorPanel({
   divergencePhaseMessage,
   selectionPersistenceError,
   inheritedKeywords,
+  onDismissInheritedKeyword,
   collapsed = false,
   onCollapsedChange,
 }: {
@@ -87,6 +88,7 @@ export function AIBehaviorPanel({
   divergencePhaseMessage: string | null;
   selectionPersistenceError: string | null;
   inheritedKeywords?: string[];
+  onDismissInheritedKeyword?: (keyword: string) => void;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 }) {
@@ -287,17 +289,20 @@ export function AIBehaviorPanel({
                 <section className="dimension-panel inherited-keywords" aria-label="已继承关键词">
                   <div className="dimension-panel-head">
                     <strong>上一意图</strong>
+                    <span className="sr-only">点击关键词可从本轮移除</span>
                   </div>
                   <div className="prompt-token-board grouped">
                     {inheritedKeywords.map((keyword, index) => (
-                      <span
-                        className="prompt-token is-keyword-enter"
+                      <button
+                        className="prompt-token is-keyword-enter is-inherited"
                         key={keyword}
-                        title="继承自上一意图，不可点选"
+                        type="button"
+                        title="点击移除，不再带入本轮"
                         style={{ animationDelay: `${Math.min(index, 12) * 28}ms` }}
+                        onClick={() => onDismissInheritedKeyword?.(keyword)}
                       >
                         <span>{keyword}</span>
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </section>

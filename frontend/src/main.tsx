@@ -226,7 +226,6 @@ function App() {
     setPartDiscovery,
     discoveringParts,
     setDiscoveringParts,
-    hy3dCandidateIds,
     hy3dProgress,
     setHy3dCandidateIds,
     fittingCandidateIds,
@@ -430,6 +429,8 @@ function App() {
     recordAddPrimitive,
     createPrimitive,
     togglePromptToken,
+    dismissInheritedKeyword,
+    inheritedKeywords,
     discoverPartsForAsset,
     discoverParts,
     renameSelectedPart,
@@ -442,7 +443,6 @@ function App() {
     loadJobCandidates,
     previewCandidateForComparison,
     decideCandidate,
-    generateCandidateHy3d,
     fitCandidateToPart,
     versionNodes,
     versionLinks,
@@ -520,7 +520,6 @@ function App() {
   const [perceptionCollapsed, setPerceptionCollapsed] = useState(false);
 
   const canvasDecisionRevision = selectActiveDecision(intentRevisions);
-  const activeIntentRevision = intentRevisions.find((item) => item.revision_id === activeRevisionId) ?? null;
   const latestIntentCutoff = intentRevisions.reduce((latest, item) => Math.max(latest, item.cutoff_seq), 0);
   // Only the newest revision drives the canvas spinner — a stale leftover
   // `planning` row must not keep the blue ring spinning forever.
@@ -558,12 +557,6 @@ function App() {
         item.phenomenon ? `现象：${item.phenomenon}` : null,
       ].filter(Boolean).join(" · "),
     }));
-  const inheritedRevisionKeywords = activeIntentRevision
-    ? [...intentRevisions]
-        .filter((item) => item.intent_seq < activeIntentRevision.intent_seq && ["accepted", "generating", "completed"].includes(item.status))
-        .reverse()
-        .find((item) => item.effective_keywords.length)?.effective_keywords ?? []
-    : [];
   const aiBehaviorPresentation = buildAiBehaviorPresentation({
     uiBrief,
     plannerTypedText,
@@ -754,7 +747,6 @@ function App() {
               loading={(solutionSpaceGenerating || fourStage.stage === "generation") && !fourStage.error && displayIntentSeq === liveIntentSeq}
               progressLabel={solutionProgressLabel}
               errorMessage={fourStage.stage === "failed" ? fourStage.error?.message ?? null : null}
-              hy3dCandidateIds={hy3dCandidateIds}
               selectedCandidateId={selectedCandidateId}
               height={solutionSpaceHeight}
               onHeightChange={setSolutionSpaceHeight}
@@ -768,11 +760,8 @@ function App() {
                   reduceSolutionSpaceVisibility(current, { type: "collapse" }),
                 );
               }}
-              onPreview={(candidate) => void previewCandidateForComparison(candidate)}
               onAcceptDirection={(candidate) => void decideCandidate(candidate, "accept", false)}
-              onCommit3D={(candidate) => void decideCandidate(candidate, "accept", true)}
               onReject={(candidate) => void decideCandidate(candidate, "reject")}
-              onGenerate3D={(candidate) => void generateCandidateHy3d(candidate)}
             />
           ) : null}
           {!liveSolutionSpaceVisible ? (
@@ -840,7 +829,8 @@ function App() {
               semanticDivergenceError={semanticDivergenceError}
               divergencePhaseMessage={divergencePhaseMessage}
               selectionPersistenceError={selectionPersistenceError}
-              inheritedKeywords={inheritedRevisionKeywords}
+              inheritedKeywords={inheritedKeywords}
+              onDismissInheritedKeyword={dismissInheritedKeyword}
               projectNotice={projectNotice}
               onDismissNotice={() => setProjectNotice(null)}
               intentBubble={intentBubble}
@@ -954,7 +944,7 @@ function App() {
               <button type="button" title="Redo" aria-label="Redo" disabled={!editorScene.canRedo} onClick={redoEditor}>
                 <RefreshCw size={14} aria-hidden="true" />
               </button>
-              <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => setCanvasZoom((value) => Math.max(0.4, Number((value - 0.1).toFixed(2))))}>
+              <button type="button" title="Zoom out" aria-label="Zoom out" onClick={() => zoomCanvasBy(0.9)}>
                 <ZoomOut size={14} aria-hidden="true" />
               </button>
               <button type="button" title="Fit all" aria-label="Fit all versions" onClick={() => focusVersionCanvas("all")}>

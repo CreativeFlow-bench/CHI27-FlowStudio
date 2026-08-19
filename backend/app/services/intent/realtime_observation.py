@@ -895,7 +895,9 @@ class RealtimeObservationService:
                 IntentRevisionStatus.completed,
             }
         ]
-        base = list(prior[-1].effective_keywords) if prior else []
+        excluded = set(selection.excluded_inherited_keywords or [])
+        prior_effective = list(prior[-1].effective_keywords) if prior else []
+        base = [keyword for keyword in prior_effective if keyword not in excluded]
         base_phrases = (
             list(prior[-1].divergence_selection.resolved_prompt_phrases)
             if prior and prior[-1].divergence_selection is not None

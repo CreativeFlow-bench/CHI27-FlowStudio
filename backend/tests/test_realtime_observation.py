@@ -1424,6 +1424,31 @@ def test_rejected_revision_does_not_inherit_but_next_accepted_revision_appends()
     assert run["generation_spec"]["candidate_count"] == 8
 
 
+def test_excluded_inherited_keywords_are_dropped_from_base() -> None:
+    sid = _session()
+    _behavior(sid, "brush")
+    first = _revision(sid, "change silhouette")
+    client.post(f"/api/v1/intent-revisions/{first['revision_id']}/gate", json={"accepted": True})
+    client.put(
+        f"/api/v1/intent-revisions/{first['revision_id']}/divergence-selection",
+        json={"selected_candidate_ids": [_semantic_candidate(first)["candidate_id"]], "scope": "whole"},
+    )
+    _behavior(sid, "drag")
+    second = _revision(sid, "extend the hat")
+    client.post(f"/api/v1/intent-revisions/{second['revision_id']}/gate", json={"accepted": True})
+    dropped = client.put(
+        f"/api/v1/intent-revisions/{second['revision_id']}/divergence-selection",
+        json={
+            "selected_candidate_ids": [_semantic_candidate(second, 1)["candidate_id"]],
+            "scope": "part",
+            "excluded_inherited_keywords": ["卷曲帽檐"],
+        },
+    ).json()
+    assert dropped["base_keywords"] == []
+    assert dropped["delta_keywords"] == ["柔和插接"]
+    assert dropped["effective_keywords"] == ["柔和插接"]
+
+
 def test_accepted_unselected_revision_does_not_break_cumulative_inheritance() -> None:
     sid = _session()
     _behavior(sid, "brush")

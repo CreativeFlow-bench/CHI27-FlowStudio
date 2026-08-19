@@ -808,6 +808,7 @@ export type DivergenceSelection = {
   user_text?: string | null;
   dimensions?: Record<string, string[]>;
   system_keywords?: string[];
+  excluded_inherited_keywords?: string[];
   command_id?: string;
   idempotency_key?: string;
   expected_version?: number;

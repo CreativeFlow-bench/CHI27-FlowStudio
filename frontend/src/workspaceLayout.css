@@ -148,6 +148,7 @@
 
 .studio-shell.ai-behavior-collapsed .ai-behavior-float {
   width: auto;
+  height: auto;
   min-height: 0;
   max-height: none;
   overflow: hidden;
@@ -275,7 +276,8 @@
   right: var(--workspace-edge);
   z-index: 24;
   width: var(--shell-width, var(--ai-behavior-width));
-  min-height: 220px;
+  min-height: 480px;
+  height: max(480px, var(--shell-height, 0px));
   max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-safe-bottom));
   display: flex;
   flex-direction: column;
@@ -287,7 +289,7 @@
 }
 
 .ai-behavior-float .ai-behavior-panel-body {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
   max-height: none;
   overflow: visible;
@@ -295,7 +297,7 @@
 
 .canvas-nav {
   position: fixed;
-  left: calc(var(--chrome-left) + 8px);
+  left: var(--workspace-edge);
   bottom: 24px;
 }
 

@@ -55,6 +55,9 @@ export function deriveSemanticDivergenceUiState({
   if (resultStatus === "completed" && hasCandidates) {
     return { loading: false, error: null };
   }
+  if (resultStatus === "completed" && !hasCandidates) {
+    return { loading: false, error: revisionError || "no keywords returned" };
+  }
   return {
     loading:
       revisionStatus === "running" ||

@@ -20,6 +20,8 @@ export function reduceSolutionSpaceVisibility(
 export type SolutionSpaceRoundChip = {
   intentSeq: number;
   count: number;
+  summary?: string;
+  live?: boolean;
 };
 
 /** Resolve which intent round a candidate belongs to. */

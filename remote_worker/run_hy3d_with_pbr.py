@@ -61,6 +61,10 @@ def _texture_item(item: dict, out_dir: Path) -> dict:
         str(mesh_glb),
         "--out-dir",
         str(pbr_dir),
+        "--max-views",
+        os.getenv("CF_PBR_MAX_VIEWS", "6"),
+        "--texture-resolution",
+        os.getenv("CF_PBR_TEXTURE_RESOLUTION", "1024"),
     ]
     pbr = _run(pbr_cmd, timeout=1800)
     pbr_obj = pbr_dir / "mesh_pbr.obj"

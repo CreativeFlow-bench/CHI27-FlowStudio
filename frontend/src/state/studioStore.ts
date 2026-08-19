@@ -82,6 +82,12 @@ import {
   candidateIntentSeq,
   reduceSolutionSpaceVisibility,
 } from "../utils/solutionSpaceVisibility";
+import {
+  fourStageCandidateFromArtifact,
+  inheritedKeywordsFromRevisions,
+  summarizeKeywords,
+  visibleInheritedKeywords,
+} from "./studioInteraction";
 import { mergeRealtimeRevisions } from "../utils/optimisticRevisions";
 import { computeCenteredActiveCanvasPan, computeOverviewCanvasCamera, layoutVersionGraph } from "../utils/versionGraph";
 import { createExperimentEventRecorder } from "../utils/experimentProject";
@@ -350,6 +356,10 @@ export function useStudioStore() {
   // 是关键词面板的唯一数据源（替代旧 directions/suggest 输出）。
   const [divergenceKeywords, setDivergenceKeywords] = useState<PromptToken[]>([]);
   const [selectedPromptTokens, setSelectedPromptTokens] = useState<PromptToken[]>([]);
+  const [excludedInheritedKeywords, setExcludedInheritedKeywords] = useState<string[]>([]);
+  const excludedInheritedKeywordsRef = useRef<string[]>([]);
+  excludedInheritedKeywordsRef.current = excludedInheritedKeywords;
+  const divergenceHydrateRetryRef = useRef<string | null>(null);
   const [semanticDivergence, setSemanticDivergence] = useState<NonNullable<FourStageRun["semantic_divergence"]> | null>(null);
   const [semanticDivergenceLoading, setSemanticDivergenceLoading] = useState(false);
   const [semanticDivergenceError, setSemanticDivergenceError] = useState<string | null>(null);
@@ -428,19 +438,22 @@ export function useStudioStore() {
       setSemanticDivergenceLoading(true);
       setSemanticDivergenceError(null);
       setDivergencePhaseMessage((current) => current ?? "Connecting to model…");
-    } else if (projected.error) {
-      setSemanticDivergenceLoading(false);
-      setSemanticDivergenceError(projected.error);
-    } else if (semanticDivergence?.status === "completed" && divergenceKeywords.length > 0) {
-      setSemanticDivergenceLoading(false);
-      setSemanticDivergenceError(null);
+      return;
     }
+    setSemanticDivergenceLoading(false);
+    setSemanticDivergenceError(projected.error);
+    if (!projected.error) setDivergencePhaseMessage(null);
   }, [
     activeRevisionId,
     divergenceKeywords.length,
     intentRevisions,
     semanticDivergence?.status,
   ]);
+  useEffect(() => {
+    setExcludedInheritedKeywords([]);
+    excludedInheritedKeywordsRef.current = [];
+    divergenceHydrateRetryRef.current = null;
+  }, [activeRevisionId]);
   const [plannerTypedText, setPlannerTypedText] = useState("");
   const [liveObserveNarrative, setLiveObserveNarrative] = useState<string | null>(null);
   const plannerNarrationTimerRef = useRef<number | null>(null);
@@ -594,6 +607,9 @@ export function useStudioStore() {
     setSculptTool(null);
     editorScene.reset();
     setSelectedPromptTokens([]);
+    setExcludedInheritedKeywords([]);
+    excludedInheritedKeywordsRef.current = [];
+    divergenceHydrateRetryRef.current = null;
     setInterpretation(null);
     setSolutionSpaceReleased((current) =>
       reduceSolutionSpaceVisibility(current, { type: "source_changed" }),
@@ -1804,36 +1820,30 @@ export function useStudioStore() {
     (batch.artifacts ?? []).map((artifact, promptIndex) => ({ batch, artifact, promptIndex })),
   );
   const fourStageCandidates: Candidate[] = appendedBatchArtifacts.map(
-    ({ batch, artifact, promptIndex }, index) => ({
-      candidate_id: String(artifact.candidate_id ?? `fourstage_${batch.run_id}_${index + 1}`),
-      job_id: batch.run_id,
-      session_id: session?.session_id ?? "",
-      source_asset_id: asset?.asset_id ?? "",
-      source_part_id: batch.source_context?.target_part_id ?? null,
-      label: `意图 ${batch.intent_seq} · 方案 ${promptIndex + 1}`,
-      decision: "suggested",
-      mesh_url: artifact.kind === "glb" ? String(artifact.url ?? "") : null,
-      obj_url: artifact.kind === "obj" ? String(artifact.url ?? "") : null,
-      thumbnail_url: artifact.kind === "png" ? String(artifact.url ?? "") : null,
-      scores: {},
-      metadata: {
-        stage: "four_stage_generated",
-        fidelity: "low",
-        four_stage_artifact: true,
-        run_id: batch.run_id,
-        revision_id: batch.revision_id,
-        intent_seq: batch.intent_seq,
-        artifact_kind: artifact.kind,
-        prompt_index: promptIndex,
-        append_index: batch.append_index,
-        parent_batch_id: batch.parent_batch_id,
-        gate_id: batch.gate_id,
-        base_keywords: batch.base_keywords,
-        delta_keywords: batch.delta_keywords,
-        cumulative_keywords: batch.cumulative_keywords,
-        source_context: batch.source_context,
-      },
-    }),
+    ({ batch, artifact, promptIndex }) =>
+      fourStageCandidateFromArtifact({
+        runId: batch.run_id,
+        index: promptIndex,
+        artifact: {
+          candidate_id: artifact.candidate_id,
+          kind: String(artifact.kind ?? "png"),
+          url: String(artifact.url ?? ""),
+        },
+        sessionId: session?.session_id ?? "",
+        assetId: asset?.asset_id ?? "",
+        partId: batch.source_context?.target_part_id ?? null,
+        intentSeq: batch.intent_seq,
+        revisionId: batch.revision_id,
+        keywords: batch.delta_keywords?.length ? batch.delta_keywords : batch.cumulative_keywords,
+        extraMetadata: {
+          append_index: batch.append_index,
+          parent_batch_id: batch.parent_batch_id,
+          gate_id: batch.gate_id,
+          base_keywords: batch.base_keywords,
+          cumulative_keywords: batch.cumulative_keywords,
+          source_context: batch.source_context,
+        },
+      }),
   );
   // 四阶段候选以 fourStage.generationArtifacts 派生为准；candidates 里若也
   // 放了一份（completed 时 setCandidates 写入），必须去重避免同一批图出现两次。
@@ -1882,7 +1892,26 @@ export function useStudioStore() {
         if (seq == null) return displayIntentSeq === liveIntentSeq;
         return seq === displayIntentSeq;
       });
-  const solutionSpaceRoundChips = buildSolutionSpaceRoundChips(roundCounts, liveIntentSeq || null);
+  const solutionSpaceRoundChips = buildSolutionSpaceRoundChips(roundCounts, liveIntentSeq || null).map((chip) => {
+    const batch = [...solutionBatches].reverse().find((item) => item.intent_seq === chip.intentSeq);
+    const revision = intentRevisions.find((item) => item.intent_seq === chip.intentSeq);
+    const keywords = batch?.delta_keywords?.length
+      ? batch.delta_keywords
+      : batch?.cumulative_keywords?.length
+        ? batch.cumulative_keywords
+        : revision?.delta_keywords ?? revision?.effective_keywords ?? [];
+    return {
+      ...chip,
+      summary: summarizeKeywords(keywords),
+      live: chip.intentSeq === liveIntentSeq && solutionSpaceGenerating,
+    };
+  });
+  const inheritedKeywords = visibleInheritedKeywords(
+    activeIntentRevision?.base_keywords?.length
+      ? activeIntentRevision.base_keywords
+      : inheritedKeywordsFromRevisions(intentRevisions, activeIntentRevision?.intent_seq ?? null),
+    excludedInheritedKeywords,
+  );
   const liveSolutionSpaceVisible = !solutionSpaceReleased;
   const solutionSpaceComparing = Boolean(
     liveSolutionSpaceVisible && !solutionSpaceGenerating && solutionSpaceCandidates.length > 0,
@@ -2312,6 +2341,32 @@ export function useStudioStore() {
     }
   };
 
+  const mapRunArtifactsToCandidates = (
+    runId: string,
+    artifacts: Array<{ candidate_id?: unknown; kind?: string | null; url?: string | null }>,
+  ) => {
+    const revisionForRun =
+      intentRevisionsRef.current.find((item) => item.run_id === runId)
+      ?? intentRevisionsRef.current.find((item) => item.revision_id === activeRevisionIdRef.current)
+      ?? null;
+    const keywords = revisionForRun?.delta_keywords?.length
+      ? revisionForRun.delta_keywords
+      : revisionForRun?.effective_keywords ?? [];
+    return artifacts.map((artifact, index) =>
+      fourStageCandidateFromArtifact({
+        runId,
+        index,
+        artifact,
+        sessionId: session?.session_id ?? "",
+        assetId: asset?.asset_id ?? "",
+        partId: revisionForRun?.source_context?.target_part_id ?? selectedPart || null,
+        intentSeq: revisionForRun?.intent_seq,
+        revisionId: revisionForRun?.revision_id,
+        keywords,
+      }),
+    );
+  };
+
   const applyFourStageWsEvent = (message: FourStageWsEvent) => {
     const { payload } = message;
     const runId = payload?.run_id ?? null;
@@ -2354,35 +2409,7 @@ export function useStudioStore() {
         next.generationArtifacts = extractGenerationArtifacts(payload);
         next.generationCompleted = Number(payload?.completed_count ?? next.generationArtifacts.length);
         next.generationTotal = Number(payload?.total_count ?? next.generationArtifacts.length);
-        const revisionForRun =
-          intentRevisionsRef.current.find((item) => item.run_id === next.runId)
-          ?? intentRevisionsRef.current.find((item) => item.revision_id === activeRevisionIdRef.current)
-          ?? null;
-        const runCandidates: Candidate[] = next.generationArtifacts.map((artifact, index) => ({
-          candidate_id: `fourstage_${next.runId ?? "run"}_${index + 1}`,
-          job_id: next.runId ?? "",
-          session_id: session?.session_id ?? "",
-          source_asset_id: asset?.asset_id ?? "",
-          source_part_id: selectedPart || null,
-          label: revisionForRun
-            ? `意图 ${revisionForRun.intent_seq} · 方案 ${index + 1}`
-            : `方案 ${index + 1}`,
-          decision: "suggested",
-          mesh_url: artifact.kind === "glb" ? artifact.url : null,
-          obj_url: artifact.kind === "obj" ? artifact.url : null,
-          thumbnail_url: artifact.kind === "png" ? artifact.url : null,
-          scores: {},
-          metadata: {
-            stage: "four_stage_generated",
-            fidelity: "low",
-            four_stage_artifact: true,
-            run_id: next.runId,
-            revision_id: revisionForRun?.revision_id,
-            intent_seq: revisionForRun?.intent_seq,
-            artifact_kind: artifact.kind,
-            prompt_index: index,
-          },
-        }));
+        const runCandidates = mapRunArtifactsToCandidates(next.runId ?? "run", next.generationArtifacts);
         if (runCandidates.length) {
           setCandidates((current) =>
             rankCandidates([
@@ -2401,35 +2428,7 @@ export function useStudioStore() {
         next.generationCompleted = next.generationArtifacts.length;
         next.generationTotal = next.generationArtifacts.length;
         // 四阶段产物进入 Solution Space 候选（点选不触发 hy3d；拖入才启动）。
-        const revisionForRun =
-          intentRevisionsRef.current.find((item) => item.run_id === next.runId)
-          ?? intentRevisionsRef.current.find((item) => item.revision_id === activeRevisionIdRef.current)
-          ?? null;
-        const runCandidates: Candidate[] = next.generationArtifacts.map((artifact, index) => ({
-          candidate_id: `fourstage_${next.runId ?? "run"}_${index + 1}`,
-          job_id: next.runId ?? "",
-          session_id: session?.session_id ?? "",
-          source_asset_id: asset?.asset_id ?? "",
-          source_part_id: selectedPart || null,
-          label: revisionForRun
-            ? `意图 ${revisionForRun.intent_seq} · 方案 ${index + 1}`
-            : `方案 ${index + 1}`,
-          decision: "suggested",
-          mesh_url: artifact.kind === "glb" ? artifact.url : null,
-          obj_url: artifact.kind === "obj" ? artifact.url : null,
-          thumbnail_url: artifact.kind === "png" ? artifact.url : null,
-          scores: {},
-          metadata: {
-            stage: "four_stage_generated",
-            fidelity: "low",
-            four_stage_artifact: true,
-            run_id: next.runId,
-            revision_id: revisionForRun?.revision_id,
-            intent_seq: revisionForRun?.intent_seq,
-            artifact_kind: artifact.kind,
-            prompt_index: index,
-          },
-        }));
+        const runCandidates = mapRunArtifactsToCandidates(next.runId ?? "run", next.generationArtifacts);
         if (runCandidates.length) {
           setCandidates((current) =>
             rankCandidates([
@@ -2537,41 +2536,10 @@ export function useStudioStore() {
     );
     next.generationCompleted = next.generationArtifacts.length;
     next.generationTotal = Math.max(next.generationArtifacts.length, totalHint, next.generationTotal);
-    const revisionForRun =
-      intentRevisionsRef.current.find((item) => item.run_id === run.run_id)
-      ?? intentRevisionsRef.current.find((item) => item.revision_id === activeRevisionIdRef.current)
-      ?? null;
     const sourceArtifacts = keepLocal
       ? next.generationArtifacts
       : fromRun;
-    const runCandidates: Candidate[] = sourceArtifacts.map((artifact, index) => ({
-      candidate_id: String(
-        (run.generation_artifacts?.[index] as { candidate_id?: string } | undefined)?.candidate_id
-          ?? `fourstage_${run.run_id}_${index + 1}`,
-      ),
-      job_id: run.run_id,
-      session_id: run.session_id,
-      source_asset_id: asset?.asset_id ?? "",
-      source_part_id: selectedPart || null,
-      label: revisionForRun
-        ? `意图 ${revisionForRun.intent_seq} · 方案 ${index + 1}`
-        : `方案 ${index + 1}`,
-      decision: "suggested",
-      mesh_url: artifact.kind === "glb" ? artifact.url : null,
-      obj_url: artifact.kind === "obj" ? artifact.url : null,
-      thumbnail_url: artifact.kind === "png" ? artifact.url : null,
-      scores: {},
-      metadata: {
-        stage: "four_stage_generated",
-        fidelity: "low",
-        four_stage_artifact: true,
-        run_id: run.run_id,
-        revision_id: revisionForRun?.revision_id,
-        intent_seq: revisionForRun?.intent_seq,
-        artifact_kind: artifact.kind,
-        prompt_index: index,
-      },
-    }));
+    const runCandidates = mapRunArtifactsToCandidates(run.run_id, sourceArtifacts);
     if (runCandidates.length) {
       setCandidates((current) =>
         rankCandidates([
@@ -3376,10 +3344,10 @@ export function useStudioStore() {
       { revision_id: capturedRevisionId, ...capturedParameters },
       `divergence-params:${capturedRevisionId}:${capturedParameters.temperature}:${capturedParameters.per_group_count}:${preflight ? "pre" : "post"}`,
     );
-    const capturedInheritedKeywords = [...intentRevisionsRef.current]
-      .filter((item) => item.intent_seq < revision.intent_seq && ["accepted", "generating", "completed"].includes(item.status))
-      .reverse()
-      .find((item) => item.effective_keywords.length)?.effective_keywords ?? [];
+    const capturedInheritedKeywords = visibleInheritedKeywords(
+      inheritedKeywordsFromRevisions(intentRevisionsRef.current, revision.intent_seq),
+      excludedInheritedKeywordsRef.current,
+    );
     const capturedRequestBaseKey = JSON.stringify([
       capturedRunId,
       capturedParameters.temperature,
@@ -3472,6 +3440,7 @@ export function useStudioStore() {
       }
       if (!isCurrentDivergenceInvocation()) return null;
       setSemanticDivergenceLoading(true);
+      setDivergenceKeywords([]);
       setSemanticDivergenceError(null);
       setDivergencePhaseMessage(
         streamParams.preflight ? "Preflight divergence…" : "Connecting to model…",
@@ -3743,6 +3712,7 @@ export function useStudioStore() {
   };
 
   // If server marks divergence running (Accept path) but SSE wasn't attached, attach it.
+  // Also re-fetch once if the worker already marked completed but keywords never hydrated.
   useEffect(() => {
     const revision =
       (activeRevisionId
@@ -3750,15 +3720,24 @@ export function useStudioStore() {
         : null) ??
       [...intentRevisions].reverse().find((item) => item.semantic_divergence_status === "running") ??
       null;
-    if (!revision?.run_id || revision.semantic_divergence_status !== "running") return;
+    if (!revision?.run_id) return;
     if (solutionSpaceGenerating) return;
     if (semanticDivergence?.status === "failed") return;
+    const needsHydrate =
+      revision.semantic_divergence_status === "completed"
+      && divergenceKeywords.length === 0
+      && semanticDivergence?.status !== "completed";
+    const needsAttach = revision.semantic_divergence_status === "running";
+    if (!needsAttach && !needsHydrate) return;
+    if (needsHydrate && divergenceHydrateRetryRef.current === revision.revision_id) return;
     if (semanticDivergenceAttachingRevisionRef.current === revision.revision_id) return;
     if (semanticDivergenceInFlightRef.current.size > 0) return;
     if (semanticDivergence?.status === "completed" && divergenceKeywords.length > 0) return;
+    if (needsHydrate) divergenceHydrateRetryRef.current = revision.revision_id;
     void commitDivergenceParameters({
       preflight: true,
       revisionId: revision.revision_id,
+      force: needsHydrate,
     });
   }, [activeRevisionId, intentRevisions, semanticDivergence?.status, divergenceKeywords.length, solutionSpaceGenerating]);
 
@@ -3817,6 +3796,9 @@ export function useStudioStore() {
     }
     setSolutionSpaceReadyPulse(false);
     setSolutionSpaceGenerating(true);
+    setSolutionSpaceReleased((current) =>
+      reduceSolutionSpaceVisibility(current, { type: "expand" }),
+    );
     setSolutionSpaceHeight((current) => Math.max(current, 280));
     const focusRevision = intentRevisionsRef.current.find((item) => item.revision_id === revisionId);
     if (focusRevision) setSolutionSpaceViewIntentSeq(focusRevision.intent_seq);
@@ -5332,6 +5314,116 @@ export function useStudioStore() {
     addLog("primitive", primitive);
   };
 
+  const persistDivergenceSelection = (next: PromptToken[], excludedInherited: string[]) => {
+    const revisionId = activeRevisionIdRef.current;
+    const revision = intentRevisionsRef.current.find((item) => item.revision_id === revisionId);
+    if (!revisionId || !revision) return;
+    const tracker = selectionPersistenceByRevisionRef.current.get(revisionId) ?? {
+      sequence: 0,
+      chain: Promise.resolve(true),
+      latest: Promise.resolve(true),
+      pending: false,
+      error: null,
+      expectedVersion: revision.version,
+      expectedSelectionVersion: revision.selection_version,
+    };
+    tracker.expectedVersion = revision.version;
+    tracker.expectedSelectionVersion = revision.selection_version;
+    selectionPersistenceByRevisionRef.current.set(revisionId, tracker);
+    const selectionSequence = ++tracker.sequence;
+    tracker.pending = true;
+    tracker.error = null;
+    setSelectionPersistenceErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors[revisionId];
+      return nextErrors;
+    });
+    const payload = {
+      scope: revision.gate_scope ?? "whole",
+      target_part_id: revision.source_context.target_part_id ?? (selectedPart || null),
+      selected_candidate_ids: next.flatMap((item) => item.candidate_id ? [item.candidate_id] : []),
+      selected_keywords: next.map((item) => item.label),
+      user_text: revision.user_text || null,
+      system_keywords: revision.divergence_selection?.system_keywords ?? [],
+      excluded_inherited_keywords: excludedInherited,
+    };
+    const isVersionConflict = (error: unknown) => {
+      const text = String(error);
+      return (
+        text.includes("409") ||
+        text.includes("expected revision version") ||
+        text.includes("expected selection version")
+      );
+    };
+    const persistence = tracker.chain
+      .catch(() => false)
+      .then(async () => {
+        if (!interactionCoordinator) {
+          throw new Error("interaction coordinator unavailable");
+        }
+        const latest =
+          intentRevisionsRef.current.find((item) => item.revision_id === revisionId) ?? revision;
+        tracker.expectedVersion = latest.version;
+        tracker.expectedSelectionVersion = latest.selection_version;
+        const commandId = `selection_${revisionId}_${selectionSequence}_${crypto.randomUUID()}`;
+        const saveOnce = (rev: IntentRevision) =>
+          interactionCoordinator.saveSelection(
+            rev,
+            {
+              ...payload,
+              expected_version: rev.version,
+              expected_selection_version: rev.selection_version,
+            },
+            {
+              command_id: commandId,
+              idempotency_key: `selection:${revisionId}:${selectionSequence}`,
+            },
+          );
+        let updated: IntentRevision;
+        try {
+          updated = await saveOnce(latest);
+        } catch (error) {
+          if (!isVersionConflict(error) || !session?.session_id) throw error;
+          const projection = await api<{ revisions: IntentRevision[] }>(
+            `/api/v1/sessions/${session.session_id}/interaction-projection`,
+          );
+          const fresh = projection.revisions.find((item) => item.revision_id === revisionId);
+          if (!fresh) throw error;
+          setIntentRevisions((current) =>
+            current.map((item) => (item.revision_id === revisionId ? { ...item, ...fresh } : item)),
+          );
+          updated = await saveOnce(fresh);
+        }
+        tracker.expectedVersion = updated.version;
+        tracker.expectedSelectionVersion = updated.selection_version;
+        if (tracker.sequence === selectionSequence) {
+          tracker.pending = false;
+          setIntentRevisions((current) =>
+            current.map((item) => (item.revision_id === revisionId ? updated : item)),
+          );
+          tracker.error = null;
+          setSelectionPersistenceErrors((current) => {
+            const nextErrors = { ...current };
+            delete nextErrors[revisionId];
+            return nextErrors;
+          });
+        }
+        return true;
+      })
+      .catch((error) => {
+        if (tracker.sequence === selectionSequence) {
+          tracker.pending = false;
+          const message = "关键词保存失败，请重新选择后再生成";
+          tracker.error = message;
+          setSelectionPersistenceErrors((current) => ({ ...current, [revisionId]: message }));
+          addLog("keywords", `${message}: ${String(error).slice(0, 80)}`);
+        }
+        return false;
+      });
+    tracker.chain = persistence;
+    tracker.latest = persistence;
+  };
+
   const togglePromptToken = (token: PromptToken) => {
     pushEditorHistory(`toggle ${token.label}`);
     const key = promptTokenKey(token);
@@ -5348,115 +5440,14 @@ export function useStudioStore() {
       `divergence-selection:${activeRevisionIdRef.current ?? "none"}:${crypto.randomUUID()}`,
     );
     updateLiveSignals({ semantic_distance: Math.min(1, next.length / 6) });
-    // 关键词属于当前已确认 revision，不改写用户的原始意图文本。
-    const revisionId = activeRevisionIdRef.current;
-    const revision = intentRevisionsRef.current.find((item) => item.revision_id === revisionId);
-    if (revisionId && revision) {
-      const tracker = selectionPersistenceByRevisionRef.current.get(revisionId) ?? {
-        sequence: 0,
-        chain: Promise.resolve(true),
-        latest: Promise.resolve(true),
-        pending: false,
-        error: null,
-        expectedVersion: revision.version,
-        expectedSelectionVersion: revision.selection_version,
-      };
-      // Always sync OCC from the latest revision — Accept / prior saves bump versions.
-      tracker.expectedVersion = revision.version;
-      tracker.expectedSelectionVersion = revision.selection_version;
-      selectionPersistenceByRevisionRef.current.set(revisionId, tracker);
-      const selectionSequence = ++tracker.sequence;
-      tracker.pending = true;
-      tracker.error = null;
-      setSelectionPersistenceErrors((current) => {
-        const nextErrors = { ...current };
-        delete nextErrors[revisionId];
-        return nextErrors;
-      });
-      const payload = {
-        scope: revision.gate_scope ?? "whole",
-        target_part_id: revision.source_context.target_part_id ?? (selectedPart || null),
-        selected_candidate_ids: next.flatMap((item) => item.candidate_id ? [item.candidate_id] : []),
-        selected_keywords: next.map((item) => item.label),
-        user_text: revision.user_text || null,
-        system_keywords: revision.divergence_selection?.system_keywords ?? [],
-      };
-      const isVersionConflict = (error: unknown) => {
-        const text = String(error);
-        return (
-          text.includes("409") ||
-          text.includes("expected revision version") ||
-          text.includes("expected selection version")
-        );
-      };
-      const persistence = tracker.chain
-        .catch(() => false)
-        .then(async () => {
-          if (!interactionCoordinator) {
-            throw new Error("interaction coordinator unavailable");
-          }
-          const latest =
-            intentRevisionsRef.current.find((item) => item.revision_id === revisionId) ?? revision;
-          tracker.expectedVersion = latest.version;
-          tracker.expectedSelectionVersion = latest.selection_version;
-          const commandId = `selection_${revisionId}_${selectionSequence}_${crypto.randomUUID()}`;
-          const saveOnce = (rev: IntentRevision) =>
-            interactionCoordinator.saveSelection(
-              rev,
-              {
-                ...payload,
-                expected_version: rev.version,
-                expected_selection_version: rev.selection_version,
-              },
-              {
-                command_id: commandId,
-                idempotency_key: `selection:${revisionId}:${selectionSequence}`,
-              },
-            );
-          let updated: IntentRevision;
-          try {
-            updated = await saveOnce(latest);
-          } catch (error) {
-            if (!isVersionConflict(error) || !session?.session_id) throw error;
-            const projection = await api<{ revisions: IntentRevision[] }>(
-              `/api/v1/sessions/${session.session_id}/interaction-projection`,
-            );
-            const fresh = projection.revisions.find((item) => item.revision_id === revisionId);
-            if (!fresh) throw error;
-            setIntentRevisions((current) =>
-              current.map((item) => (item.revision_id === revisionId ? { ...item, ...fresh } : item)),
-            );
-            updated = await saveOnce(fresh);
-          }
-          tracker.expectedVersion = updated.version;
-          tracker.expectedSelectionVersion = updated.selection_version;
-          if (tracker.sequence === selectionSequence) {
-            tracker.pending = false;
-            setIntentRevisions((current) =>
-              current.map((item) => (item.revision_id === revisionId ? updated : item)),
-            );
-            tracker.error = null;
-            setSelectionPersistenceErrors((current) => {
-              const nextErrors = { ...current };
-              delete nextErrors[revisionId];
-              return nextErrors;
-            });
-          }
-          return true;
-        })
-        .catch((error) => {
-          if (tracker.sequence === selectionSequence) {
-            tracker.pending = false;
-            const message = "关键词保存失败，请重新选择后再生成";
-            tracker.error = message;
-            setSelectionPersistenceErrors((current) => ({ ...current, [revisionId]: message }));
-            addLog("keywords", `${message}: ${String(error).slice(0, 80)}`);
-          }
-          return false;
-        });
-      tracker.chain = persistence;
-      tracker.latest = persistence;
-    }
+    persistDivergenceSelection(next, excludedInheritedKeywordsRef.current);
+  };
+
+  const dismissInheritedKeyword = (keyword: string) => {
+    const nextExcluded = [...new Set([...excludedInheritedKeywordsRef.current, keyword])];
+    excludedInheritedKeywordsRef.current = nextExcluded;
+    setExcludedInheritedKeywords(nextExcluded);
+    persistDivergenceSelection(selectedPromptTokensRef.current, nextExcluded);
   };
 
   const discoverPartsForAsset = async (
@@ -7245,6 +7236,8 @@ export function useStudioStore() {
     recordAddPrimitive,
     createPrimitive,
     togglePromptToken,
+    dismissInheritedKeyword,
+    inheritedKeywords,
     discoverPartsForAsset,
     discoverParts,
     renameSelectedPart,
