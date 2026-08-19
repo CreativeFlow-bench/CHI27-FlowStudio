@@ -7,6 +7,7 @@
   --solution-space-height: 168px;
   --solution-space-left: calc(var(--workspace-edge) + var(--perception-width) + var(--workspace-gap));
   --solution-space-right: var(--workspace-edge);
+  --brand-reserve: 296px;
   --panel-top: 68px;
   --perception-top: 68px;
   --ai-behavior-top: var(--panel-top);
@@ -28,7 +29,7 @@
 .studio-shell.has-solution-space {
   --workspace-safe-top: var(--solution-space-height);
   --ai-behavior-top: calc(var(--solution-space-height) + 8px);
-  --solution-space-left: calc(var(--workspace-edge) + 52px + var(--workspace-gap));
+  --solution-space-left: max(var(--brand-reserve), calc(var(--workspace-edge) + 52px + var(--workspace-gap)));
   --solution-space-right: var(--workspace-safe-right);
 }
 

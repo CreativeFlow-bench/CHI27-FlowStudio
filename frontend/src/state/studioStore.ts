@@ -3780,7 +3780,10 @@ export function useStudioStore() {
 
   const startActiveRevisionGeneration = async () => {
     const revisionId = activeRevisionIdRef.current ?? [...intentRevisionsRef.current].reverse().find((item) => item.status === "accepted")?.revision_id;
-    if (!revisionId) return null;
+    if (!revisionId) {
+      setProjectNotice("请先确认改变范围，再点 Generate");
+      return null;
+    }
     setSolutionSpaceReadyPulse(false);
     window.setTimeout(() => setSolutionSpaceReadyPulse(true), 30);
     setSolutionSpaceGenerating(true);
@@ -6444,7 +6447,7 @@ export function useStudioStore() {
     setCanvasPan(camera.pan);
   };
 
-  // Keep the focused 3D node centered when panels / window / editor size change.
+  // 3D is the bottom layer: only recenter on window / canvas shell size, not chrome overlay resize.
   useEffect(() => {
     if (versionViewMode !== "active") return undefined;
     const shell = versionCanvasShellRef.current;
@@ -6466,12 +6469,6 @@ export function useStudioStore() {
     recenter();
     const observer = new ResizeObserver(() => recenter());
     observer.observe(shell);
-    const active = shell.querySelector(".version-node.active");
-    if (active) observer.observe(active);
-    for (const sel of [".canvas-composer-shell", ".intent-composer-shell"]) {
-      const el = document.querySelector(sel);
-      if (el) observer.observe(el);
-    }
     window.addEventListener("resize", recenter);
     return () => {
       cancelAnimationFrame(frame);

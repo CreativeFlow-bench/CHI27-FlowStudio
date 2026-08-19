@@ -515,7 +515,7 @@ function App() {
   } = useStudioStore();
 
   const [perceptionWidth, setPerceptionWidth] = useState(320);
-  const [aiBehaviorWidth, setAiBehaviorWidth] = useState(378);
+  const aiBehaviorWidth = 378;
   const [aiBehaviorCollapsed, setAiBehaviorCollapsed] = useState(false);
   const [perceptionCollapsed, setPerceptionCollapsed] = useState(false);
 
@@ -827,7 +827,6 @@ function App() {
             handleCorner="sw"
             handlePosition="static"
             resizable
-            onSizeChange={(size) => setAiBehaviorWidth(size.w)}
           >
             <AIBehaviorPanel
               presentation={aiBehaviorPresentation}

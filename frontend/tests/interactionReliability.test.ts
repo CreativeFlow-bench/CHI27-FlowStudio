@@ -62,6 +62,14 @@ test("canvas navigation stays viewport-anchored instead of covering top workspac
   assert.match(layout, /--active-editor-width:\s*calc\(100vw - var\(--workspace-safe-left\) - var\(--workspace-safe-right\)\)/);
 });
 
+test("resizing AI Behavior does not reflow the 3D editor layer", async () => {
+  const main = await read("../src/main.tsx");
+  const store = await read("../src/state/studioStore.ts");
+  assert.doesNotMatch(main, /setAiBehaviorWidth\(size\.w\)/);
+  assert.doesNotMatch(store, /\.canvas-composer-shell".*observer\.observe/s);
+  assert.match(store, /only recenter on window \/ canvas shell size/);
+});
+
 test("open chrome panels reflow siblings through workspace safe-area tokens", async () => {
   const layout = await read("../src/workspaceLayout.css");
   const overlay = await read("../src/components/overlays/PlannerClarificationOverlay.tsx");

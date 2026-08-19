@@ -9,15 +9,10 @@
 import * as ort from "onnxruntime-web";
 
 // Model URLs are overridable at build time (VITE_SAM_ENCODER_URL /
-// VITE_SAM_DECODER_URL). Defaults point at the official MobileSAM ONNX
-// exports; when the models are unavailable the segmenter returns null and
-// callers fall back to the 3D Raycaster / backend viewport segmentation.
-const ENCODER_URL =
-  import.meta.env.VITE_SAM_ENCODER_URL ??
-  "https://huggingface.co/Acly/MobileSAM/resolve/main/mobile_sam_image_encoder.onnx";
-const DECODER_URL =
-  import.meta.env.VITE_SAM_DECODER_URL ??
-  "https://huggingface.co/Acly/MobileSAM/resolve/main/mobile_sam_mask_decoder.onnx";
+// VITE_SAM_DECODER_URL). Leave them unset to skip browser MobileSAM and
+// fall back to raycaster / backend viewport segmentation.
+const ENCODER_URL = String(import.meta.env.VITE_SAM_ENCODER_URL || "");
+const DECODER_URL = String(import.meta.env.VITE_SAM_DECODER_URL || "");
 
 const IMAGE_SIZE = 1024;
 const EMBEDDING_SIZE = 256;
@@ -84,6 +79,9 @@ async function loadSession(url: string): Promise<ort.InferenceSession> {
 }
 
 export async function ensureSegmenter(dataUrl: string): Promise<SegmenterState> {
+  if (!ENCODER_URL || !DECODER_URL) {
+    throw new Error("segmenter models not configured");
+  }
   if (statePromise) return statePromise;
   statePromise = (async () => {
     const [encoder, decoder, image] = await Promise.all([
