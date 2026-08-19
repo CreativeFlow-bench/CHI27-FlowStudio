@@ -75,9 +75,17 @@ def create_assets_router(
                     if isinstance(value, str) and value.strip():
                         trimmed_metadata["image"] = value.strip()
                         break
+            preview_url = record.thumbnail_url or trimmed_metadata.get("image")
+            if isinstance(preview_url, str):
+                preview_url = preview_url.strip() or None
+            else:
+                preview_url = None
             trimmed.append(
                 record.model_copy(
-                    update={"metadata": trimmed_metadata}
+                    update={
+                        "metadata": trimmed_metadata,
+                        "thumbnail_url": preview_url,
+                    }
                 )
             )
         # CreativeFlow picked dataset repeats the same noun across batches

@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { buildAccounts, buildAdminAccount, buildReviewerAccount, verifyPassword } from "../src/auth.js";
-import { buildParticipantSchedules } from "../src/schedules.js";
+import { buildAccounts, buildAdminAccount, buildReviewerAccount, refreshAccountSchedules, verifyPassword } from "../src/auth.js";
+import { buildParticipantSchedules, ORDERS } from "../src/schedules.js";
 import { createInitialRecord, submitCurrentStep } from "../src/workflow.js";
 import { initializeDatabase, readRecords, writeRecord } from "../src/store.js";
 
@@ -20,7 +20,17 @@ test("builds 20 formal and 5 pilot accounts with balanced schedules", () => {
     ["G1", "G2", "G3", "G4"],
   );
   assert.equal(new Set(schedules.map((item) => item.username)).size, 25);
-  assert.equal(schedules.every((item) => item.steps.filter((step) => step.kind === "task").length === 4), true);
+  assert.equal(schedules.every((item) => item.steps.filter((step) => step.kind === "task").length === 2), true);
+  assert.deepEqual(ORDERS, {
+    G1: ["Flow-XMAS", "Text-HANDBAG"],
+    G2: ["Text-XMAS", "Flow-HANDBAG"],
+    G3: ["Flow-HANDBAG", "Text-XMAS"],
+    G4: ["Text-HANDBAG", "Flow-XMAS"],
+  });
+  assert.deepEqual(
+    schedules.slice(0, 20).reduce((counts, item) => ({ ...counts, [item.sequence]: (counts[item.sequence] || 0) + 1 }), {}),
+    { G1: 5, G2: 5, G3: 5, G4: 5 },
+  );
 });
 
 test("generated account passwords are verifiable but not stored in plaintext", () => {
@@ -54,16 +64,42 @@ test("builds a non-participant questionnaire reviewer account", () => {
   assert.equal(verifyPassword(credential.password, account), true);
 });
 
+test("schedule refresh preserves participant passwords and non-participant accounts", () => {
+  const { publicAccounts } = buildAccounts(() => "FixedPass9K");
+  const { account: admin } = buildAdminAccount(() => "AdminPass8K");
+  const { account: reviewer } = buildReviewerAccount(() => "ReviewPass7K");
+  const existing = [...publicAccounts.map((account) => ({ ...account, order: ["old"] })), admin, reviewer];
+
+  const refreshed = refreshAccountSchedules(existing);
+  const participant = refreshed.find((account) => account.username === "P001");
+  assert.deepEqual(participant.order, ["Flow-XMAS", "Text-HANDBAG"]);
+  assert.equal(participant.passwordHash, publicAccounts[0].passwordHash);
+  assert.equal(participant.salt, publicAccounts[0].salt);
+  assert.deepEqual(refreshed.find((account) => account.username === "ADMIN"), admin);
+  assert.deepEqual(refreshed.find((account) => account.username === "P000"), reviewer);
+});
+
 test("requires NASA after every task and CSI plus SUS after each system block", () => {
   const [schedule] = buildParticipantSchedules();
   const kinds = schedule.steps.map((step) => step.kind);
 
   assert.deepEqual(kinds, [
     "welcome", "prestudy",
-    "task", "nasa", "task", "nasa", "csi", "sus", "break",
-    "task", "nasa", "task", "nasa", "csi", "sus",
+    "task", "nasa", "csi", "sus", "break",
+    "task", "nasa", "csi", "sus",
     "comparison", "interview", "complete",
   ]);
+});
+
+test("each task presents an open exploration brief and the correct system constraints", () => {
+  const schedules = buildParticipantSchedules();
+  const taskSteps = schedules.flatMap((schedule) => schedule.steps.filter((step) => step.kind === "task"));
+
+  assert.equal(taskSteps.every((step) => step.duration === "12–15 分钟"), true);
+  assert.equal(taskSteps.every((step) => step.requirements.length >= 2 && step.requirements.length <= 3), true);
+  assert.equal(taskSteps.filter((step) => step.task === "XMAS").every((step) => step.requirements.some((item) => item.includes("雪人"))), true);
+  assert.equal(taskSteps.filter((step) => step.system === "Flow").every((step) => step.systemGuide.includes("预设 3D 模型") && step.systemGuide.includes("不能上传参考图")), true);
+  assert.equal(taskSteps.filter((step) => step.system === "Text").every((step) => step.systemGuide.includes("多轮") && step.systemGuide.includes("历史") && step.systemGuide.includes("不能上传参考图")), true);
 });
 
 test("workflow only advances after the current step has a valid answer", () => {
@@ -86,6 +122,16 @@ test("reviewer sees the dimensional interview guide while participants only conf
   assert.match(appSource, /如果只能改进一个地方，你会改进什么？/);
   assert.match(appSource, /研究员将进行约 30 分钟的口头访谈并录音\/记录/);
   assert.doesNotMatch(appSource, /name="interview1"/);
+});
+
+test("questionnaire copy describes two open explorations instead of four tasks", async () => {
+  const appSource = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+
+  assert.match(appSource, /两次开放式创意探索/);
+  assert.match(appSource, /每项任务后填写一次，共两次/);
+  assert.match(appSource, /新中式手包设计（主题待确认）/);
+  assert.doesNotMatch(appSource, /四项设计任务/);
+  assert.doesNotMatch(appSource, /四项任务/);
 });
 
 test("SQLite storage preserves concurrent participant submissions", async () => {

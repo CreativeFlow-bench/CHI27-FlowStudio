@@ -87,6 +87,7 @@ def test_explicit_text_generation_posts_gpt_image_2_json() -> None:
         "n": 1,
         "size": "1024x1024",
         "output_format": "png",
+        "response_format": "b64_json",
     }
 
 
@@ -113,6 +114,33 @@ def test_whole_edit_posts_source_image_as_multipart() -> None:
     assert b"gpt-image-2" in captured["body"]
     assert b'name="image"; filename="source.png"' in captured["body"]
     assert b'name="mask"' not in captured["body"]
+
+
+def test_edit_falls_back_to_generations_when_edits_are_forbidden() -> None:
+    urls: list[str] = []
+
+    def open_request(request, timeout):
+        urls.append(request.full_url)
+        if str(request.full_url).endswith("/images/edits"):
+            raise urllib.error.HTTPError(
+                request.full_url,
+                403,
+                "Forbidden",
+                {},
+                io.BytesIO(b'{"error":{"message":"forbidden"}}'),
+            )
+        return _Response()
+
+    result = asyncio.run(
+        _gateway(open_request).edit(
+            "Keep this snowman's identity and make its torso rounder.",
+            _png(),
+        )
+    )
+
+    assert result.startswith(b"\x89PNG")
+    assert any(url.endswith("/images/edits") for url in urls)
+    assert any(url.endswith("/images/generations") for url in urls)
 
 
 def test_region_edit_posts_same_size_alpha_mask() -> None:

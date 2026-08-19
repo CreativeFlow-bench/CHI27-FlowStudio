@@ -114,13 +114,24 @@ class SandboxDrawingSemanticRequest(BaseModel):
 
 
 _OBSERVE_NARRATIVE_SYSTEM = """You are FlowStudio's canvas observation narrator.
-Given the user's 3D canvas actions and current focus, output ONE English observation sentence (12–28 words).
+Given the user's 3D canvas actions and current focus, output ONE plain English sentence (8–20 words) a person would say.
 Rules:
-1. Describe only what is happening (orbiting, brushing, hovering, focusing a part). No instructions, no suggestions, no Generate / Solution Space / wireframe talk.
-2. Use human part names; rewrite Cube.* / obj_group_* / mesh ids as "the current part" or with object_type (e.g. "the snowman body").
-3. Output a JSON object with only narrative, e.g. {"narrative":"Brushing the snowman body while inspecting local surface detail."}.
+1. Describe only what is happening, in everyday words (turning the model, looking closely, brushing a surface). No instructions.
+2. Never mention IDs, asset_*, Cube.*, obj_group_*, mesh names, or the word viewport.
+3. Prefer "the model" / a human part name. Output JSON only: {"narrative":"You're turning the model around and looking closely at a small area."}.
 4. The reply must start with { and end with }. English only.
 """
+
+
+def _scrub_observe_narrative(text: str) -> str:
+    import re
+
+    text = re.sub(r"(?i)\basset_[a-z0-9]+\b", "the model", text)
+    text = re.sub(r"(?i)\b(?:obj_group_|mesh_)[a-z0-9_]+\b", "this part", text)
+    text = re.sub(r"(?i)\bCube\.\d+\b", "this part", text)
+    text = re.sub(r"(?i)\borbiting the viewport\b", "turning the model around", text)
+    text = re.sub(r"(?i)\brepeatedly hovering over local details\b", "looking closely at a small area", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _humanize_observe_fallback(
@@ -132,22 +143,21 @@ def _humanize_observe_fallback(
 
     text = str(rule_summary or "").strip()
     label = str(part_label or "").strip()
-    obj = str(object_type or "").strip() or "object"
+    obj = str(object_type or "").strip() or "model"
+    if re.search(r"(?i)^asset_", obj):
+        obj = "model"
     if label and re.search(r"(?i)^(cube\.|obj_group_|mesh_|mesh\.)", label):
-        label = "the current part"
-    if label and re.search(r"(?i)cube\.|obj_group_|mesh_", label):
-        label = "the current part"
+        label = "this part"
+    if label and re.search(r"(?i)cube\.|obj_group_|mesh_|asset_", label):
+        label = "this part"
     if text:
-        text = re.sub(r"(?i)Cube\.\d+(?:\s+Cube\.\d+)*", "the current part", text)
-        text = re.sub(r"(?i)obj_group_\w+", "the current part", text)
-        text = re.sub(r"\s+", " ", text).strip()
+        text = _scrub_observe_narrative(text)
         text = re.split(r"\.\s+When the prompt chips", text, maxsplit=1)[0].strip()
-        # Prefer English fallbacks when the rule line is Chinese-only.
         if text and re.search(r"[A-Za-z]", text):
             return text[:120]
     if label:
-        return f"Observing {label} on the {obj}."[:120]
-    return f"Observing the current structure of the {obj}."[:120]
+        return f"Looking at {label} on the {obj}."[:120]
+    return f"Looking at the {obj}."[:120]
 
 
 def create_sandbox_router(
@@ -215,9 +225,9 @@ def create_sandbox_router(
 
         from app.services.model_api.types import ModelStage
 
-        part_hint = body.part_label or body.part_id or "未指定"
-        if __import__("re").search(r"(?i)cube\.|obj_group_|mesh_", str(part_hint)):
-            part_hint = f"the current part of the {body.object_type or 'object'}"
+        part_hint = body.part_label or body.part_id or "the model"
+        if __import__("re").search(r"(?i)cube\.|obj_group_|mesh_|asset_", str(part_hint)):
+            part_hint = "a part of the model"
         action_line = ", ".join(body.recent_actions[-8:]) or "no clear action yet"
         signal_line = ", ".join(
             f"{key}={body.signals.get(key)}"
@@ -241,7 +251,7 @@ def create_sandbox_router(
                     continue
                 if re.search(r"[\u4e00-\u9fff]", text):
                     raise ValueError("narrative must be English-only")
-                return text[:120]
+                return _scrub_observe_narrative(text)[:120]
             raise ValueError(f"missing narrative in {list(raw)[:6]}")
 
         user_prompt = (
@@ -251,7 +261,7 @@ def create_sandbox_router(
             f"Recent actions: {action_line}\n"
             f"Signals: {signal_line}\n"
             'Output only: {"narrative":"..."}\n'
-            'Example: {"narrative":"Orbiting the snowman while comparing local part details."}'
+            'Example: {"narrative":"You are turning the model around and looking closely at a small area."}'
         )
         try:
             raw = await text_gateway.transport.chat_json(

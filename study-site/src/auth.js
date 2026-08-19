@@ -49,3 +49,13 @@ export function verifyPassword(password, account) {
   const actual = Buffer.from(hashPassword(password, account.salt), "hex");
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
+
+export function refreshAccountSchedules(existingAccounts) {
+  const schedules = new Map(buildParticipantSchedules().map((schedule) => [schedule.username, schedule]));
+  return existingAccounts.map((account) => {
+    if (account.role !== "participant") return account;
+    const schedule = schedules.get(account.username);
+    if (!schedule) throw new Error(`missing_schedule:${account.username}`);
+    return { ...schedule, role: account.role, salt: account.salt, passwordHash: account.passwordHash };
+  });
+}

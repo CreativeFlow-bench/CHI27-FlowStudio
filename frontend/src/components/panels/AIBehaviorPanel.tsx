@@ -1,6 +1,6 @@
 /** AI Behavior narrative and divergence controls. */
 import { useEffect, useMemo, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import type {
   AssetRecord,
   Interpretation,
@@ -41,10 +41,8 @@ export function AIBehaviorPanel({
   presentation,
   projectNotice,
   onDismissNotice,
-  intentBubble,
   divergenceKeywords,
   selectedPromptTokens,
-  interpretation,
   session,
   asset,
   generationBusy,
@@ -62,8 +60,8 @@ export function AIBehaviorPanel({
   divergencePhaseMessage,
   selectionPersistenceError,
   inheritedKeywords,
-  drawerOpen = false,
-  onMenuToggle,
+  collapsed = false,
+  onCollapsedChange,
 }: {
   presentation: AiBehaviorPresentation;
   projectNotice: string | null;
@@ -89,8 +87,8 @@ export function AIBehaviorPanel({
   divergencePhaseMessage: string | null;
   selectionPersistenceError: string | null;
   inheritedKeywords?: string[];
-  drawerOpen?: boolean;
-  onMenuToggle?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [revealedKeywordCount, setRevealedKeywordCount] = useState(0);
@@ -131,48 +129,45 @@ export function AIBehaviorPanel({
   const noCurrentCandidate = selectedPromptTokens.length === 0;
   const generateDisabledReason = selectionPersistenceError
     ? "关键词保存失败，请重新选择后再生成"
-    : noCurrentCandidate
-      ? "请先选择至少一个当前发散候选"
-      : null;
-  const generateDisabled = !session || !asset || generationBusy || solutionSpaceGenerating || Boolean(generateDisabledReason);
+    : null;
+  const generateDisabled = !session || !asset || generationBusy || solutionSpaceGenerating || noCurrentCandidate || Boolean(generateDisabledReason);
   const scopeReady = presentation.creativeState !== "locked";
-  const scopeHint = intentBubble.scope
-    ? `Change ${intentBubble.scope}`
-    : interpretation?.features?.design_state_ir?.scope_hint
-      ? `Change ${String(interpretation.features.design_state_ir.scope_hint)}`
-      : null;
   const phaseText = divergencePhaseMessage ?? "Connecting to model…";
   return (
-    <aside className={`ai-behavior-float float-panel${mobileOpen ? " is-mobile-open" : ""}`} aria-label="AI Behavior">
-      <header className="ai-behavior-header">
-        {onMenuToggle ? (
+    <aside className={`ai-behavior-float float-panel${mobileOpen ? " is-mobile-open" : ""}${collapsed ? " is-collapsed" : ""}`} aria-label="AI Behavior">
+      <header className="float-panel-label observe-head">
+        <span>AI Behavior</span>
+        <div className="observe-head-actions">
+          <span className="status-dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
           <button
             type="button"
             className="drawer-toggle"
-            aria-label={drawerOpen ? "Hide studio menu" : "Show studio menu"}
-            aria-pressed={drawerOpen}
-            aria-controls="studio-rail"
-            title={drawerOpen ? "Hide studio menu" : "Show studio menu"}
-            onClick={onMenuToggle}
+            aria-label={collapsed ? "Expand AI Behavior" : "Collapse AI Behavior"}
+            aria-pressed={collapsed}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Expand AI Behavior" : "Collapse AI Behavior"}
+            onClick={() => onCollapsedChange?.(!collapsed)}
           >
-            {drawerOpen ? <PanelLeftClose size={15} aria-hidden="true" /> : <PanelLeftOpen size={15} aria-hidden="true" />}
+            {collapsed ? <PanelRightOpen size={15} aria-hidden="true" /> : <PanelRightClose size={15} aria-hidden="true" />}
           </button>
-        ) : null}
-        <strong>AI BEHAVIOR</strong>
-        <span className="ai-behavior-status-dots" aria-hidden="true"><i /><i /><i /></span>
-        <button
-          type="button"
-          className="mobile-panel-toggle"
-          aria-label={mobileOpen ? "Close AI Behavior" : "Open AI Behavior"}
-          aria-expanded={mobileOpen}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            setMobileOpen((current) => !current);
-          }}
-        >
-          {mobileOpen ? "收起" : "展开"}
-        </button>
+          <button
+            type="button"
+            className="mobile-panel-toggle"
+            aria-label={mobileOpen ? "Close AI Behavior" : "Open AI Behavior"}
+            aria-expanded={mobileOpen}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              setMobileOpen((current) => !current);
+            }}
+          >
+            {mobileOpen ? "收起" : "展开"}
+          </button>
+        </div>
       </header>
       <div className="ai-behavior-panel-body">
         <div className="ai-insight-stack">
@@ -189,18 +184,14 @@ export function AIBehaviorPanel({
             </button>
           </div>
         ) : null}
-        <h2 className="model-details-label">MODEL DETAILS</h2>
         <section className="more-creative-card">
           <header className="more-creative-header">
             <span>
               <strong className="more-creative-title">More Creative?</strong>
-              <small className="more-creative-scope">
-                {scopeReady && scopeHint ? scopeHint : "Confirm scope to start divergence"}
-              </small>
             </span>
           </header>
           <section className={`mc-pane mc-keywords-pane${scopeReady ? "" : " is-locked"}`} aria-label="Divergence keywords" aria-disabled={!scopeReady}>
-        <div className="mc-param-row" aria-label="发散参数">
+        <div className="mc-param-row" aria-label="Divergence parameters">
           <label className="mc-param">
             <span className="mc-param-label">DIVERGENCE</span>
             <em>{divergenceTemperature.toFixed(1)}</em>
@@ -241,14 +232,6 @@ export function AIBehaviorPanel({
             <span className="sr-only">{formatPerGroupCount(divergencePerGroupCount)}</span>
           </label>
         </div>
-        {inheritedKeywords?.length ? (
-          <div className="prompt-token-board grouped inherited-keywords" aria-label="已继承关键词">
-            <span className="prompt-token-hint">继承自上一意图（不可点选）</span>
-            {inheritedKeywords.map((keyword) => (
-              <span className="prompt-token selected inherited" key={keyword}>{keyword}</span>
-            ))}
-          </div>
-        ) : null}
         {semanticDivergenceLoading ? (
           <div className="semantic-keyword-skeleton" role="status" aria-live="polite" aria-busy="true">
             <p className="semantic-keyword-status is-phase-tick" key={phaseText}>
@@ -276,9 +259,29 @@ export function AIBehaviorPanel({
             {semanticDivergenceError || "Semantic divergence unavailable — retry or refine intent"}
           </p>
         ) : null}
-        {visibleKeywords.length ? (
+        {inheritedKeywords?.length || visibleKeywords.length ? (
           <div className="dimension-direction-list">
-              {divergenceKeywordGroups(visibleKeywords).map((group) => (
+              {inheritedKeywords?.length ? (
+                <section className="dimension-panel inherited-keywords" aria-label="已继承关键词">
+                  <div className="dimension-panel-head">
+                    <strong>上一意图</strong>
+                  </div>
+                  <div className="prompt-token-board grouped">
+                    {inheritedKeywords.map((keyword, index) => (
+                      <span
+                        className="prompt-token is-keyword-enter"
+                        key={keyword}
+                        title="继承自上一意图，不可点选"
+                        style={{ animationDelay: `${Math.min(index, 12) * 28}ms` }}
+                      >
+                        <span>{keyword}</span>
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              {visibleKeywords.length
+                ? divergenceKeywordGroups(visibleKeywords).map((group) => (
                 <section className={`dimension-panel ${group.group}`} aria-labelledby={`dimension-${group.group}`} key={group.group}>
                   <div className="dimension-panel-head">
                     <strong id={`dimension-${group.group}`}>{GROUP_LABELS[group.group]}</strong>
@@ -306,10 +309,8 @@ export function AIBehaviorPanel({
                     </div>
                   ) : null}
                 </section>
-              ))}
+              )) : null}
             </div>
-        ) : !semanticDivergenceLoading && !semanticDivergenceError && semanticDivergence?.status !== "failed" ? (
-          <p className="prompt-token-hint sr-only">Divergence keywords will appear once a white model or intent is available.</p>
         ) : null}
           </section>
         </section>
@@ -317,13 +318,12 @@ export function AIBehaviorPanel({
           className="behavior-generate-button"
           type="button"
           disabled={generateDisabled}
-          aria-describedby="semantic-generate-disabled-reason"
           onClick={onGenerate}
         >
           Generate
         </button>
-        {generateDisabledReason ? (
-          <p id="semantic-generate-disabled-reason" className="prompt-token-hint generate-disabled-reason" role={selectionPersistenceError ? "alert" : undefined}>
+        {selectionPersistenceError && generateDisabledReason ? (
+          <p className="prompt-token-hint generate-disabled-reason" role="alert">
             {generateDisabledReason}
           </p>
         ) : null}

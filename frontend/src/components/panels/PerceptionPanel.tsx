@@ -2,7 +2,7 @@
  * Privacy-safe summary of the user's current interaction and recent operations.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye } from "lucide-react";
 import type { BehaviorSession, LiveObservationState, LivePerception } from "../../types";
 import {
   buildPerceptionDisplay,
@@ -54,6 +54,7 @@ export function PerceptionPanel({
   hasModel: boolean;
 }) {
   const [now, setNow] = useState(() => Date.now());
+  const [expanded, setExpanded] = useState(false);
   const display = useMemo(() => buildPerceptionDisplay({
     livePerception,
     liveObservation,
@@ -92,11 +93,19 @@ export function PerceptionPanel({
 
   return (
     <section
-      className={`perception-float float-panel observe-float${perceptionHistoryOpen ? " is-open" : ""}`}
+      className={`perception-float float-panel observe-float${perceptionHistoryOpen ? " is-open" : ""}${expanded ? " is-expanded" : ""}`}
       aria-label="Perception"
       style={{ left: styleLeft }}
     >
       <header className="float-panel-label observe-head">
+        <button
+          type="button"
+          className="perception-eye"
+          aria-label={expanded ? "Collapse Perception" : "Expand Perception"}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          <Eye size={16} aria-hidden="true" />
+        </button>
         <span>Perception</span>
         <div className="observe-head-actions">
           <span className="status-dots" aria-hidden="true">

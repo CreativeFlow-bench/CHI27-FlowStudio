@@ -6,9 +6,10 @@
   --ai-behavior-width: 340px;
   --solution-space-height: 168px;
   --solution-space-left: calc(var(--workspace-edge) + var(--perception-width) + var(--workspace-gap));
-  /* Span to the right edge of the AI Behavior panel (viewport edge), not its left. */
   --solution-space-right: var(--workspace-edge);
-  --ai-behavior-top: var(--workspace-edge);
+  --panel-top: 68px;
+  --perception-top: 68px;
+  --ai-behavior-top: var(--panel-top);
   --composer-reserve: 132px;
   --workspace-safe-top: 64px;
   --workspace-safe-right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
@@ -23,13 +24,12 @@
 }
 
 .studio-shell.has-solution-space {
-  --workspace-safe-top: var(--solution-space-height);
-  --ai-behavior-top: calc(var(--solution-space-height) + var(--workspace-gap));
+  --solution-space-left: calc(var(--workspace-edge) + 52px + var(--workspace-gap));
+  --solution-space-right: var(--workspace-safe-right);
 }
 
-.studio-shell.has-solution-space .ai-behavior-float {
-  top: var(--ai-behavior-top);
-  max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-edge));
+.studio-shell.ai-behavior-collapsed {
+  --workspace-safe-right: calc(52px + var(--workspace-edge) + var(--workspace-gap));
 }
 
 .workspace,
@@ -45,7 +45,7 @@
 
 .perception-float {
   position: fixed;
-  top: 68px;
+  top: var(--perception-top, var(--panel-top));
   left: var(--workspace-edge);
   z-index: 42;
   width: var(--shell-width, var(--perception-width));
@@ -75,6 +75,74 @@
   line-height: 1.4;
 }
 
+.perception-eye {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) {
+  top: var(--perception-top);
+  width: auto;
+  max-width: none;
+}
+
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .perception-eye,
+.studio-shell.has-solution-space .perception-float.is-expanded .perception-eye {
+  display: inline-flex;
+}
+
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .observe-head > span,
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .observe-current,
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .observe-toggle,
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .observe-log {
+  display: none;
+}
+
+.studio-shell.has-solution-space .perception-float:not(.is-expanded) .observe-head {
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-bottom: 0;
+}
+
+.studio-shell.has-solution-space .perception-float-shell .resize-handle {
+  display: none;
+}
+
+.studio-shell.ai-behavior-collapsed .ai-behavior-float {
+  width: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.studio-shell.ai-behavior-collapsed .ai-behavior-float .float-panel-label > span,
+.studio-shell.ai-behavior-collapsed .ai-behavior-panel-body {
+  display: none;
+}
+
+.studio-shell.ai-behavior-collapsed .ai-behavior-float .observe-head {
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-bottom: 0;
+}
+
+.studio-shell.ai-behavior-collapsed .ai-behavior-float-shell .resize-handle,
+.studio-shell.ai-behavior-collapsed .mobile-panel-toggle {
+  display: none;
+}
+
 .solution-space-rail {
   position: fixed;
   top: 0;
@@ -92,7 +160,6 @@
   overflow: hidden;
   transform: none;
   border-radius: 0 0 18px 18px;
-  transition: left 160ms ease, right 160ms ease;
 }
 
 .solution-space-rail .solution-space-scroll {
@@ -118,6 +185,7 @@
   grid-template-rows: minmax(0, 1fr);
   gap: 0;
   padding: 4px;
+  background: rgba(255, 255, 255, 0.52);
 }
 
 .solution-space-rail .solution-card img,
@@ -162,7 +230,6 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  transition: top 180ms ease, max-height 180ms ease;
 }
 
 .ai-behavior-float .ai-behavior-panel-body {
@@ -176,6 +243,32 @@
   position: fixed;
   left: var(--workspace-edge);
   bottom: 24px;
+}
+
+.clear-history-fab {
+  position: fixed;
+  right: var(--workspace-edge);
+  bottom: 24px;
+  z-index: 18;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(57, 70, 85, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(42, 52, 66, 0.12);
+  color: #31404c;
+  cursor: pointer;
+}
+
+.clear-history-fab:hover,
+.clear-history-fab:focus-visible {
+  border-color: rgba(57, 70, 85, 0.28);
+  outline: none;
 }
 
 .canvas-composer-shell {
@@ -195,22 +288,12 @@
 }
 
 .ai-behavior-float .float-panel-label {
-  position: relative;
-  min-height: 44px;
+  min-height: 36px;
   margin: 0;
-  padding: 11px 14px;
+  padding: 8px 14px;
   border-bottom: 1px solid rgba(57, 70, 85, 0.08);
   cursor: default;
   touch-action: auto;
-}
-
-.ai-behavior-float .float-panel-label::after {
-  position: absolute;
-  inset: 0 14px auto;
-  height: 2px;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(90deg, #2ad4e8, #9b7bff 50%, #ff4f9a);
-  content: "";
 }
 
 .ai-behavior-panel-body {
@@ -242,6 +325,10 @@
 
 @media (max-width: 1149px) {
   .canvas-nav {
+    bottom: calc(var(--workspace-safe-bottom) + 12px);
+  }
+
+  .clear-history-fab {
     bottom: calc(var(--workspace-safe-bottom) + 12px);
   }
 
@@ -318,7 +405,6 @@
   }
 
   .studio-shell.has-solution-space .ai-behavior-float {
-    top: var(--ai-behavior-top);
     height: auto;
     max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-safe-bottom));
   }

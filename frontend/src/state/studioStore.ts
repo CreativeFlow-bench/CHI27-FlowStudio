@@ -400,7 +400,9 @@ export function useStudioStore() {
   const [perceptionHistoryOpen, setPerceptionHistoryOpen] = useState(false);
   const [workspaceChromeReady, setWorkspaceChromeReady] = useState(false);
   const [workspaceStartedAt, setWorkspaceStartedAt] = useState<string | null>(null);
-  const [solutionSpaceReleased, setSolutionSpaceReleased] = useState(false);
+  const [solutionSpaceReleased, setSolutionSpaceReleased] = useState(true);
+  const [solutionSpaceReadyPulse, setSolutionSpaceReadyPulse] = useState(false);
+  const wasSolutionSpaceGeneratingRef = useRef(false);
   const [solutionSpaceGenerating, setSolutionSpaceGenerating] = useState(false);
   const [solutionSpaceHeight, setSolutionSpaceHeight] = useState(168);
   /** Which intent round the rail body shows; null = follow live intent. */
@@ -1352,28 +1354,36 @@ export function useStudioStore() {
       }
     }
     if (!activeSession) {
-      const created = await api<SessionRecord>("/api/v1/sessions", {
-        method: "POST",
-        body: JSON.stringify({ title: "Design DB exploration", user_id: "local-dev" }),
-      });
-      activeSession = created;
-      window.localStorage.setItem(SESSION_STORAGE_KEY, created.session_id);
-      setSession(created);
-      setStage(created.stage);
-      setCanvasPrimitive(null);
-      setCanvasDisplayMode("textured");
-      setCanvasTool("select");
-      setAsset(null);
-      setParts([]);
-      setSelectedPart("");
-      setSelectedBenchmarkId("");
-      addLog("session", "blank start; choose a Design DB model or upload refs");
+      try {
+        const created = await Promise.race([
+          api<SessionRecord>("/api/v1/sessions", {
+            method: "POST",
+            body: JSON.stringify({ title: "Design DB exploration", user_id: "local-dev" }),
+          }),
+          timeoutAfter(8000, "create session"),
+        ]);
+        activeSession = created;
+        window.localStorage.setItem(SESSION_STORAGE_KEY, created.session_id);
+        setSession(created);
+        setStage(created.stage);
+        setCanvasPrimitive(null);
+        setCanvasDisplayMode("textured");
+        setCanvasTool("select");
+        setAsset(null);
+        setParts([]);
+        setSelectedPart("");
+        setSelectedBenchmarkId("");
+        addLog("session", "blank start; choose a Design DB model or upload refs");
+      } catch (error) {
+        addLog("session", String(error).slice(0, 160));
+      }
     }
     setWorkspaceStartedAt(new Date().toISOString());
     // Session snapshot already contains the active white model. Mount the 3D
     // workspace now; health, service, case and library data can hydrate without
     // delaying the renderer or blocking observation.
     setWorkspaceChromeReady(true);
+    if (!activeSession) return;
     void Promise.allSettled([
       refreshRemoteHealth(),
       refreshSystemServices(),
@@ -1697,15 +1707,7 @@ export function useStudioStore() {
         return seq === displayIntentSeq;
       });
   const solutionSpaceRoundChips = buildSolutionSpaceRoundChips(roundCounts, liveIntentSeq || null);
-  const liveSolutionSpaceVisible = Boolean(
-    !solutionSpaceReleased && (
-      solutionSpaceCandidates.length
-      || solutionSpaceRoundChips.length
-      || job
-      || solutionSpaceGenerating
-      || solutionBatches.some((batch) => batch.status === "generation" || batch.status === "generating" || batch.status === "queued")
-    ),
-  );
+  const liveSolutionSpaceVisible = !solutionSpaceReleased;
   const solutionSpaceComparing = Boolean(
     liveSolutionSpaceVisible && !solutionSpaceGenerating && solutionSpaceCandidates.length > 0,
   );
@@ -1999,7 +2001,7 @@ export function useStudioStore() {
             headers: { "Content-Type": "application/json" },
             signal: controller.signal,
             body: JSON.stringify({
-              object_type: asset?.label || asset?.asset_id || "object",
+              object_type: asset?.label || asset?.object_type || "model",
               part_label: partLabel,
               part_id: activeSelectedPart?.part_id ?? null,
               intent_text: intentText.trim() || null,
@@ -2031,7 +2033,7 @@ export function useStudioStore() {
   }, [
     session?.session_id,
     asset?.label,
-    asset?.asset_id,
+    asset?.object_type,
     behaviorSessions,
     activeSelectedPart?.label,
     activeSelectedPart?.part_id,
@@ -2098,16 +2100,13 @@ export function useStudioStore() {
   ]);
 
   useEffect(() => {
-    setSolutionSpaceReleased((current) =>
-      reduceSolutionSpaceVisibility(current, { type: "new_batch" }),
-    );
-  }, [solutionSpaceSignature]);
-
-  useEffect(() => {
-    setSolutionSpaceReleased((current) =>
-      reduceSolutionSpaceVisibility(current, { type: "content_updated" }),
-    );
-  }, [allCandidates.length]);
+    const finished = wasSolutionSpaceGeneratingRef.current && !solutionSpaceGenerating;
+    wasSolutionSpaceGeneratingRef.current = solutionSpaceGenerating;
+    if (!finished || !solutionSpaceReleased) return;
+    setSolutionSpaceReadyPulse(true);
+    const timer = window.setTimeout(() => setSolutionSpaceReadyPulse(false), 2800);
+    return () => window.clearTimeout(timer);
+  }, [solutionSpaceGenerating, solutionSpaceReleased]);
 
   useEffect(() => {
     if (!job?.job_id || job.job_id.startsWith("local_pending_") || !isActiveJobStatus(job.status)) return;
@@ -2160,8 +2159,6 @@ export function useStudioStore() {
       }
       if (message.type === "four_stage.generation_queued") {
         next.stage = "generation";
-        // Open once when generation starts — later progress must not fight user collapse.
-        setSolutionSpaceReleased(false);
         setSolutionSpaceGenerating(true);
       }
       if (message.type === "four_stage.generation_progress") {
@@ -2786,9 +2783,6 @@ export function useStudioStore() {
       setIntentText((current) => current.trim() === intentTextAtClick ? "" : current);
       // Stow prior Solution Space into round chips; body follows the new intent.
       setSolutionSpaceViewIntentSeq(optimisticIntentSeq);
-      setSolutionSpaceReleased((current) =>
-        reduceSolutionSpaceVisibility(current, { type: "intent_advanced" }),
-      );
     }
     const queued = intentSendQueueRef.current.then(async () => {
       if (trigger === "idle") {
@@ -3118,10 +3112,29 @@ export function useStudioStore() {
     if (capturedRevisionId) {
       semanticDivergenceAttachingRevisionRef.current = capturedRevisionId;
     }
-    const revision = intentRevisionsRef.current.find((item) => item.revision_id === capturedRevisionId) ?? null;
+    let revision = intentRevisionsRef.current.find((item) => item.revision_id === capturedRevisionId) ?? null;
     const allowedStatuses = preflight
       ? new Set(["awaiting_gate", "accepted"])
       : new Set(["accepted"]);
+    const sessionId = session?.session_id;
+    if (revision && allowedStatuses.has(revision.status) && !revision.run_id && sessionId) {
+      setDivergencePhaseMessage("Waiting for planner…");
+      for (let attempt = 0; attempt < 90; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        if (activeRevisionIdRef.current !== capturedRevisionId) {
+          if (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId) {
+            semanticDivergenceAttachingRevisionRef.current = null;
+          }
+          return null;
+        }
+        const snapshot = await refreshRealtimeObservation(sessionId);
+        revision =
+          (snapshot?.revisions ?? []).find((item) => item.revision_id === capturedRevisionId)
+          ?? intentRevisionsRef.current.find((item) => item.revision_id === capturedRevisionId)
+          ?? null;
+        if (revision?.run_id) break;
+      }
+    }
     if (!revision || !allowedStatuses.has(revision.status) || !revision.run_id) {
       if (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId) {
         semanticDivergenceAttachingRevisionRef.current = null;
@@ -3130,7 +3143,7 @@ export function useStudioStore() {
         !revision
           ? "No active revision to diverge"
           : !revision.run_id
-            ? "Revision has no run_id yet"
+            ? "Waiting for planner…"
             : `Revision status ${revision.status} cannot diverge`,
       );
       return null;
@@ -3172,8 +3185,18 @@ export function useStudioStore() {
 
     try {
       if (!isCurrentDivergenceInvocation()) return null;
-      const run = await api<FourStageRun>(`/api/v1/four-stage/runs/${capturedRunId}`);
+      let run = await api<FourStageRun>(`/api/v1/four-stage/runs/${capturedRunId}`);
       if (!isCurrentDivergenceInvocation()) return null;
+      for (let attempt = 0; attempt < 90 && run.stage !== "awaiting_gate"; attempt += 1) {
+        if (run.stage === "failed" || run.stage === "cancelled") {
+          setDivergencePhaseMessage(run.error?.message ?? `Planner ${run.stage}`);
+          return null;
+        }
+        setDivergencePhaseMessage(`Planner ${run.stage}…`);
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        if (!isCurrentDivergenceInvocation()) return null;
+        run = await api<FourStageRun>(`/api/v1/four-stage/runs/${capturedRunId}`);
+      }
       if (run.stage !== "awaiting_gate") {
         setDivergencePhaseMessage(`等待 run 进入 awaiting_gate（当前 ${run.stage}）`);
         return null;
@@ -3563,9 +3586,8 @@ export function useStudioStore() {
   const startActiveRevisionGeneration = async () => {
     const revisionId = activeRevisionIdRef.current ?? [...intentRevisionsRef.current].reverse().find((item) => item.status === "accepted")?.revision_id;
     if (!revisionId) return null;
-    // Open Solution Space immediately so streaming progress is visible before
-    // the first artifact / job_update arrives.
-    setSolutionSpaceReleased(false);
+    setSolutionSpaceReadyPulse(false);
+    window.setTimeout(() => setSolutionSpaceReadyPulse(true), 30);
     setSolutionSpaceGenerating(true);
     setSolutionSpaceHeight((current) => Math.max(current, 280));
     const focusRevision = intentRevisionsRef.current.find((item) => item.revision_id === revisionId);
@@ -4383,6 +4405,36 @@ export function useStudioStore() {
       addLog("blank", String(error).slice(0, 120));
       return null;
     }
+  };
+
+  const clearCurrentHistory = async () => {
+    if (!session) return null;
+    const confirmed = window.confirm("清除当前历史记录？意图、行为和发散会清空，白模会重新加载。");
+    if (!confirmed) return null;
+    const benchmarkId = selectedBenchmarkId;
+    try {
+      await api<{ ok: boolean }>(`/api/v1/sessions/${session.session_id}/reset`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      addLog("history", String(error).slice(0, 120));
+    }
+    resetSourceDependentState("History cleared. Load a model or type an intent.");
+    attachSessionSocket(session.session_id);
+    void refreshRealtimeObservation(session.session_id);
+    if (!benchmarkId) return session;
+    try {
+      const nextAsset = await loadBenchmarkAsset(session.session_id, benchmarkId);
+      setSelectedBenchmarkId(benchmarkId);
+      setAsset(nextAsset);
+      setParts(nextAsset.parts);
+      setSelectedPart(nextAsset.parts[0]?.part_id ?? "");
+      addLog("history", "cleared; white model reloaded");
+    } catch (error) {
+      addLog("history", String(error).slice(0, 120));
+    }
+    return session;
   };
 
   const loadCaseIntoStudio = async (item: CaseIndexItem) => {
@@ -5561,8 +5613,8 @@ export function useStudioStore() {
     return node;
   };
 
-  const generateCandidateHy3d = async (candidate: Candidate, versionNodeId?: string) => {
-    if (!session || hy3dCandidateIds.includes(candidate.candidate_id)) return;
+  const generateCandidateHy3d = async (candidate: Candidate, versionNodeId?: string, force = false) => {
+    if (!session || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
     setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
     addLog("hy3d", `started ${candidate.candidate_id}`);
     try {
@@ -5780,10 +5832,10 @@ export function useStudioStore() {
     }
   };
 
-  const runFourStageHy3d = async (candidate: Candidate, versionNodeId?: string) => {
+  const runFourStageHy3d = async (candidate: Candidate, versionNodeId?: string, force = false) => {
     const runId = String(candidate.metadata?.run_id ?? fourStageRef.current.runId ?? "");
     const artifactUrl = candidate.thumbnail_url ?? candidatePreviewUrl(candidate);
-    if (!runId || !artifactUrl || hy3dCandidateIds.includes(candidate.candidate_id)) return;
+    if (!runId || !artifactUrl || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
     setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
     try {
       const updated = await api<{
@@ -5845,18 +5897,57 @@ export function useStudioStore() {
 
   const retryVersionNode = async (nodeId: string) => {
     const node = versionGraphRef.current.nodes.find((item) => item.node_id === nodeId);
-    if (!node?.candidate_id || node.status !== "mesh_failed") return;
-    const candidate = allCandidates.find((item) => item.candidate_id === node.candidate_id);
-    if (!candidate) {
-      addLog("version", `Version ${node.version_number} 的候选已不在 Solution Space`);
+    if (!node || node.status !== "mesh_failed") return;
+    const live = node.candidate_id
+      ? allCandidates.find((item) => item.candidate_id === node.candidate_id)
+      : undefined;
+    const fourStageMatch = node.candidate_id ? /^fourstage_(.+)_(\d+)$/.exec(node.candidate_id) : null;
+    const runId = String(
+      live?.metadata?.run_id
+        ?? fourStageMatch?.[1]
+        ?? (live?.metadata?.four_stage_artifact ? fourStageRef.current.runId : "")
+        ?? "",
+    );
+    const imageUrl = live?.thumbnail_url ?? (live ? candidatePreviewUrl(live) : null) ?? node.preview_url;
+    const retryCandidate: Candidate = live ?? {
+      candidate_id: node.candidate_id ?? `retry_${node.node_id}`,
+      job_id: "",
+      session_id: session?.session_id ?? "",
+      source_asset_id: "",
+      source_part_id: null,
+      label: node.label,
+      decision: "accepted",
+      mesh_url: null,
+      obj_url: null,
+      thumbnail_url: imageUrl,
+      scores: {},
+      metadata: {
+        four_stage_artifact: Boolean(runId && (live?.metadata?.four_stage_artifact || fourStageMatch)),
+        run_id: runId || undefined,
+        prompt_index: fourStageMatch ? Math.max(0, Number(fourStageMatch[2]) - 1) : 0,
+      },
+    };
+    const useFourStage = Boolean(
+      runId && imageUrl && (live?.metadata?.four_stage_artifact || fourStageMatch),
+    );
+    if (!useFourStage && !node.candidate_id) {
+      addLog("hy3d", `Version ${node.version_number} 无法重试 3D：缺少候选`);
       return;
     }
     await patchVersionNode(nodeId, { status: "generating_3d", error: null });
-    if (candidate.metadata?.four_stage_artifact) {
-      void runFourStageHy3d(candidate, nodeId);
-    } else {
-      void generateCandidateHy3d(candidate, nodeId);
+    if (useFourStage) {
+      void runFourStageHy3d(
+        {
+          ...retryCandidate,
+          thumbnail_url: imageUrl,
+          metadata: { ...retryCandidate.metadata, four_stage_artifact: true, run_id: runId },
+        },
+        nodeId,
+        true,
+      );
+      return;
     }
+    void generateCandidateHy3d(retryCandidate, nodeId, true);
   };
 
   const fitCandidateToPart = async (candidate: Candidate) => {
@@ -5975,7 +6066,7 @@ export function useStudioStore() {
     observer.observe(shell);
     const active = shell.querySelector(".version-node.active");
     if (active) observer.observe(active);
-    for (const sel of [".perception-float", ".ai-behavior-float", ".solution-space-rail", ".canvas-composer-shell", ".intent-composer-shell"]) {
+    for (const sel of [".canvas-composer-shell", ".intent-composer-shell"]) {
       const el = document.querySelector(sel);
       if (el) observer.observe(el);
     }
@@ -5985,7 +6076,7 @@ export function useStudioStore() {
       observer.disconnect();
       window.removeEventListener("resize", recenter);
     };
-  }, [versionViewMode, liveSolutionSpaceVisible, studioDrawerOpen, menuWidth, activeVersionId]);
+  }, [versionViewMode, studioDrawerOpen, menuWidth, activeVersionId]);
 
   const zoomCanvasBy = (factor: number) => {
     const current = canvasZoomRef.current;
@@ -6397,6 +6488,8 @@ export function useStudioStore() {
     setWorkspaceStartedAt,
     solutionSpaceReleased,
     setSolutionSpaceReleased,
+    solutionSpaceReadyPulse,
+    setSolutionSpaceReadyPulse,
     solutionSpaceViewIntentSeq,
     setSolutionSpaceViewIntentSeq,
     solutionSpaceCandidates,
@@ -6550,6 +6643,7 @@ export function useStudioStore() {
     confirmProjectSwitch,
     switchBenchmarkAsset,
     startBlankWorkspace,
+    clearCurrentHistory,
     loadCaseIntoStudio,
     sendBrush,
     sendDrag,

@@ -270,18 +270,18 @@ button.icon-button {
   min-height: 84px;
   padding: 0;
   border-radius: 5px;
-  border: 1px solid rgba(190, 196, 208, 0.95);
-  background: rgba(236, 238, 242, 0.55);
-  color: rgba(122, 132, 152, 0.6);
+  border: 1px solid rgba(132, 142, 158, 0.95);
+  background: rgba(224, 228, 236, 0.78);
+  color: rgba(98, 110, 130, 0.75);
   transform: translateY(-50%);
-  box-shadow: none;
+  box-shadow: 0 0 0 1px rgba(90, 102, 118, 0.12);
   cursor: ew-resize;
   touch-action: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.6;
-  transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+  opacity: 0.88;
+  transition: opacity 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
 .studio-rail-handle:hover:not(:disabled) {
@@ -962,11 +962,11 @@ button.design-db-card strong {
 
 .observe-head {
   margin-bottom: 0;
-  min-height: 48px;
-  padding: 0 10px 0 10px;
+  min-height: 36px;
+  padding: 8px 14px;
   cursor: default;
   background: rgba(255, 255, 255, 0.84);
-  border-bottom: 1px solid rgba(120, 130, 150, 0.12);
+  border-bottom: 1px solid rgba(57, 70, 85, 0.08);
 }
 
 .observe-head > span {
@@ -1112,8 +1112,8 @@ button.design-db-card strong {
 }
 
 .ai-behavior-float {
-  top: 72px;
-  right: 18px;
+  top: var(--panel-top, 68px);
+  right: var(--workspace-edge, 18px);
   z-index: 12;
   gap: 12px;
 }
@@ -1280,12 +1280,13 @@ button.design-db-card strong {
 
 .solution-space-rail {
   z-index: 40;
-  border: 1px solid var(--panel-border);
+  border: 1px solid rgba(210, 216, 228, 0.55);
   border-top: 0;
   border-radius: 0 0 18px 18px;
-  background: var(--panel-bg);
-  box-shadow: 0 14px 32px rgba(40, 55, 90, 0.12);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 14px 32px rgba(40, 55, 90, 0.08);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
   max-width: none;
   pointer-events: auto;
 }
@@ -1495,9 +1496,10 @@ button.design-db-card strong {
 .solution-space-launcher {
   position: fixed;
   top: 0;
-  left: calc((var(--solution-space-left) + 100vw - var(--solution-space-right)) / 2);
+  left: 50vw;
   z-index: 41;
-  transform: translateX(-50%);
+  translate: -50% 0;
+  transform: none;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -1512,6 +1514,19 @@ button.design-db-card strong {
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.solution-space-launcher.is-ready {
+  animation: solution-space-ready 0.7s ease-in-out 4;
+}
+
+@keyframes solution-space-ready {
+  50% {
+    border-color: rgba(47, 123, 255, 0.75);
+    color: var(--accent-blue-deep);
+    box-shadow: 0 0 0 6px rgba(47, 123, 255, 0.18), 0 10px 24px rgba(40, 55, 90, 0.12);
+  }
 }
 
 .solution-space-launcher.is-top-drawer .solution-space-launcher-grip {
@@ -1525,8 +1540,10 @@ button.design-db-card strong {
   transform: translateX(-50%);
 }
 
-.solution-space-launcher:hover,
+.solution-space-launcher:hover:not(:disabled),
 .solution-space-launcher:focus-visible {
+  translate: -50% 0;
+  transform: none;
   border-color: rgba(47, 123, 255, 0.55);
   color: var(--accent-blue-deep);
 }
@@ -2096,7 +2113,7 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #fff;
+  background: transparent;
 }
 
 .version-retry {
@@ -5001,30 +5018,22 @@ textarea:focus-visible,
 }
 
 .ai-behavior-float .float-panel-label {
-  min-height: 68px;
-  margin: 0 0 13px;
-  padding: 18px 17px 15px;
+  min-height: 36px;
+  margin: 0;
+  padding: 8px 14px;
   border-bottom: 1px solid rgba(57, 70, 85, .08);
-  background:
-    radial-gradient(circle at 82% 10%, rgba(241, 148, 207, .16), transparent 32%),
-    radial-gradient(circle at 15% 90%, rgba(103, 208, 226, .18), transparent 38%),
-    rgba(255, 255, 255, .84);
+  background: rgba(255, 255, 255, 0.84);
 }
 
 .ai-behavior-float .float-panel-label::after {
-  position: absolute;
-  inset: 0 18px auto;
-  height: 2px;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(90deg, #75d5e5, #a7cafa 50%, #ec95cf);
-  content: "";
+  content: none;
 }
 
 .ai-behavior-float .float-panel-label > span {
-  color: #66707c;
-  font-size: 12px;
-  font-weight: 850;
-  letter-spacing: .13em;
+  color: var(--ink-mute);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
 }
 
 .ai-insight-stack {
@@ -5162,9 +5171,9 @@ textarea:focus-visible,
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 112px;
-  padding: 22px 24px 18px;
-  border-bottom: 1px solid rgba(93, 99, 112, .1);
+  min-height: 0;
+  padding: 4px 0 8px;
+  border-bottom: 0;
 }
 
 .more-creative-header > span {
@@ -5352,6 +5361,11 @@ textarea:focus-visible,
   box-shadow: none;
 }
 
+.ai-behavior-float span.prompt-token {
+  cursor: default;
+  pointer-events: none;
+}
+
 .ai-behavior-float .prompt-token span {
   font-size: 11px;
   font-weight: 700;
@@ -5418,63 +5432,35 @@ textarea:focus-visible,
 }
 
 .ai-behavior-header {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 0 0 auto;
-  min-height: 68px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(66, 76, 89, .08);
-  background:
-    radial-gradient(circle at 84% 8%, rgba(239, 129, 198, .15), transparent 34%),
-    radial-gradient(circle at 10% 86%, rgba(91, 204, 224, .16), transparent 38%),
-    rgba(255, 255, 255, .96);
+  display: none;
 }
 
-.ai-behavior-header::after {
-  position: absolute;
-  inset: 0 20px auto;
-  height: 2px;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(90deg, #72d4e4, #a6c8f7 50%, #eb91ce);
-  content: "";
-}
-
-.ai-behavior-header > strong {
-  color: #626c79;
-  font-size: 13px;
-  font-weight: 850;
-  letter-spacing: .13em;
-}
-
-.ai-behavior-header .drawer-toggle {
+.ai-behavior-float .drawer-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
-  margin-right: 4px;
+  min-height: 26px;
+  flex: 0 0 26px;
   padding: 0;
-  border: 1px solid rgba(60, 76, 92, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.6);
-  color: #4a5563;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-mute);
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.ai-behavior-header .drawer-toggle:hover {
-  background: rgba(47, 123, 255, 0.08);
-  border-color: rgba(47, 123, 255, 0.3);
-  color: var(--accent-blue-deep);
+.ai-behavior-float .drawer-toggle:hover,
+.ai-behavior-float .drawer-toggle:focus-visible {
+  background: rgba(43, 57, 70, 0.08);
+  color: var(--ink);
+  outline: none;
 }
 
-.ai-behavior-header .drawer-toggle[aria-pressed="true"] {
-  background: rgba(47, 123, 255, 0.14);
-  border-color: rgba(47, 123, 255, 0.4);
+.ai-behavior-float .drawer-toggle[aria-pressed="true"] {
+  background: rgba(47, 123, 255, 0.12);
   color: var(--accent-blue-deep);
 }
 
@@ -5514,10 +5500,10 @@ textarea:focus-visible,
 .ai-insight-card {
   display: grid;
   gap: 7px;
-  padding: 14px 16px;
-  border: 1px solid rgba(63, 75, 88, .08);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, .9);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .ai-insight-card > span,
@@ -5563,15 +5549,15 @@ textarea:focus-visible,
 .more-creative-card {
   flex: 0 1 auto;
   overflow: visible;
-  border: 1px solid rgba(173, 177, 186, .56);
-  border-radius: 18px;
-  background: rgba(248, 249, 251, .78);
-  box-shadow: 0 8px 18px rgba(56, 63, 75, .06);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .more-creative-card .more-creative-header {
-  min-height: 72px;
-  padding: 14px 16px 12px;
+  min-height: 0;
+  padding: 4px 0 8px;
 }
 
 .more-creative-card .more-creative-title {
@@ -5604,13 +5590,8 @@ textarea:focus-visible,
 }
 
 @media (max-width: 899px) {
-  .ai-behavior-header {
-    min-height: 62px;
-    padding: 14px 16px;
-  }
-
-  .ai-behavior-float:not(.is-mobile-open) .ai-behavior-header > strong,
-  .ai-behavior-float:not(.is-mobile-open) .ai-behavior-status-dots {
+  .ai-behavior-float:not(.is-mobile-open) .observe-head > span,
+  .ai-behavior-float:not(.is-mobile-open) .observe-head-actions .status-dots {
     display: none;
   }
 

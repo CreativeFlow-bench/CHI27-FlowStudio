@@ -320,6 +320,8 @@ function App() {
     setWorkspaceStartedAt,
     solutionSpaceReleased,
     setSolutionSpaceReleased,
+    solutionSpaceReadyPulse,
+    setSolutionSpaceReadyPulse,
     solutionSpaceHeight,
     setSolutionSpaceHeight,
     solutionSpaceGenerating,
@@ -416,6 +418,7 @@ function App() {
     confirmProjectSwitch,
     switchBenchmarkAsset,
     startBlankWorkspace,
+    clearCurrentHistory,
     loadCaseIntoStudio,
     sendBrush,
     sendDrag,
@@ -508,6 +511,7 @@ function App() {
   const [modelAnchor, setModelAnchor] = useState<ModelAnchor | null>(null);
   const [perceptionWidth, setPerceptionWidth] = useState(320);
   const [aiBehaviorWidth, setAiBehaviorWidth] = useState(340);
+  const [aiBehaviorCollapsed, setAiBehaviorCollapsed] = useState(false);
   const onModelAnchorChange = useMemo(
     () => (anchor: ModelAnchor | null) => {
       setModelAnchor((current) => {
@@ -587,7 +591,7 @@ function App() {
 
   return (
     <main
-      className={`studio-shell${studioDrawerOpen ? " menu-open" : ""}${liveSolutionSpaceVisible ? " has-solution-space" : ""}`}
+      className={`studio-shell${studioDrawerOpen ? " menu-open" : ""}${liveSolutionSpaceVisible ? " has-solution-space" : ""}${aiBehaviorCollapsed ? " ai-behavior-collapsed" : ""}`}
       style={{
         ["--solution-space-height" as string]: `${solutionSpaceHeight}px`,
         ["--perception-width" as string]: `${perceptionWidth}px`,
@@ -781,14 +785,17 @@ function App() {
               onGenerate3D={(candidate) => void generateCandidateHy3d(candidate)}
             />
           ) : null}
-          {solutionSpaceReleased && (solutionSpaceCandidates.length > 0 || solutionSpaceRoundChips.length > 0 || solutionSpaceGenerating) ? (
+          {!liveSolutionSpaceVisible ? (
             <button
               type="button"
-              className="solution-space-launcher is-top-drawer"
+              className={`solution-space-launcher is-top-drawer${solutionSpaceReadyPulse ? " is-ready" : ""}`}
               aria-label="Open Solution Space"
-              onClick={() => setSolutionSpaceReleased((current) =>
-                reduceSolutionSpaceVisibility(current, { type: "expand" })
-              )}
+              onClick={() => {
+                setSolutionSpaceReadyPulse(false);
+                setSolutionSpaceReleased((current) =>
+                  reduceSolutionSpaceVisibility(current, { type: "expand" }),
+                );
+              }}
             >
               <span className="solution-space-launcher-grip" aria-hidden="true" />
               <Sparkles size={14} aria-hidden="true" />
@@ -855,8 +862,8 @@ function App() {
               solutionSpaceGenerating={solutionSpaceGenerating}
               onTogglePromptToken={togglePromptToken}
               onGenerate={() => void startActiveRevisionGeneration()}
-              drawerOpen={studioDrawerOpen}
-              onMenuToggle={() => setStudioDrawerOpen((value) => !value)}
+              collapsed={aiBehaviorCollapsed}
+              onCollapsedChange={setAiBehaviorCollapsed}
             />
           </ResizableShell>
 
@@ -950,6 +957,16 @@ function App() {
                 <Focus size={14} aria-hidden="true" />
               </button>
             </nav>
+          ) : null}
+          {workspaceChromeReady && session ? (
+            <button
+              type="button"
+              className="clear-history-fab"
+              aria-label="清除当前历史记录"
+              onClick={() => void clearCurrentHistory()}
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+            </button>
           ) : null}
 
         </section>

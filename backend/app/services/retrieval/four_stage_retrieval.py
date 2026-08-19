@@ -58,8 +58,9 @@ class FourStageRetrievalService:
         intent_ir: IntentIR,
     ) -> RetrievalBundle:
         if not self.retriever.ready:
-            raise FourStageRetrievalError(
-                "design-state IR data missing or empty (source of truth unavailable)"
+            logger.warning("design-state IR index empty; abstaining retrieval")
+            return self._abstained(
+                run, intent_ir, "design-state IR data missing or empty"
             )
         features = self._ir_to_features(intent_ir)
         pool = self.retriever.retrieve(features, top_k=self.candidate_pool)

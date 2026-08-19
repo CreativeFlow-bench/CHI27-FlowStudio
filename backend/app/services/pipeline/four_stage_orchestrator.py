@@ -232,6 +232,12 @@ class FourStageOrchestrator:
                 request.session_id, request.idempotency_key
             )
             if existing is not None:
+                if existing.decision is not None and existing.scope_gate is not None:
+                    return existing
+                if auto_advance:
+                    if existing.stage == FourStageStage.failed:
+                        return await self.retry_run(existing.run_id)
+                    return await self._reencode_to_gate(existing)
                 return existing
         run = FourStageRun(
             run_id=f"fsrun_{uuid4().hex[:10]}",

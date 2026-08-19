@@ -28,7 +28,7 @@ from app.services.pipeline.four_stage_orchestrator import (
     FakeEncodingService,
     FourStageOrchestrator,
 )
-from app.services.retrieval import FourStageRetrievalError, FourStageRetrievalService
+from app.services.retrieval import FourStageRetrievalService
 from app.services.storage.four_stage_store import FourStageStore
 
 
@@ -188,15 +188,16 @@ def test_metadata_and_outcome_scoring() -> None:
     assert c1.final_score == pytest.approx(expected, abs=1e-3)
 
 
-def test_missing_prior_data_fails_explicitly() -> None:
+def test_missing_prior_data_abstains() -> None:
     retriever = DesignStateIRRetriever(
         path=Path("/nonexistent/design_state_ir_retrieval.jsonl")
     )
     assert retriever.ready is False
     service = FourStageRetrievalService(retriever=retriever)
     run = FourStageRun(run_id="run_m", session_id="sess_m", source_event_ids=["evt_1"])
-    with pytest.raises(FourStageRetrievalError):
-        asyncio.run(service.retrieve(run, _ir()))
+    bundle = asyncio.run(service.retrieve(run, _ir()))
+    assert bundle.abstained is True
+    assert bundle.matches == []
 
 
 def test_gate_accept_and_reject_record_retrieval_feedback() -> None:

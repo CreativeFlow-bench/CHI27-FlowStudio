@@ -95,13 +95,14 @@ test("Solution Space can be collapsed, reopened, and stays collapsed while image
   const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
   const css = await read("../src/styles.css");
   const store = await read("../src/state/studioStore.ts");
+  const visibility = await read("../src/utils/solutionSpaceVisibility.ts");
   assert.match(main, /aria-label="Open Solution Space"/);
-  assert.match(main, />\s*展开 Solution Space · \{allCandidates\.length\}\s*</);
+  assert.match(main, /is-ready/);
   assert.match(rail, />\s*收起\s*</);
   assert.match(css, /\.solution-space-collapse\s*\{[^}]*min-width:\s*56px/s);
   assert.match(main, /type: "expand"/);
-  assert.match(store, /type: "content_updated"/);
-  assert.match(store, /type: "new_batch"/);
+  assert.match(visibility, /action\.type === "expand"\) return false/);
+  assert.match(store, /solutionSpaceReadyPulse/);
 });
 
 test("version canvas is an accessible candidate drop target", async () => {

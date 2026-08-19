@@ -762,9 +762,21 @@ export function benchmarkAssetGroupLabel(asset: BenchmarkAsset) {
 }
 
 export function benchmarkPreviewUrl(asset: BenchmarkAsset): string | null {
-  const image = asset.metadata?.image;
-  if (typeof image !== "string" || !image.trim()) return null;
-  return absoluteUrl(image.trim());
+  const thumbnail =
+    (typeof asset.thumbnail_url === "string" && asset.thumbnail_url.trim()) ||
+    (typeof asset.metadata?.image === "string" && asset.metadata.image.trim()) ||
+    "";
+  if (thumbnail) return absoluteUrl(thumbnail);
+  // Stale API responses may omit preview metadata; white models always use
+  // `<stem>.preview.png` beside the OBJ on disk.
+  if (
+    asset.metadata?.source === "local_white_model" &&
+    typeof asset.obj_url === "string" &&
+    asset.obj_url.toLowerCase().endsWith(".obj")
+  ) {
+    return absoluteUrl(asset.obj_url.replace(/\.obj$/i, ".preview.png"));
+  }
+  return null;
 }
 
 export function compareBenchmarkAssets(a: BenchmarkAsset, b: BenchmarkAsset) {

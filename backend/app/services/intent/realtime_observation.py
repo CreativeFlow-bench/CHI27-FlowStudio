@@ -532,7 +532,7 @@ class RealtimeObservationService:
                 )
             )
         try:
-            async with asyncio.timeout(10):
+            async with asyncio.timeout(90):
                 planner = self._planner_for_revision(revision, behaviors)
                 run = await planner.create_run(
                     FourStageRunCreateRequest(
@@ -543,23 +543,16 @@ class RealtimeObservationService:
                         events=events,
                         source_context=revision.source_context,
                     ),
-                    auto_advance=True,
+                    auto_advance=False,
                 )
                 revision.run_id = run.run_id
-                # Best-effort LLM phenomenon generation — never blocks the gate pipeline.
-                if hasattr(planner, "encoding_service") and hasattr(
-                    planner.encoding_service, "generate_phenomenon"
-                ):
-                    try:
-                        phenomenon = await planner.encoding_service.generate_phenomenon(
-                            run, run.intent_ir
-                        )
-                        if phenomenon:
-                            run.phenomenon = phenomenon
-                            revision.phenomenon = phenomenon
-                            self.store.save_run(run)
-                    except Exception:
-                        pass  # phenomenon is best-effort; gate pipeline takes priority
+                self.store.save_revision(revision)
+                await self._emit(
+                    revision.session_id,
+                    "intent.revision_updated",
+                    {"revision": revision.model_dump(mode="json")},
+                )
+                run = await planner.advance_run(run.run_id)
                 if run.scope_gate is None:
                     raise FourStageError("planner did not produce a scope Gate")
                 gate_target, gate_scope, gate_question = await self._compose_revision_gate(
@@ -581,8 +574,25 @@ class RealtimeObservationService:
                 revision.gate_scope = gate_scope
                 revision.gate_provisional = False
                 revision.status = IntentRevisionStatus.awaiting_gate
+            planner = self._planner_for_revision(revision, behaviors)
+            run = self.store.get_run(revision.run_id or "") if revision.run_id else None
+            if (
+                run is not None
+                and hasattr(planner, "encoding_service")
+                and hasattr(planner.encoding_service, "generate_phenomenon")
+            ):
+                try:
+                    phenomenon = await planner.encoding_service.generate_phenomenon(
+                        run, run.intent_ir
+                    )
+                    if phenomenon:
+                        run.phenomenon = phenomenon
+                        revision.phenomenon = phenomenon
+                        self.store.save_run(run)
+                except Exception:
+                    pass
         except TimeoutError:
-            logger.info("plan_revision timed out after 10s · keep Fast Gate for %s", revision_id)
+            logger.info("plan_revision timed out after 90s · keep Fast Gate for %s", revision_id)
             if not revision.gate_question:
                 self._apply_fast_gate_draft(revision, behaviors)
             revision.status = IntentRevisionStatus.awaiting_gate

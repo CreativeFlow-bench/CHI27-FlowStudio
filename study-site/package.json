@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "seed": "node scripts/seed-accounts.js",
+    "refresh-schedules": "node scripts/refresh-schedules.js",
     "start": "node src/server.js",
     "test": "node --test"
   }

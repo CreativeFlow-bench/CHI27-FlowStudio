@@ -70,6 +70,7 @@ class BenchmarkAssetRecord(BaseModel):
     object_type: str
     mesh_url: str | None = None
     obj_url: str | None = None
+    thumbnail_url: str | None = None
     file_size_bytes: int = 0
     vertex_count: int | None = None
     face_count: int | None = None

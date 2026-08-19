@@ -568,9 +568,9 @@ class InteractionOrchestrator:
         if not task.revision_id:
             raise FourStageError("divergence task has no revision")
         revision = self._require_revision(task.revision_id)
-        # Fast Gate accept can outrun plan_revision; wait briefly for decision.
+        # Fast Gate accept can outrun plan_revision; wait for the cloud LLM.
         run = None
-        for _ in range(50):
+        for _ in range(300):
             revision = self._require_revision(task.revision_id)
             run = self.store.get_run(revision.run_id or "") if revision.run_id else None
             if run is not None and run.decision is not None:
@@ -578,6 +578,9 @@ class InteractionOrchestrator:
             if task.cancel_requested:
                 raise FourStageConflict("task cancellation requested")
             await asyncio.sleep(0.2)
+        if run is None or run.decision is None:
+            revision = await self.observation.plan_revision(task.revision_id)
+            run = self.store.get_run(revision.run_id or "") if revision.run_id else None
         if run is None or run.decision is None:
             raise FourStageError("revision planner result is not ready")
         raw_params = dict(task.input_json.get("divergence_params") or {})

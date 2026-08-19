@@ -67,6 +67,7 @@ class ImageModelGateway:
                     "n": 1,
                     "size": size,
                     "output_format": "png",
+                    "response_format": "b64_json",
                 }
                 raw = await asyncio.to_thread(
                     self._post_json,
@@ -129,7 +130,7 @@ class ImageModelGateway:
                 return self._decode_openai_png(raw)
             except (ModelTransportUnavailable, ImageResponseError) as exc:
                 last_error = exc
-        raise last_error or ModelTransportUnavailable("image API unavailable")
+        return await self.generate(prompt, size=size)
 
     def _gemini_generate_content(
         self,
@@ -163,9 +164,9 @@ class ImageModelGateway:
 
     def _post_bytes(self, url: str, body: bytes, content_type: str) -> dict[str, Any]:
         last_error: ModelTransportUnavailable | None = None
-        # Image edits are large multipart posts; give them more headroom than text.
-        request_timeout = max(float(self.profile.timeout_sec), 120.0)
-        for attempt in range(self.profile.max_retries + 1):
+        request_timeout = min(max(float(self.profile.timeout_sec), 20.0), 45.0)
+        retries = min(int(self.profile.max_retries), 1)
+        for attempt in range(retries + 1):
             request = urllib.request.Request(
                 url,
                 data=body,
@@ -183,7 +184,7 @@ class ImageModelGateway:
                 return raw
             except urllib.error.HTTPError as exc:
                 response_body = exc.read().decode("utf-8", errors="replace")
-                if exc.code == 429 or exc.code == 408 or 500 <= exc.code <= 599:
+                if exc.code in {403, 404, 408, 429} or 500 <= exc.code <= 599:
                     last_error = ModelTransportUnavailable(
                         f"image API HTTP {exc.code}: {response_body[:200]}"
                     )
@@ -197,7 +198,7 @@ class ImageModelGateway:
                 )
             except json.JSONDecodeError as exc:
                 raise ImageResponseError("image API returned invalid JSON") from exc
-            if attempt < self.profile.max_retries:
+            if attempt < retries:
                 self._sleep(0.5 * (2**attempt))
         raise last_error or ModelTransportUnavailable("image API unavailable")
 

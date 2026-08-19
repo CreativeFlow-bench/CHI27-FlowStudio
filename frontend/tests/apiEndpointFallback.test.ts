@@ -34,3 +34,27 @@ test("production fallback targets same-host GPU port 18000", () => {
     { apiBase: "https://gpu.example:18000", wsBase: "wss://gpu.example:18000" },
   );
 });
+
+test("static preview on 5173 talks to GPU backend 18000", () => {
+  assert.deepEqual(
+    resolveRuntimeEndpoints({
+      protocol: "http:",
+      hostname: "gpu.example",
+      port: "5173",
+      origin: "http://gpu.example:5173",
+    }),
+    { apiBase: "http://gpu.example:18000", wsBase: "ws://gpu.example:18000" },
+  );
+});
+
+test("public same-origin gateway keeps API on the page origin", () => {
+  assert.deepEqual(
+    resolveRuntimeEndpoints({
+      protocol: "https:",
+      hostname: "u857862.example",
+      port: "8443",
+      origin: "https://u857862.example:8443",
+    }),
+    { apiBase: "https://u857862.example:8443", wsBase: "wss://u857862.example:8443" },
+  );
+});

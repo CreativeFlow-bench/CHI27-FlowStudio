@@ -7,15 +7,13 @@ export type SolutionSpaceVisibilityAction =
   | { type: "intent_advanced" };
 
 /** `released=true` means the rail is hidden.
- *  Explicit collapse sticks until the user expands (or a brand-new generation starts).
- *  Mid-flight progress / batch signature changes must not force-expand. */
+ *  Only an explicit user expand opens it. Generation / new candidates never auto-open. */
 export function reduceSolutionSpaceVisibility(
   released: boolean,
   action: SolutionSpaceVisibilityAction,
 ): boolean {
-  if (action.type === "collapse") return true;
-  if (action.type === "expand" || action.type === "source_changed") return false;
-  // new_batch / content_updated / intent_advanced: keep user collapse sticky
+  if (action.type === "expand") return false;
+  if (action.type === "collapse" || action.type === "source_changed") return true;
   return released;
 }
 

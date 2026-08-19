@@ -2,7 +2,7 @@
  * Version canvas shell: pannable/zoomable canvas with ThreeViewport,
  * branch thumbnails and sculpt controls panel.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box, GitBranch, GripHorizontal, RotateCcw, Trash2, X } from "lucide-react";
 import type {
   AnnotationStroke,
@@ -54,6 +54,50 @@ export type VersionCanvasLink = {
   controlX2: number;
   isActivePath: boolean;
 };
+
+function VersionPreviewImage({ src, alt }: { src: string; alt: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [fallback, setFallback] = useState(false);
+  useEffect(() => {
+    let revoked = false;
+    setFallback(false);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas || revoked) return;
+      canvas.width = img.naturalWidth || 520;
+      canvas.height = img.naturalHeight || 520;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setFallback(true);
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      try {
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = data.data;
+        for (let i = 0; i < pixels.length; i += 4) {
+          if (pixels[i] > 250 && pixels[i + 1] > 250 && pixels[i + 2] > 250) pixels[i + 3] = 0;
+        }
+        ctx.putImageData(data, 0, 0);
+      } catch {
+        setFallback(true);
+      }
+    };
+    img.onerror = () => setFallback(true);
+    img.src = src;
+    return () => {
+      revoked = true;
+    };
+  }, [src]);
+  return (
+    <>
+      <canvas className="version-active-image" ref={canvasRef} aria-label={alt} hidden={fallback} />
+      {fallback ? <img className="version-active-image" src={src} alt={alt} width={520} height={520} /> : null}
+    </>
+  );
+}
 
 export type CanvasPanState = { x: number; y: number };
 
@@ -385,7 +429,7 @@ export function VersionCanvas({
                   sculptStrength={sculptStrength}
                   canvasZoom={canvasZoom}
                   onGeometryReady={(geometry) => editorScene.setGeometry(geometry)}
-                /> : node.previewUrl ? <img className="version-active-image" src={node.previewUrl} alt={node.label} width={520} height={520} /> : <div className="version-thumb-fallback"><Box size={32} /></div>}
+                /> : node.previewUrl ? <VersionPreviewImage src={node.previewUrl} alt={node.label} /> : <div className="version-thumb-fallback"><Box size={32} /></div>}
                 {node.status === "mesh_ready" ? <AnnotationCanvasOverlay
                   active={annotationMode}
                   onCancel={onCancelAnnotation}
@@ -426,7 +470,7 @@ export function VersionCanvas({
                   </div>
                 ) : null}
               </div>
-              {node.status === "mesh_failed" ? <button type="button" className="version-retry" aria-label={`重试 Version ${node.versionNumber} 的 3D 生成`} onClick={() => void onRetryVersionNode(node.id)}>重试 3D</button> : null}
+              {node.status === "mesh_failed" ? <button type="button" className="version-retry" aria-label={`重试 Version ${node.versionNumber} 的 3D 生成`} onClick={(event) => { event.stopPropagation(); void onRetryVersionNode(node.id); }}>重试 3D</button> : null}
             </div>
           ) : (
             <button

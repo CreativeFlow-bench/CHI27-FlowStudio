@@ -63,6 +63,7 @@ def test_stage_routing_matches_the_approved_external_models() -> None:
     assert image_route.fallback_model is None
     assert profile.ordered_image_models() == [
         "gpt-image-2",
+        "grok-imagine-image-lite",
+        "gemini-3.6-flash-image",
         "gemini-3.1-flash-image",
-        "gemini-3-pro-image-2k",
     ]

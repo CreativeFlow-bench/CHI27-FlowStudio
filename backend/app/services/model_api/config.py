@@ -10,8 +10,9 @@ from app.services.model_api.types import ModelRoute, ModelStage
 # OpenAI /images/* rejects these; ImageModelGateway routes them via Gemini
 # v1beta generateContent instead.
 IMAGE_FALLBACK_MODELS = (
+    "grok-imagine-image-lite",
+    "gemini-3.6-flash-image",
     "gemini-3.1-flash-image",
-    "gemini-3-pro-image-2k",
 )
 
 

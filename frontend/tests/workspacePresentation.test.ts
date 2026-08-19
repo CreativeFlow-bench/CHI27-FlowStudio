@@ -5,13 +5,22 @@ import * as workspacePresentation from "../src/utils/workspacePresentation.ts";
 
 const { buildAiBehaviorPresentation } = workspacePresentation;
 
+test("observe narrative hides asset ids and jargon", () => {
+  assert.equal(
+    workspacePresentation.humanizeObserveNarrative(
+      "Comparing the current part of asset_0a8a397439 while orbiting the viewport and repeatedly hovering over local details.",
+    ),
+    "Comparing the current part of the model while turning the model around and looking closely at a small area.",
+  );
+});
+
 test("content amount is presented as an exact per-dimension count", () => {
   const format = (workspacePresentation as typeof workspacePresentation & {
     formatPerGroupCount?: (value: number) => string;
   }).formatPerGroupCount;
 
   assert.equal(typeof format, "function", "per-dimension content amount formatter is missing");
-  assert.equal(format?.(5), "5 / 维");
+  assert.equal(format?.(5), "5 per group");
 });
 
 test("content amount is rounded and constrained to five through eight per dimension", () => {

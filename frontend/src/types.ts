@@ -290,6 +290,7 @@ export type BenchmarkAsset = {
   object_type: string;
   mesh_url: string | null;
   obj_url: string | null;
+  thumbnail_url?: string | null;
   model_available?: boolean;
   file_size_bytes: number;
   vertex_count: number | null;

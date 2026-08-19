@@ -7,10 +7,11 @@ import {
   reduceSolutionSpaceVisibility,
 } from "../src/utils/solutionSpaceVisibility.ts";
 
-test("a completed candidate batch stays visible until the user explicitly collapses it", () => {
+test("only an explicit expand opens the rail; source change stays collapsed", () => {
   assert.equal(reduceSolutionSpaceVisibility(true, { type: "new_batch" }), true);
   assert.equal(reduceSolutionSpaceVisibility(false, { type: "collapse" }), true);
-  assert.equal(reduceSolutionSpaceVisibility(true, { type: "source_changed" }), false);
+  assert.equal(reduceSolutionSpaceVisibility(true, { type: "source_changed" }), true);
+  assert.equal(reduceSolutionSpaceVisibility(false, { type: "source_changed" }), true);
   assert.equal(reduceSolutionSpaceVisibility(true, { type: "expand" }), false);
 });
 

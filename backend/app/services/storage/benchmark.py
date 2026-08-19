@@ -310,12 +310,16 @@ def _discover_local_white_model_assets(files_root: Path) -> list[BenchmarkAssetR
             continue
         label = str(item.get("label") or Path(obj_url).stem)
         category = str(item.get("category") or "white_models")
+        preview_url = _clean_url_value(item.get("thumbnail_url"))
+        if not preview_url and obj_url.lower().endswith(".obj"):
+            preview_url = _clean_url_value(obj_url.replace(".obj", ".preview.png").replace(".OBJ", ".preview.png"))
         records.append(
             BenchmarkAssetRecord(
                 benchmark_id=str(item.get("benchmark_id") or f"white:{category}:{Path(obj_url).stem}"),
                 label=f"{category.replace('_', ' ').title()} · {label}",
                 object_type=str(item.get("object_type") or category),
                 obj_url=obj_url,
+                thumbnail_url=preview_url,
                 file_size_bytes=int(item.get("file_size_bytes") or 0),
                 reference_status="LOCAL_WHITE_MODEL",
                 model_available=True,
@@ -325,7 +329,7 @@ def _discover_local_white_model_assets(files_root: Path) -> list[BenchmarkAssetR
                     "category": category,
                     "collection": item.get("collection"),
                     "source_zip": item.get("source_zip"),
-                    "image": item.get("thumbnail_url"),
+                    "image": preview_url,
                     "storage_path": storage_path,
                     "texture_index_rule": _benchmark_texture_index_rule("source_obj"),
                 },

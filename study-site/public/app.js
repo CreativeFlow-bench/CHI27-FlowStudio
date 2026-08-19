@@ -130,10 +130,10 @@ function reviewInterviewGuide() {
 
 function renderReviewer() {
   app.innerHTML = `<div class="review-shell"><header class="admin-header"><div><div class="brand">FlowStudio Research</div><div class="participant-meta">P000 · 研究材料审阅</div></div><button class="secondary" id="review-logout">退出登录</button></header><nav class="review-nav"><a href="#flow">流程</a><a href="#prestudy">前测</a><a href="#tasks">任务</a><a href="#nasa">NASA-TLX</a><a href="#csi">CSI</a><a href="#sus">SUS</a><a href="#comparison">系统比较</a><a href="#interview">访谈</a></nav><main class="review-content"><section class="review-intro"><div class="eyebrow">Review mode</div><h1>实验问卷总览</h1><p class="lead">这个账号只用于阅读和讨论，不提交答案，也不会写入参与者数据。</p></section>
-    <section class="review-section" id="flow"><h2>完整实验流程</h2><p class="review-note">前测 → 系统一任务 1 → NASA → 系统一任务 2 → NASA → CSI → SUS → 休息 → 系统二任务 1 → NASA → 系统二任务 2 → NASA → CSI → SUS → 系统比较 → 半结构化访谈。</p><h3>四种平衡顺序</h3><ol><li>G1：Flow-A1 → Flow-B1 → Text-A2 → Text-B2</li><li>G2：Text-A1 → Text-B1 → Flow-A2 → Flow-B2</li><li>G3：Flow-B1 → Flow-A1 → Text-B2 → Text-A2</li><li>G4：Text-B1 → Text-A1 → Flow-B2 → Flow-A2</li></ol></section>
+    <section class="review-section" id="flow"><h2>完整实验流程</h2><p class="review-note">前测 → 开放式创意探索 1（12–15 分钟）→ NASA → CSI → SUS → 休息 → 开放式创意探索 2（12–15 分钟）→ NASA → CSI → SUS → 系统比较 → 半结构化访谈。</p><h3>四种平衡顺序</h3><ol><li>G1：FlowStudio × 圣诞道具 → Baseline × 新中式手包</li><li>G2：Baseline × 圣诞道具 → FlowStudio × 新中式手包</li><li>G3：FlowStudio × 新中式手包 → Baseline × 圣诞道具</li><li>G4：Baseline × 新中式手包 → FlowStudio × 圣诞道具</li></ol><p>正式参与者 P001–P020，每组 5 人；P021–P025 用于预测试。</p></section>
     <section class="review-section" id="prestudy"><h2>实验前问卷</h2>${reviewList(["主要设计背景或创意领域", "3D 建模经验：无 / 入门 / 中等 / 熟练 / 专业", "生成式 AI 使用频率：很少 / 每月数次 / 每周数次 / 几乎每天"])}</section>
-    <section class="review-section" id="tasks"><h2>四项设计任务</h2><p class="review-note">具体任务内容目前保留为空，待我们讨论后填写。正式页面不会向参与者展示 A/B 等研究标签。</p><ol><li>A1：定向设计任务，占位</li><li>B1：开放设计任务，占位</li><li>A2：定向设计任务，占位</li><li>B2：开放设计任务，占位</li></ol></section>
-    <section class="review-section" id="nasa"><h2>NASA-TLX</h2><p>每项任务后填写一次，共四次。</p>${reviewList(NASA, "1–11 分，对应原始 0–100")}</section>
+    <section class="review-section" id="tasks"><h2>两次开放式创意探索</h2><p class="review-note">每人体验两个系统、完成两个不同主题；系统与主题的组合按 G1–G4 平衡。两个系统均不能上传参考图。</p><h3>主题 1：圣诞解谜游戏的场景关键道具设计</h3><p>以雪人为核心，开放探索能够支持谜题或场景叙事的关键 3D 道具。</p><h3>主题 2：新中式手包设计（主题待确认）</h3><p>开放探索传统文化表达与当代使用方式相结合的手包设计。</p><h3>系统条件</h3><ol><li><strong>FlowStudio：</strong>从预设 3D 模型开始，通过空间交互进行修改和发散，不能上传参考图。</li><li><strong>Baseline：</strong>使用纯文本 Hunyuan3D，可多轮修改、查看历史并选择最终方案，不能上传参考图。</li></ol></section>
+    <section class="review-section" id="nasa"><h2>NASA-TLX</h2><p>每项任务后填写一次，共两次。</p>${reviewList(NASA, "1–11 分，对应原始 0–100")}</section>
     <section class="review-section" id="csi"><h2>适配版 CSI</h2><p>每完成一个系统后填写一次，共两次。单人任务不包含 Collaboration。</p>${reviewList(CSI, "1–10 分")}</section>
     <section class="review-section" id="sus"><h2>System Usability Scale</h2><p>每完成一个系统后填写一次，共两次，保留完整 10 题。</p>${reviewList(SUS, "1–5 分")}</section>
     <section class="review-section" id="comparison"><h2>最终系统比较</h2>${reviewList(["总体上更偏好哪个系统？", "哪个系统更有助于探索不同创意方向？", "哪个系统更有助于表达设计意图？", "哪个系统更有控制感？", "哪个系统更容易使用？", "哪个系统更适合实际设计工作？"], "FlowStudio / Text-Hunyuan3D / 相近")}</section>
@@ -145,7 +145,7 @@ function renderReviewer() {
 async function renderAdmin() {
   const payload = await api("/api/admin/participants");
   const completed = payload.participants.filter((item) => item.completedAt).length;
-  app.innerHTML = `<div class="admin-shell"><header class="admin-header"><div><div class="brand">FlowStudio Research</div><div class="participant-meta">管理员控制台</div></div><div class="admin-actions"><button class="secondary" id="export-data">导出回答 JSON</button><button class="secondary" id="admin-logout">退出登录</button></div></header><main class="admin-content"><h1>参与者进度</h1><p class="admin-summary">共 ${payload.participants.length} 个账号，${completed} 人已完成。任务正文当前仍为占位内容。</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>账号</th><th>样本</th><th>顺序</th><th>任务编排</th><th>当前环节</th><th>进度</th><th>最近保存</th></tr></thead><tbody>${payload.participants.map((item) => `<tr><td><strong>${item.username}</strong></td><td>${item.cohort === "formal" ? "正式" : "预测试"}</td><td>${item.sequence}</td><td>${item.order.join(" → ")}</td><td><span class="status ${item.completedAt ? "complete" : ""}">${item.completedAt ? "已完成" : stageName({ kind: item.currentStage })}</span></td><td>${item.percent}%</td><td>${new Date(item.updatedAt).toLocaleString("zh-CN")}</td></tr>`).join("")}</tbody></table></div></main></div>`;
+  app.innerHTML = `<div class="admin-shell"><header class="admin-header"><div><div class="brand">FlowStudio Research</div><div class="participant-meta">管理员控制台</div></div><div class="admin-actions"><button class="secondary" id="export-data">导出回答 JSON</button><button class="secondary" id="admin-logout">退出登录</button></div></header><main class="admin-content"><h1>参与者进度</h1><p class="admin-summary">共 ${payload.participants.length} 个账号，${completed} 人已完成。每人完成两次开放式创意探索。</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>账号</th><th>样本</th><th>顺序</th><th>任务编排</th><th>当前环节</th><th>进度</th><th>最近保存</th></tr></thead><tbody>${payload.participants.map((item) => `<tr><td><strong>${item.username}</strong></td><td>${item.cohort === "formal" ? "正式" : "预测试"}</td><td>${item.sequence}</td><td>${item.order.join(" → ")}</td><td><span class="status ${item.completedAt ? "complete" : ""}">${item.completedAt ? "已完成" : stageName({ kind: item.currentStage })}</span></td><td>${item.percent}%</td><td>${new Date(item.updatedAt).toLocaleString("zh-CN")}</td></tr>`).join("")}</tbody></table></div></main></div>`;
   document.querySelector("#admin-logout").addEventListener("click", logout);
   document.querySelector("#export-data").addEventListener("click", exportAdminData);
 }
@@ -193,7 +193,7 @@ function ratingQuestions(items, count, low = "非常不同意", high = "非常�
 }
 
 function welcomeView(step) {
-  return formShell(step, "开始前", "欢迎参加用户研究", "本网站用于安排实验步骤并收集问卷。研究评价的是系统，而不是你的设计能力。", `<div class="task-brief"><h2>预计流程</h2><p>四项设计任务；每项任务后填写一次 NASA-TLX；每完成一个系统后填写一次 CSI 和 SUS；最后完成系统比较与访谈问卷。</p></div><div class="choice-list"><label><input type="checkbox" name="consent" required>我已阅读研究说明，并同意开始实验。</label></div>`, "开始实验");
+  return formShell(step, "开始前", "欢迎参加用户研究", "本网站用于安排实验步骤并收集问卷。研究评价的是系统，而不是你的设计能力。", `<div class="task-brief"><h2>预计流程</h2><p>两次开放式创意探索，每次 12–15 分钟；每次任务后填写 NASA-TLX、CSI 和 SUS；最后完成系统比较与口头访谈。</p></div><div class="choice-list"><label><input type="checkbox" name="consent" required>我已阅读研究说明，并同意开始实验。</label></div>`, "开始实验");
 }
 
 function prestudyView(step) {
@@ -201,14 +201,14 @@ function prestudyView(step) {
 }
 
 function taskView(step) {
-  return formShell(step, step.systemLabel, step.title, "请按照研究员指引在对应系统中完成设计。任务正文将在预测试前统一替换。", `<div class="task-brief"><h2>当前任务</h2><div class="placeholder">具体任务内容待确认。内部任务代码：${step.task}</div><p>完成设计并在系统中选择最终方案后，再返回本页继续。</p></div><div class="choice-list"><label><input type="checkbox" name="taskCompleted" required>我已完成当前任务并选择最终方案。</label></div>`, "进入任务后问卷");
+  return formShell(step, `${step.systemLabel} · ${step.duration}`, step.title, step.scene, `<div class="task-brief"><h2>${step.theme}</h2><p><strong>目标：</strong>${step.goal}</p><h3>基本要求</h3><ul>${step.requirements.map((item) => `<li>${item}</li>`).join("")}</ul><div class="placeholder"><strong>当前系统：</strong>${step.systemGuide}</div><p>完成探索并选择最终方案后，再返回本页继续。</p></div><div class="choice-list"><label><input type="checkbox" name="taskCompleted" required>我已完成当前任务并选择最终方案。</label></div>`, "进入任务后问卷");
 }
 
 function nasaView(step) {
   return formShell(step, `${step.systemLabel} · 任务后`, "NASA-TLX 任务负荷", "请只评价刚刚完成的任务。", NASA.map(([name, label, low, high], index) => `<fieldset class="question"><legend>${index + 1}. ${label}</legend>${scale(name, 11, low, high)}</fieldset>`).join(""));
 }
 
-function csiView(step) { return formShell(step, step.systemLabel, "创造力支持体验", "请综合评价刚才使用该系统完成两项任务的体验。", ratingQuestions(CSI, 10)); }
+function csiView(step) { return formShell(step, step.systemLabel, "创造力支持体验", "请评价刚才使用该系统完成开放式创意探索的体验。", ratingQuestions(CSI, 10)); }
 function susView(step) { return formShell(step, step.systemLabel, "系统可用性", "请综合评价刚才使用的系统。", ratingQuestions(SUS.map((label, i) => [`sus${i + 1}`, label]), 5)); }
 
 function breakView(step) {
@@ -218,7 +218,7 @@ function breakView(step) {
 function comparisonView(step) {
   const choices = ["FlowStudio", "Text-Hunyuan3D", "相近或无明显偏好"];
   const items = ["总体上更偏好哪个系统？", "哪个系统更有助于探索不同创意方向？", "哪个系统更有助于表达设计意图？", "哪个系统更有控制感？", "哪个系统更容易使用？", "哪个系统更适合实际设计工作？"];
-  return formShell(step, "总体比较", "比较两套系统", "请根据四项任务的整体体验作答。", items.map((label, index) => `<fieldset class="question"><legend>${index + 1}. ${label}</legend><div class="choice-list">${choices.map((choice) => `<label><input type="radio" name="compare${index + 1}" value="${choice}" required>${choice}</label>`).join("")}</div></fieldset>`).join(""));
+  return formShell(step, "总体比较", "比较两套系统", "请根据两次开放式创意探索的整体体验作答。", items.map((label, index) => `<fieldset class="question"><legend>${index + 1}. ${label}</legend><div class="choice-list">${choices.map((choice) => `<label><input type="radio" name="compare${index + 1}" value="${choice}" required>${choice}</label>`).join("")}</div></fieldset>`).join(""));
 }
 
 function interviewView(step) {

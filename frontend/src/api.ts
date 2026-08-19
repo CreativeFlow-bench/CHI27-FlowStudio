@@ -19,6 +19,8 @@ const runtimeEndpoints = resolveRuntimeEndpoints({
   runtimeWsBase: window.__FLOWSTUDIO_WS_BASE__,
   protocol: window.location.protocol,
   hostname: window.location.hostname,
+  port: window.location.port,
+  origin: window.location.origin,
 });
 
 export const API_BASE = runtimeEndpoints.apiBase;

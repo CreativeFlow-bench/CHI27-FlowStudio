@@ -22,7 +22,7 @@ export function normalizePerGroupCount(value: number): number {
 }
 
 export function formatPerGroupCount(value: number): string {
-  return `${normalizePerGroupCount(value)} / 维`;
+  return `${normalizePerGroupCount(value)} per group`;
 }
 
 export function buildSemanticDivergenceParameters({
@@ -65,6 +65,17 @@ export function deriveSemanticDivergenceUiState({
   };
 }
 
+export function humanizeObserveNarrative(text: string): string {
+  return text
+    .replace(/\basset_[a-z0-9]+\b/gi, "the model")
+    .replace(/\b(?:obj_group_|mesh_)[a-z0-9_]+\b/gi, "this part")
+    .replace(/\bCube\.\d+\b/gi, "this part")
+    .replace(/\borbiting the viewport\b/gi, "turning the model around")
+    .replace(/\brepeatedly hovering over local details\b/gi, "looking closely at a small area")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function buildAiBehaviorPresentation({
   uiBrief,
   plannerTypedText,
@@ -95,7 +106,9 @@ export function buildAiBehaviorPresentation({
 
   return {
     // Live canvas LLM observe > revision phenomenon > planner text > brief
-    narrative: liveObserveNarrative || phenomenon || plannerTypedText || brief?.phenomenon || "Waiting for the user's next move.",
+    narrative: humanizeObserveNarrative(
+      liveObserveNarrative || phenomenon || plannerTypedText || brief?.phenomenon || "Waiting for the next move.",
+    ),
     details: plannerNarration.trim() || null,
     creativeState,
   };
