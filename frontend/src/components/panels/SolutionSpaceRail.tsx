@@ -63,7 +63,7 @@ export function SolutionSpaceRail({
   displayIntentSeq?: number | null;
   onSelectRound?: (intentSeq: number) => void;
 }) {
-  const dragRef = useRef<{ startY: number; startH: number; moved: boolean } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startH: number; moved: boolean } | null>(null);
   const [streamIndex, setStreamIndex] = useState(0);
   const expectedTotal = useMemo(() => {
     const match = String(progressLabel || "").match(/\/(\d+)/);
@@ -73,7 +73,7 @@ export function SolutionSpaceRail({
 
   const streamLines = useMemo(() => {
     const lines: string[] = [];
-    if (errorMessage) {
+    if (errorMessage && !candidates.length && !loading) {
       lines.push(`failed · ${errorMessage}`);
     }
     if (loading || (job && isActiveJobStatus(job.status))) {
@@ -250,7 +250,7 @@ export function SolutionSpaceRail({
           title="点击收起 · 拖动调整高度"
           onPointerDown={(event) => {
             event.preventDefault();
-            dragRef.current = { startY: event.clientY, startH: railHeight ?? 168, moved: false };
+            dragRef.current = { startX: event.clientX, startY: event.clientY, startH: railHeight ?? 168, moved: false };
             (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
@@ -270,7 +270,8 @@ export function SolutionSpaceRail({
             } catch {
               // ignore
             }
-            if (drag && !drag.moved) {
+            const draggedSideways = drag && Math.abs(event.clientX - drag.startX) >= CLICK_COLLAPSE_PX;
+            if (drag && !drag.moved && !draggedSideways) {
               onCollapse();
             }
           }}

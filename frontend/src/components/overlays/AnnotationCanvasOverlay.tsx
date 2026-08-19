@@ -29,11 +29,10 @@ const BRUSH_OPTIONS: Array<{
   { id: "eraser", label: "橡皮", Icon: Eraser },
 ];
 
-const BRUSH_COLORS: Record<BrushKind, string> = {
+const BRUSH_COLORS: Record<Exclude<BrushKind, "eraser">, string> = {
   pen: "#1d4ed8",
   marker: "#f59e0b",
   pencil: "#334155",
-  eraser: "#ffffff",
 };
 
 function stampRadius(
@@ -83,6 +82,16 @@ function renderStamp(
 ) {
   ctx.save();
   ctx.translate(x, y);
+  if (brush === "eraser") {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
   ctx.globalAlpha = alpha;
   if (brush === "pencil") {
     // Fine grain: a small speckled disc.
@@ -95,12 +104,9 @@ function renderStamp(
       ctx.fillRect(Math.cos(a) * radius * 0.55, Math.sin(a) * radius * 0.55, radius * 0.5, radius * 0.5);
     }
   } else {
-    // Soft radial nib for pen/marker/eraser.
+    // Soft radial nib for pen/marker.
     const gradient = ctx.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius);
-    if (brush === "eraser") {
-      gradient.addColorStop(0, "rgba(255,255,255,1)");
-      gradient.addColorStop(1, "rgba(255,255,255,0.85)");
-    } else if (brush === "marker") {
+    if (brush === "marker") {
       gradient.addColorStop(0, `${BRUSH_COLORS.marker}cc`);
       gradient.addColorStop(1, `${BRUSH_COLORS.marker}22`);
     } else {
@@ -147,13 +153,21 @@ export function drawBrushStrokes(
       if (i > 0) {
         // Bridge gaps with a fading line so fast strokes stay connected.
         const prevPx = pointToPx(stroke.points[i - 1], width, height);
-        ctx.globalAlpha = alpha * 0.35;
-        ctx.strokeStyle = BRUSH_COLORS[stroke.brush];
+        ctx.save();
+        if (stroke.brush === "eraser") {
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "#000";
+        } else {
+          ctx.globalAlpha = alpha * 0.35;
+          ctx.strokeStyle = BRUSH_COLORS[stroke.brush];
+        }
         ctx.lineWidth = Math.max(1, radius * 0.7);
         ctx.beginPath();
         ctx.moveTo(prevPx.x, prevPx.y);
         ctx.lineTo(px.x, px.y);
         ctx.stroke();
+        ctx.restore();
       }
     }
   }

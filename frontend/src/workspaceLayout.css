@@ -197,7 +197,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 6px;
-  padding: 10px 12px 14px;
+  padding: 10px 12px 22px;
   overflow: hidden;
   transform: none;
   border-radius: 0 0 18px 18px;
@@ -390,10 +390,6 @@
   .clear-history-fab {
     bottom: calc(var(--workspace-safe-bottom) + 12px);
   }
-
-  .canvas-drag-handle {
-    bottom: calc(var(--workspace-safe-bottom) + 12px);
-  }
 }
 
 @media (max-width: 899px) {
@@ -402,10 +398,6 @@
     --workspace-safe-top: 64px;
     --workspace-safe-right: 0px;
     --workspace-safe-bottom: 148px;
-  }
-
-  .canvas-drag-handle {
-    bottom: calc(var(--workspace-safe-bottom) + 12px);
   }
 
   .perception-float {
@@ -481,14 +473,6 @@
   gap: 6px;
   background: transparent;
   padding: 0;
-}
-
-.tool-group-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #8892a0;
-  margin-right: 2px;
-  user-select: none;
 }
 
 .composer-tool-divider {

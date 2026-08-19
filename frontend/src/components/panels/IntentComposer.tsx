@@ -136,7 +136,6 @@ export function IntentComposer({
       <div className="canvas-composer-row">
         <div className="composer-tools" aria-label="Intent composer tools">
           <div className="composer-tool-group">
-            <span className="tool-group-label">2D</span>
             <button
               type="button"
               className={`icon-tool ${hoverMode ? "is-active" : ""}`}
@@ -158,7 +157,6 @@ export function IntentComposer({
           <div className="composer-tool-divider" />
           
           <div className="composer-tool-group">
-            <span className="tool-group-label">3D</span>
             <button type="button" aria-label="Drag sculpt" className={`icon-tool tool-asset ${sculptTool === "drag" ? "is-active" : ""}`} data-tooltip="Drag Sculpt (3D Deformation)" disabled={!canShowDrag || generationBusy} onClick={() => onToggleSculptTool("drag")}>
               <img src={`${import.meta.env.BASE_URL}icons/drag.svg`} alt="" width={34} height={38} draggable={false} />
             </button>

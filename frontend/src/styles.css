@@ -1287,7 +1287,7 @@ button.design-db-card strong {
 }
 
 .solution-space-rail.is-loading {
-  padding: 10px 12px 14px;
+  padding: 10px 12px 22px;
 }
 
 .solution-space-rail .resizable-shell-body {
@@ -1540,15 +1540,18 @@ button.design-db-card strong {
 
 .solution-space-resize {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 10px;
+  left: 50%;
+  right: auto;
+  bottom: 2px;
+  z-index: 1;
+  width: 56px;
+  height: 12px;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 0 0 18px 18px;
+  border-radius: 999px;
   background: transparent;
+  transform: translateX(-50%);
   cursor: ns-resize;
 }
 
@@ -1757,42 +1760,6 @@ button.design-db-card strong {
   background: rgba(47, 123, 255, 0.06);
   outline: 3px dashed rgba(47, 123, 255, 0.58);
   outline-offset: -12px;
-}
-
-.canvas-drag-handle {
-  position: fixed;
-  bottom: 24px;
-  left: var(--workspace-edge, 12px);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px 6px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(210, 220, 235, 0.9);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
-  box-shadow: 0 10px 30px rgba(69, 86, 118, 0.12);
-  color: var(--ink-mute, #5a6a85);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: grab;
-  user-select: none;
-  transition: background 0.16s ease, color 0.16s ease;
-}
-
-.canvas-drag-handle:hover {
-  background: rgba(240, 245, 255, 0.98);
-  color: var(--accent-blue-deep, #1a3a9e);
-}
-
-.canvas-drag-handle:active {
-  cursor: grabbing;
-}
-
-.canvas-drag-handle svg {
-  flex-shrink: 0;
 }
 
 .version-canvas-world {
@@ -3313,7 +3280,7 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
 .annotation-hint {
   position: absolute;
   left: 50%;
-  top: 18px;
+  top: 14%;
   z-index: 2;
   max-width: min(420px, 72%);
   padding: 0;
@@ -6077,14 +6044,6 @@ textarea:focus-visible,
   gap: 6px;
   background: transparent;
   padding: 0;
-}
-
-.tool-group-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #8892a0;
-  margin-right: 2px;
-  user-select: none;
 }
 
 .composer-tool-divider {

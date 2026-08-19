@@ -3334,7 +3334,12 @@ export function useStudioStore() {
         setIntentRevisions((current) => current.map((item) => item.revision_id === capturedRevisionId
           ? {
               ...item,
-              semantic_divergence_status: response.status === "completed" ? "completed" : item.semantic_divergence_status,
+              semantic_divergence_status:
+                response.status === "completed"
+                  ? "completed"
+                  : response.status === "failed"
+                    ? "failed"
+                    : item.semantic_divergence_status,
               semantic_divergence_error: response.status === "failed" ? "semantic divergence unavailable" : null,
             }
           : item));
@@ -3410,6 +3415,17 @@ export function useStudioStore() {
         setSemanticDivergenceLoading(false);
         setDivergencePhaseMessage(null);
         setSemanticDivergenceError(String(error).slice(0, 160));
+        setIntentRevisions((current) =>
+          current.map((item) =>
+            item.revision_id === capturedRevisionId
+              ? {
+                  ...item,
+                  semantic_divergence_status: "failed",
+                  semantic_divergence_error: String(error).slice(0, 160),
+                }
+              : item,
+          ),
+        );
         addLog("semantic divergence", String(error).slice(0, 160));
       }
       return null;
@@ -3643,6 +3659,8 @@ export function useStudioStore() {
       [...intentRevisions].reverse().find((item) => item.semantic_divergence_status === "running") ??
       null;
     if (!revision?.run_id || revision.semantic_divergence_status !== "running") return;
+    if (solutionSpaceGenerating) return;
+    if (semanticDivergence?.status === "failed") return;
     if (semanticDivergenceAttachingRevisionRef.current === revision.revision_id) return;
     if (semanticDivergenceInFlightRef.current.size > 0) return;
     if (semanticDivergence?.status === "completed" && divergenceKeywords.length > 0) return;
@@ -3650,7 +3668,7 @@ export function useStudioStore() {
       preflight: true,
       revisionId: revision.revision_id,
     });
-  }, [activeRevisionId, intentRevisions, semanticDivergence?.status, divergenceKeywords.length]);
+  }, [activeRevisionId, intentRevisions, semanticDivergence?.status, divergenceKeywords.length, solutionSpaceGenerating]);
 
   // While SSE is mid-flight, also poll the run so keywords appear even if a phase
   // event was missed (Accept worker join / proxy buffering).

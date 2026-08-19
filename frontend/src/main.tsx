@@ -752,7 +752,7 @@ function App() {
               job={job}
               loading={(solutionSpaceGenerating || fourStage.stage === "generation") && !fourStage.error && displayIntentSeq === liveIntentSeq}
               progressLabel={solutionProgressLabel}
-              errorMessage={fourStage.error?.message ?? null}
+              errorMessage={fourStage.stage === "failed" ? fourStage.error?.message ?? null : null}
               hy3dCandidateIds={hy3dCandidateIds}
               selectedCandidateId={selectedCandidateId}
               height={solutionSpaceHeight}

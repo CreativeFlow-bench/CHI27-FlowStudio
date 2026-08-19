@@ -271,7 +271,7 @@ export function AIBehaviorPanel({
         {!semanticDivergenceLoading && knowledgePartial ? (
           <p className="prompt-token-hint sr-only" role="status">Knowledge augmentation partial — keep selecting.</p>
         ) : null}
-        {!semanticDivergenceLoading && (semanticDivergenceError || semanticDivergence?.status === "failed") ? (
+        {!semanticDivergenceLoading && !generationBusy && !solutionSpaceGenerating && (semanticDivergenceError || semanticDivergence?.status === "failed") ? (
           <p className="prompt-token-hint" role="alert">
             {semanticDivergenceError || "Semantic divergence unavailable — retry or refine intent"}
           </p>

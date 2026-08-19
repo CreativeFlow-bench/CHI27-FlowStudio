@@ -285,3 +285,34 @@ test("Solution Space selects by card click and drops by native drag", async () =
   assert.match(rail, /accepted-mark/);
   assert.match(css, /\.solution-card-actions\s*\{[^}]*display:\s*none/s);
 });
+
+test("stale semantic divergence errors do not flicker during generation", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const panel = await read("../src/components/panels/AIBehaviorPanel.tsx");
+  const main = await read("../src/main.tsx");
+  const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
+  assert.match(store, /semanticDivergence\?\.status === "failed"/);
+  assert.match(store, /semantic_divergence_status: "failed"/);
+  assert.match(store, /if \(solutionSpaceGenerating\) return;/);
+  assert.match(panel, /!generationBusy && !solutionSpaceGenerating/);
+  assert.match(main, /fourStage.stage === "failed" \? fourStage.error\?\.message/);
+  assert.match(rail, /errorMessage && !candidates.length && !loading/);
+});
+
+test("Solution Space height grip does not cover the horizontal scrollbar", async () => {
+  const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
+  const css = await read("../src/styles.css");
+  const layout = await read("../src/workspaceLayout.css");
+  assert.match(css, /\.solution-space-resize\s*\{[^}]*width:\s*56px/s);
+  assert.doesNotMatch(css, /\.solution-space-resize\s*\{[^}]*left:\s*0;\s*right:\s*0/s);
+  assert.match(layout, /\.solution-space-rail\s*\{[^}]*padding:\s*10px 12px 22px/s);
+  assert.match(rail, /draggedSideways/);
+});
+
+test("annotation eraser punches out ink instead of painting white", async () => {
+  const overlay = await read("../src/components/overlays/AnnotationCanvasOverlay.tsx");
+  assert.match(overlay, /brush === "eraser"/);
+  assert.match(overlay, /destination-out/);
+  assert.doesNotMatch(overlay, /eraser:\s*"#ffffff"/);
+  assert.doesNotMatch(overlay, /rgba\(255,255,255,1\)/);
+});

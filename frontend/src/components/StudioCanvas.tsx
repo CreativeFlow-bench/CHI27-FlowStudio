@@ -4,7 +4,7 @@
  */
 import { cloneElement, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
-import { Box, GripHorizontal, Maximize2, Move, RotateCcw, RotateCw, Trash2, X } from "lucide-react";
+import { Box, Maximize2, Move, RotateCcw, RotateCw, Trash2, X } from "lucide-react";
 import { absoluteUrl } from "../api";
 import type {
   AnnotationStroke,
@@ -365,7 +365,7 @@ export function VersionCanvas({
         // canvas pan hijacks the stroke into a drag.
         if (
           target?.closest(
-            ".viewport, .viewport-wrap, .version-node, .version-node-frame, .annotation-canvas-overlay, .canvas-drag-handle, button, a, input, textarea, select",
+            ".viewport, .viewport-wrap, .version-node, .version-node-frame, .annotation-canvas-overlay, button, a, input, textarea, select",
           )
         ) {
           return;
@@ -393,27 +393,6 @@ export function VersionCanvas({
       }}
     >
       {dropTargetActive ? <div className="version-drop-hint">释放以创建下一版本</div> : null}
-      <button
-        type="button"
-        className="canvas-drag-handle"
-        aria-label="拖动画布"
-        title="拖动画布"
-        onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          dragRef.current = {
-            active: true,
-            startX: event.clientX,
-            startY: event.clientY,
-            originX: canvasPan.x,
-            originY: canvasPan.y,
-          };
-          (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-          event.stopPropagation();
-        }}
-      >
-        <GripHorizontal size={14} aria-hidden="true" />
-        <span>拖动</span>
-      </button>
       <div
         className="version-canvas-world"
         style={{ transform: `translate(${canvasPan.x}px, ${canvasPan.y}px) scale(${canvasZoom})` }}
