@@ -5,6 +5,7 @@ import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as THREE from "three";
 import { captureCanvasJpeg } from "../utils/canvasCapture";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { RefreshCw } from "lucide-react";
 import { API_BASE } from "../api";
 import type { AssetRecord, CanvasDisplayMode, CanvasPrimitive, CanvasTool, PartRecord, SculptTool, ThreeViewportHandle, ThreeViewportProps, ViewportInteractionSignal } from "../types";
@@ -22,6 +23,11 @@ import {
 import { createBrushCursor, createMeshSelectionHandlers, SculptPointerController, SculptSession } from "./viewport/sculptEngine";
 
 const VIEWPORT_FALLBACK_ASPECT = 16 / 10;
+const BLOCKED_TRANSFORM_HANDLES: Record<"translate" | "rotate" | "scale", Set<string>> = {
+  translate: new Set(["XY", "YZ", "XZ", "XYZ"]),
+  rotate: new Set(["E", "XYZE"]),
+  scale: new Set(["XY", "YZ", "XZ", "XYZ"]),
+};
 
 export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewportProps>(function ThreeViewport({
   asset,
@@ -45,6 +51,8 @@ export const ThreeViewport = React.forwardRef<ThreeViewportHandle, ThreeViewport
   hoverMaskDataUrl,
   onGeometryReady,
 }, ref): React.ReactElement {
+
+
   return (
     <ThreeViewportInner
       asset={asset}
@@ -111,6 +119,14 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
   const sculptRadiusRef = useRef(sculptRadius);
   const sculptStrengthRef = useRef(sculptStrength);
   const partsRef = useRef(parts);
+  const displayModeRef = useRef(displayMode);
+  displayModeRef.current = displayMode;
+  const primitiveRef = useRef(primitive);
+  primitiveRef.current = primitive;
+  const groupRef = useRef<THREE.Group | null>(null);
+  const transformControlRef = useRef<any>(null);
+  const primitiveObjectRef = useRef<THREE.Mesh | null>(null);
+  const transformModeRef = useRef<"translate" | "rotate" | "scale">("translate");
   partsRef.current = parts;
   const sculptTargetRef = useRef<THREE.Mesh | null>(null);
   const loadedMeshesRef = useRef<THREE.Mesh[]>([]);
@@ -266,6 +282,76 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     };
   };
 
+  const getPrimitiveTransform = () => {
+    const mesh = primitiveObjectRef.current;
+    if (!mesh) return null;
+    return {
+      position: [mesh.position.x, mesh.position.y, mesh.position.z],
+      rotation: [mesh.rotation.x, mesh.rotation.y, mesh.rotation.z],
+      scale: [mesh.scale.x, mesh.scale.y, mesh.scale.z],
+    };
+  };
+
+  const attachPrimitiveTransformControls = (name?: string) => {
+    const primitiveObject = primitiveObjectRef.current;
+    const transformControl = transformControlRef.current;
+    if (!primitiveObject || !transformControl) return false;
+    if (name && name !== primitiveObject.name) return false;
+    primitiveObject.updateMatrixWorld(true);
+    selectedRef.current = primitiveObject.name;
+    transformControl.visible = true;
+    transformControl.setMode(transformModeRef.current);
+    transformControl.attach(primitiveObject);
+    enforceTransformHandleFilter(
+      typeof transformControl.getHelper === "function"
+        ? (transformControl.getHelper() as THREE.Object3D)
+        : null,
+      transformModeRef.current,
+    );
+    onSelectRef.current(primitiveObject.name);
+    return true;
+  };
+
+  const enforceTransformHandleFilter = (helper: THREE.Object3D | null, mode: "translate" | "rotate" | "scale") => {
+    if (!helper) return;
+    const blocked = BLOCKED_TRANSFORM_HANDLES[mode];
+    helper.traverse((node) => {
+      if (!node.name) return;
+      if (blocked.has(node.name)) {
+        node.visible = false;
+      }
+    });
+  };
+
+  const positionPrimitiveForEditing = (mesh: THREE.Mesh) => {
+    const sceneMeshes = loadedMeshesRef.current.filter((item) => item !== mesh && !item.userData.flowstudioPrimitive);
+    if (!sceneMeshes.length) {
+      mesh.position.set(0.9, 0.8, 0.35);
+      return;
+    }
+    const box = new THREE.Box3();
+    let valid = false;
+    for (const sceneMesh of sceneMeshes) {
+      sceneMesh.updateWorldMatrix(true, true);
+      sceneMesh.geometry.computeBoundingBox();
+      const local = sceneMesh.geometry.boundingBox;
+      if (!local) continue;
+      box.union(local.clone().applyMatrix4(sceneMesh.matrixWorld));
+      valid = true;
+    }
+    if (!valid || box.isEmpty()) {
+      mesh.position.set(0.9, 0.8, 0.35);
+      return;
+    }
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    mesh.position.set(
+      box.max.x + Math.max(0.45, size.x * 0.22),
+      center.y + Math.max(0.18, size.y * 0.08),
+      box.max.z + Math.max(0.28, size.z * 0.14),
+    );
+  };
+
   useImperativeHandle(ref, () => ({
     applySculptSnapshot,
     capturePositions,
@@ -274,6 +360,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     getLastPointer,
     exportMeshOBJ,
     getModelScreenBounds,
+    getPrimitiveTransform,
   }));
 
   useEffect(() => {
@@ -388,6 +475,8 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       }
     };
     controls.addEventListener("start", onOrbitActivity);
+    const onOrbitEnd = () => {};
+    controls.addEventListener("end", onOrbitEnd);
     const detachOrbitProbe = createOrbitInteractionProbe(controls, camera, getObjectRadius, (signal) =>
       emitViewportSignal(signal.type, signal.dwell_ms),
     );
@@ -395,6 +484,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     addStudioPreviewLighting(scene);
 
     const group = new THREE.Group();
+    groupRef.current = group;
     group.position.y = 0.2;
     scene.add(group);
 
@@ -412,15 +502,10 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       onGeometryReadyRef.current?.(null);
     };
 
-    const primitiveObject = primitive ? buildPrimitiveObject(primitive) : null;
-    if (primitiveObject) {
-      resetModel();
-      trackMesh(primitiveObject, interactive, primitive ?? "body");
-      group.add(primitiveObject);
-    }
+    let onKeyDown: ((e: KeyboardEvent) => void) | null = null;
 
-    const baseModelUrl = primitiveObject ? null : asset?.mesh_url ?? asset?.obj_url ?? null;
-    const sourceMeshUrl = primitiveObject ? null : previewMeshUrl ?? baseModelUrl;
+    const baseModelUrl = asset?.mesh_url ?? asset?.obj_url ?? null;
+    const sourceMeshUrl = previewMeshUrl ?? baseModelUrl;
     const modelUrl = sourceMeshUrl
       ? sourceMeshUrl.startsWith("http")
         ? sourceMeshUrl
@@ -442,14 +527,16 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
         onReset: resetModel,
         onMessage: setModelLoadMessage,
       });
-    } else if (!primitiveObject) {
+    } else {
       resetModel();
-      if (asset) setModelLoadMessage(`No renderable source mesh: ${asset.label}`);
+      if (asset) {
+        setModelLoadMessage(`No renderable source mesh: ${asset.label}`);
+      }
     }
     const updateMaterials = () =>
       updateSceneMaterials(
         interactive,
-        displayMode,
+        displayModeRef.current,
         partsRef.current.length,
         selectedRef.current,
         hoverNameRef.current,
@@ -464,7 +551,10 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       interactive,
       isSculpting: () => Boolean(sculptToolRef.current),
       lastHover: lastHoverRef.current,
-      onSelect: (name) => onSelectRef.current(name),
+      onSelect: (name) => {
+        if (attachPrimitiveTransformControls(name)) return;
+        onSelectRef.current(name);
+      },
       onHover: (name) => onHoverRef.current(name),
     });
     const sculptPointer = new SculptPointerController({
@@ -526,10 +616,14 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     resizeObserver?.observe(mount);
     window.addEventListener("resize", syncRendererSize);
 
-    return () => {
+  
+
+  return () => {
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
       window.removeEventListener("resize", syncRendererSize);
+      if (onKeyDown) window.removeEventListener('keydown', onKeyDown);
+
       rendererRef.current = null;
       sceneRef.current = null;
       cameraRef.current = null;
@@ -540,6 +634,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       selection.detach();
       sculptPointer.detach();
       controls.removeEventListener("start", onOrbitActivity);
+      controls.removeEventListener("end", onOrbitEnd);
       detachOrbitProbe();
       scene.remove(brushCursor);
       brushCursor.geometry.dispose();
@@ -548,7 +643,139 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [asset?.mesh_url, asset?.obj_url, previewMeshUrl, viewResetKey, primitive, tool, displayMode]);
+  }, [asset?.mesh_url, asset?.obj_url, previewMeshUrl, viewResetKey]);
+
+
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const renderer = rendererRef.current;
+    const group = groupRef.current;
+    const controls = controlsRef.current;
+    if (!scene || !camera || !renderer || !group || !controls) return;
+
+    let primitiveObject: THREE.Mesh | null = null;
+    let transformControl: any = null;
+    let transformHelper: THREE.Object3D | null = null;
+    let onKeyDown: ((e: KeyboardEvent) => void) | null = null;
+    let gizmoPointerArmed = false;
+
+    if (primitive) {
+      primitiveObject = buildPrimitiveObject(primitive);
+      primitiveObject.scale.setScalar(primitive === "cube" ? 0.28 : 0.25);
+      primitiveObject.userData.flowstudioPrimitive = true;
+      primitiveObjectRef.current = primitiveObject;
+      positionPrimitiveForEditing(primitiveObject);
+      trackMesh(primitiveObject, loadedMeshesRef.current, primitive);
+      group.add(primitiveObject);
+
+      transformControl = new TransformControls(camera, renderer.domElement);
+      transformControl.addEventListener("dragging-changed", (event: any) => {
+        if (event.value) gizmoPointerArmed = false;
+        controls.enabled = !event.value;
+      });
+      transformControl.setSpace("world");
+      transformControl.setMode(transformModeRef.current);
+      transformControl.setSize(0.9);
+      transformControl.visible = false;
+      transformHelper = typeof transformControl.getHelper === "function"
+        ? (transformControl.getHelper() as THREE.Object3D)
+        : (transformControl as THREE.Object3D);
+      const originalTransformHelperUpdateMatrixWorld = transformHelper.updateMatrixWorld.bind(transformHelper);
+      transformHelper.updateMatrixWorld = (force?: boolean) => {
+        originalTransformHelperUpdateMatrixWorld(force);
+        enforceTransformHandleFilter(transformHelper, transformControl.mode);
+      };
+      scene.add(transformHelper);
+      transformControlRef.current = transformControl;
+
+      const onPointerDownTransformHandle = () => {
+        if (!transformControl.visible || !transformControl.object || !transformControl.axis) return;
+        gizmoPointerArmed = true;
+        controls.enabled = false;
+      };
+
+      const onPointerUpTransformHandle = () => {
+        if (!gizmoPointerArmed) return;
+        gizmoPointerArmed = false;
+        if (!transformControl.dragging) {
+          controls.enabled = true;
+        }
+      };
+
+      renderer.domElement.addEventListener("pointerdown", onPointerDownTransformHandle, true);
+      renderer.domElement.addEventListener("pointerup", onPointerUpTransformHandle, true);
+
+      onKeyDown = (event: KeyboardEvent) => {
+        if (!transformControl) return;
+        switch (event.key.toLowerCase()) {
+          case "t":
+            transformModeRef.current = "translate";
+            transformControl.setMode("translate");
+            attachPrimitiveTransformControls();
+            break;
+          case "r":
+            transformModeRef.current = "rotate";
+            transformControl.setMode("rotate");
+            attachPrimitiveTransformControls();
+            break;
+          case "s":
+            transformModeRef.current = "scale";
+            transformControl.setMode("scale");
+            attachPrimitiveTransformControls();
+            break;
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      const onPointerDownSelectPrimitive = (event: PointerEvent) => {
+        if (!primitiveObject || !transformControl || sculptToolRef.current) return;
+        if (gizmoPointerArmed || transformControl.dragging || transformControl.axis) return;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const pointer = new THREE.Vector2(
+          ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          -((event.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(pointer, camera);
+        const hit = raycaster.intersectObject(primitiveObject, true)[0];
+        if (!hit) return;
+        event.stopPropagation();
+        attachPrimitiveTransformControls(primitiveObject.name);
+      };
+      renderer.domElement.addEventListener("pointerdown", onPointerDownSelectPrimitive, true);
+      window.requestAnimationFrame(() => {
+        attachPrimitiveTransformControls(primitiveObject?.name);
+      });
+
+      return () => {
+        renderer.domElement.removeEventListener("pointerdown", onPointerDownTransformHandle, true);
+        renderer.domElement.removeEventListener("pointerup", onPointerUpTransformHandle, true);
+        renderer.domElement.removeEventListener("pointerdown", onPointerDownSelectPrimitive, true);
+        if (onKeyDown) window.removeEventListener("keydown", onKeyDown);
+        if (transformControl) {
+          transformControl.detach();
+          transformControl.dispose();
+        }
+        if (transformHelper) {
+          scene.remove(transformHelper);
+        }
+        transformControlRef.current = null;
+        primitiveObjectRef.current = null;
+        if (primitiveObject) {
+          group.remove(primitiveObject);
+          const index = loadedMeshesRef.current.indexOf(primitiveObject);
+          if (index !== -1) {
+            loadedMeshesRef.current.splice(index, 1);
+          }
+        }
+      };
+    }
+
+    return () => {
+      primitiveObjectRef.current = null;
+    };
+  }, [primitive]);
 
   return (
     <div className="viewport-wrap">

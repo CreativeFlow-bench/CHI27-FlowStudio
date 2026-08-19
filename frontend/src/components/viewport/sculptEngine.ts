@@ -265,12 +265,42 @@ export class SculptSession {
     faceNormal: THREE.Vector3 | null,
     pointer: { x: number; y: number },
     shiftKey: boolean,
+    ray?: THREE.Ray,
   ) {
     if (this.tool === "drag" && this.grabbed) {
       // True grab: vertices picked at stroke start translate together with the
       // pointer. Delta is always measured from the stroke START, otherwise each
       // move would reset the displacement and the grab would "rebound".
-      this.grabbed.accumulatedDelta.copy(hitPoint).sub(this.startCenter);
+      if (ray) {
+        if (!shiftKey) {
+          // Default: constrain to strokeNormal (perpendicular to surface)
+          const p1 = this.startCenter;
+          const d1 = this.strokeNormal.clone().normalize();
+          const p2 = ray.origin;
+          const d2 = ray.direction.clone().normalize();
+          
+          const w0 = p1.clone().sub(p2);
+          const b = d1.dot(d2);
+          const d = d1.dot(w0);
+          const e = d2.dot(w0);
+          const denominator = 1 - b * b;
+          
+          if (denominator > 1e-5) {
+            const t = (b * e - d) / denominator;
+            this.grabbed.accumulatedDelta.copy(d1).multiplyScalar(t);
+          }
+        } else {
+          // Shift pressed: drag freely in camera plane
+          const planeNormal = ray.direction.clone().multiplyScalar(-1); 
+          const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormal, this.startCenter);
+          const planeHit = new THREE.Vector3();
+          if (ray.intersectPlane(plane, planeHit)) {
+            this.grabbed.accumulatedDelta.copy(planeHit).sub(this.startCenter);
+          }
+        }
+      } else {
+        this.grabbed.accumulatedDelta.copy(hitPoint).sub(this.startCenter);
+      }
       grabDisplace(mesh, this.grabbed);
     } else if (this.tool === "brush") {
       const travel = hitPoint.distanceTo(this.center);
@@ -499,6 +529,7 @@ export class SculptPointerController {
         faceNormal,
         { x: event.clientX, y: event.clientY },
         event.shiftKey,
+        this.raycaster.ray
       );
       (mesh.geometry as THREE.BufferGeometry).getAttribute("position").needsUpdate = true;
       (mesh.geometry as THREE.BufferGeometry).computeVertexNormals();

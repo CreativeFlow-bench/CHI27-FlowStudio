@@ -1133,6 +1133,7 @@ export type ThreeViewportHandle = {
   exportMeshOBJ: () => string | null;
   /** Axis-aligned model bounds in CSS pixels relative to the viewport mount. */
   getModelScreenBounds: () => ModelScreenBounds | null;
+  getPrimitiveTransform?: () => { position: number[]; rotation: number[]; scale: number[] } | null;
 };
 
 export type ThreeViewportProps = {

@@ -290,6 +290,7 @@ export function useStudioStore() {
     reservation: Promise<BehaviorSession | null>;
     localBehaviorId: string;
   } | null>(null);
+  const primitiveBehaviorRef = useRef<{ localBehaviorId: string; primitive: Exclude<CanvasPrimitive, null>; behavior_seq: number; } | null>(null);
   const pendingBehaviorCommitsRef = useRef<Set<Promise<BehaviorSession | null>>>(new Set());
   const latestCommittedBehaviorSeqRef = useRef(0);
   const intentSendQueueRef = useRef<Promise<unknown>>(Promise.resolve());
@@ -854,6 +855,56 @@ export function useStudioStore() {
       tool_switch_count: liveSignals.tool_switch_count + 1,
       semantic_distance: Math.min(1, liveSignals.semantic_distance + 0.05),
     });
+  };
+
+  
+  const beginPrimitiveBehavior = (primitive: Exclude<CanvasPrimitive, null>) => {
+    const id = `local_beh_${crypto.randomUUID().slice(0, 8)}`;
+    const seq =
+      Math.max(
+        0,
+        latestCommittedBehaviorSeqRef.current,
+        ...behaviorSessions.map((item) => item.behavior_seq),
+      ) + 1;
+    const behavior: BehaviorSession = {
+      behavior_id: id,
+      session_id: session?.session_id ?? "",
+      behavior_seq: seq,
+      tool: "add",
+      target: {
+        asset_id: asset?.asset_id ?? null,
+        part_id: selectedPart || null,
+        label: activeSelectedPart?.label ?? (selectedPart || "add"),
+      },
+      status: "active",
+      started_at: new Date().toISOString(),
+      ended_at: null,
+      stroke_count: 0,
+      operation_summary: { primitive },
+      start_views: {},
+      end_views: {},
+      evidence_refs: [],
+    };
+    setBehaviorSessions((current) => [...current, behavior]);
+    return { ...behavior, localBehaviorId: id, primitive };
+  };
+
+  const finalizePrimitiveBehavior = async () => {
+    const behavior = primitiveBehaviorRef.current;
+    if (!behavior || !session) return null;
+    primitiveBehaviorRef.current = null;
+    
+    setBehaviorSessions((current) =>
+      current.filter((item) => item.behavior_id !== behavior.localBehaviorId),
+    );
+    
+    // Call recordAddPrimitive which will create the committed ActionAtom and BehaviorSession
+    await recordAddPrimitive(behavior.primitive);
+    
+    // return the newly created behavior session by looking at the last one
+    // wait, recordAddPrimitive creates an ActionAtom, which triggers syncActionAtom and pushes a committed behavior
+    // let's just return a dummy behavior with the right seq to satisfy cutoff logic
+    return { behavior_seq: behavior.behavior_seq };
   };
 
   const beginSculptBehavior = (tool: SculptTool, startViews: BehaviorViewSet) => {
@@ -2627,9 +2678,11 @@ export function useStudioStore() {
           return views.front ?? threeViewportRef.current?.captureJpeg?.(960, 0.82) ?? null;
         })();
     const currentToolCommit = finalizeSculptBehavior(Boolean(sculptTool)).then((result) => result.behavior);
+    const primitiveCommit = finalizePrimitiveBehavior();
     // Register the whole tool-finalization promise immediately. A second rapid
     // Send can therefore include this first cutoff even while view uploads run.
     pendingBehaviorCommitsRef.current.add(currentToolCommit);
+    pendingBehaviorCommitsRef.current.add(primitiveCommit as any);
     void currentToolCommit.finally(() => pendingBehaviorCommitsRef.current.delete(currentToolCommit));
     const intentTextAtClick = trigger === "idle" ? "" : intentText.trim();
     const annotationEvidenceAtClick = (() => {
@@ -2791,9 +2844,9 @@ export function useStudioStore() {
         setIntentText((current) => current.trim() ? current : intentTextAtClick);
         return null;
       }
-      const committedAtCutoff = await Promise.all([...pendingAtClick, currentToolCommit]);
-      const cutoffSeq = committedAtCutoff.reduce(
-        (latest, behavior) => Math.max(latest, behavior?.behavior_seq ?? 0),
+            const allCommits = await Promise.all([...pendingAtClick, currentToolCommit, primitiveCommit]);
+      const cutoffSeq = allCommits.reduce(
+        (latest, behavior: any) => Math.max(latest, behavior?.behavior_seq ?? 0),
         baselineSeqAtClick,
       );
       // Clear consumed behaviors from the rail after cutoff is known.
@@ -4882,6 +4935,7 @@ export function useStudioStore() {
   ) => {
     const primitive = primitiveOverride ?? canvasPrimitive ?? "sphere";
     if (!asset && !primitiveOverride && !canvasPrimitive) return;
+    const transform = threeViewportRef.current?.getPrimitiveTransform?.() ?? null;
     const primitivePayload = buildPrimitiveAdditionPayload({
       sessionId: session?.session_id ?? "",
       asset,
@@ -4889,6 +4943,7 @@ export function useStudioStore() {
       partLabel: activeSelectedPart?.label ?? null,
       primitive,
       text: intentText,
+      transform,
     });
     let primitiveArtifact: ArtifactRecord | null = null;
     try {
@@ -4942,59 +4997,26 @@ export function useStudioStore() {
     incrementLiveSignal("new_case_attempt_rate");
     incrementLiveSignal("tool_switch_count");
     const sourceMeshUrl = asset?.mesh_url ?? asset?.obj_url;
+    
+    // Allow adding primitive into current scene without clearing it or forcing a backend preview
+    setCanvasPrimitive(primitive);
     if (!session || !asset || !sourceMeshUrl || !geometryReady) {
-      setCanvasPrimitive(primitive);
       setAsset(null);
       setParts([]);
       setSelectedPart("");
       setCandidates([]);
       setPreviewCandidate(null);
       setCanvasPreview(null);
-      handleDisplayModeChange("clay");
-      setCanvasTool("clay");
-      await recordAddPrimitive(primitive, null);
-      addLog("primitive", primitive);
-      return;
     }
-    try {
-      const primitivePayload = buildPrimitiveAdditionPayload({
-        sessionId: session.session_id,
-        asset,
-        partId: selectedPart || null,
-        partLabel: activeSelectedPart?.label ?? null,
-        primitive,
-        text: intentText,
-      });
-      const response = await api<GeometryWorkerResponse>("/api/v1/geometry/add-primitive", {
-        method: "POST",
-        body: JSON.stringify({
-          session_id: session.session_id,
-          asset_id: asset.asset_id,
-          source_mesh_url: sourceMeshUrl,
-          part: activeSelectedPart ?? undefined,
-          options: {
-            primitive,
-            transform: primitivePayload.transform,
-            relation: primitivePayload.relation,
-          },
-        }),
-      });
-      if (!response.ok || !response.preview_mesh_url) {
-        throw new Error(response.error?.message ?? "Add primitive preview failed");
-      }
-      setCanvasPrimitive(null);
-      setPreviewCandidate(null);
-      setCanvasPreview({
-        url: response.preview_mesh_url,
-        label: `Add ${primitive} preview`,
-      });
-      handleDisplayModeChange("clay");
-      setCanvasTool("clay");
-      await recordAddPrimitive(primitive, response);
-      addLog("primitive", `${primitive} ${response.job_id}`);
-    } catch (error) {
-      addLog("primitive", String(error).slice(0, 160));
+    
+    handleDisplayModeChange("clay");
+    setCanvasTool("clay");
+    if (primitiveBehaviorRef.current) {
+       // if there is an existing one, clear it
+       setBehaviorSessions((current) => current.filter(item => item.behavior_id !== primitiveBehaviorRef.current!.localBehaviorId));
     }
+    primitiveBehaviorRef.current = beginPrimitiveBehavior(primitive);
+    addLog("primitive", primitive);
   };
 
   const togglePromptToken = (token: PromptToken) => {

@@ -1159,6 +1159,7 @@ export function buildPrimitiveAdditionPayload({
   partLabel,
   primitive,
   text,
+  transform,
 }: {
   sessionId: string;
   asset: AssetRecord | null;
@@ -1166,6 +1167,7 @@ export function buildPrimitiveAdditionPayload({
   partLabel: string | null;
   primitive: Exclude<CanvasPrimitive, null>;
   text: string;
+  transform?: { position: number[], rotation: number[], scale: number[] } | null;
 }) {
   const normalizedText = text.trim();
   return {
@@ -1173,7 +1175,12 @@ export function buildPrimitiveAdditionPayload({
     asset_id: asset?.asset_id ?? null,
     part_id: partId,
     primitive,
-    transform: {
+    transform: transform ? {
+      position: transform.position,
+      rotation: transform.rotation,
+      scale: transform.scale,
+      space: "world",
+    } : {
       position: [0, 0.6, 0],
       scale: primitive === "cube" ? [0.28, 0.28, 0.28] : [0.25, 0.25, 0.25],
       rotation: [0, 0, 0],
