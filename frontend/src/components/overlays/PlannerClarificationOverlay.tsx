@@ -22,8 +22,7 @@ export type GateBubbleMode = {
 
 function bubblePlacement(anchor: ModelAnchor | null | undefined, index: number) {
   if (!anchor) {
-    const side = index % 3 === 1 ? "right" : index % 3 === 2 ? "top" : "left";
-    return { side, style: undefined as CSSProperties | undefined };
+    return { side: "left" as const, style: undefined as CSSProperties | undefined };
   }
   const bubbleWidth = 220;
   const gap = 16;
@@ -31,13 +30,9 @@ function bubblePlacement(anchor: ModelAnchor | null | undefined, index: number) 
     anchor.columnHeight - 120,
     anchor.top + anchor.height * 0.35 - 24 + index * 96,
   ));
-  // Frame-local coords: hang beside the mesh, never clamp back onto it.
-  const rightLeft = anchor.left + anchor.width + gap;
-  const leftLeft = anchor.left - bubbleWidth - gap;
-  const preferLeft = anchor.left >= anchor.columnWidth - (anchor.left + anchor.width);
-  const left = preferLeft ? leftLeft : rightLeft;
+  const left = Math.max(8, anchor.left - bubbleWidth - gap);
   return {
-    side: preferLeft ? "left" : "right",
+    side: "left" as const,
     style: {
       position: "absolute",
       left: `${Math.round(left)}px`,

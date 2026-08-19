@@ -117,6 +117,7 @@ class IntentRevisionCreateRequest(BaseModel):
     source_context: SourceContext
     run_hy3d: bool = False
     cutoff_seq: int | None = Field(default=None, ge=0)
+    live_signals: dict[str, Any] = Field(default_factory=dict)
 
 
 class IntentRevisionSourceImageRequest(BaseModel):
@@ -153,6 +154,7 @@ class IntentRevision(BaseModel):
     updated_at: datetime = Field(default_factory=now_utc)
     # LLM-generated natural-language description of current design phenomenon
     phenomenon: str | None = None
+    live_signals: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("base_keywords", "delta_keywords", "effective_keywords")
     @classmethod

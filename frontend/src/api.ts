@@ -168,3 +168,23 @@ export function inferMtlUrl(sourceUrl: string) {
 export function assetExportUrl(assetId: string, format: "glb" | "obj") {
   return `${API_BASE}/api/v1/assets/${assetId}/export?format=${format}`;
 }
+
+export async function downloadAssetExport(
+  assetId: string,
+  format: "glb" | "obj",
+  filename?: string,
+) {
+  const response = await fetch(assetExportUrl(assetId, format));
+  if (!response.ok) {
+    throw new Error((await response.text()) || `export ${format} failed`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || `export.${format}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}

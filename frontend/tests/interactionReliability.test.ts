@@ -81,8 +81,8 @@ test("open chrome panels reflow siblings through workspace safe-area tokens", as
     layout,
     /\.planner-clarification-overlay\.is-anchored,\s*\.version-node-frame > \.planner-clarification-overlay\s*\{[^}]*inset:\s*0/s,
   );
-  assert.match(overlay, /preferLeft \? leftLeft : rightLeft/);
-  assert.doesNotMatch(overlay, /workspace-safe-left/);
+  assert.match(overlay, /Math\.max\(8, anchor\.left - bubbleWidth - gap\)/);
+  assert.doesNotMatch(overlay, /preferLeft/);
 });
 
 test("collapsing Perception does not shift the rest of the workspace", async () => {
@@ -144,6 +144,8 @@ test("Solution Space can be collapsed, reopened, and stays collapsed while image
   const visibility = await read("../src/utils/solutionSpaceVisibility.ts");
   assert.match(main, /aria-label="Open Solution Space"/);
   assert.match(main, /is-ready/);
+  assert.match(main, /is-generating/);
+  assert.match(css, /solution-space-generating/);
   assert.match(rail, />\s*收起\s*</);
   assert.doesNotMatch(rail, /roundChips\.length\) return null/);
   assert.match(css, /\.solution-space-collapse\s*\{[^}]*min-width:\s*56px/s);
@@ -330,6 +332,27 @@ test("Solution Space height grip does not cover the horizontal scrollbar", async
   assert.doesNotMatch(css, /\.solution-space-resize\s*\{[^}]*left:\s*0;\s*right:\s*0/s);
   assert.match(layout, /\.solution-space-rail\s*\{[^}]*padding:\s*10px 12px 22px/s);
   assert.match(rail, /draggedSideways/);
+});
+
+test("Send snapshot includes live signals and drops generic mesh parts from Gate", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  assert.match(store, /live_signals: liveSignalsAtClick/);
+  assert.match(store, /namedPartAtClick/);
+  assert.match(store, /function isGenericMeshId/);
+  assert.match(store, /inferred_shape: inferredShape/);
+  assert.doesNotMatch(store, /dwell_ms: Math\.max\(current\.dwell_ms, current\.dwell_ms \+ 250\)/);
+});
+
+test("mana potion diverges whole silhouette without writing Action History", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const main = await read("../src/main.tsx");
+  const fnStart = store.indexOf("const triggerPostGateDivergence");
+  const fn = store.slice(fnStart, store.indexOf("const startActiveRevisionGeneration", fnStart));
+  assert.match(fn, /scope: "whole"/);
+  assert.match(fn, /整体轮廓/);
+  assert.match(fn, /\/api\/v1\/sandbox\/diverge\/stream/);
+  assert.doesNotMatch(fn, /recordActionAtom/);
+  assert.match(main, /setAiBehaviorCollapsed\(false\)/);
 });
 
 test("action history records one session from tool enter to exit", async () => {

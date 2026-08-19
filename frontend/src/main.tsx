@@ -778,7 +778,7 @@ function App() {
           {!liveSolutionSpaceVisible ? (
             <button
               type="button"
-              className={`solution-space-launcher is-top-drawer${solutionSpaceReadyPulse ? " is-ready" : ""}`}
+              className={`solution-space-launcher is-top-drawer${solutionSpaceGenerating ? " is-generating" : solutionSpaceReadyPulse ? " is-ready" : ""}`}
               aria-label="Open Solution Space"
               onClick={() => {
                 setSolutionSpaceReadyPulse(false);
@@ -937,7 +937,10 @@ function App() {
               onDeleteBehavior={(behaviorId) => { void deleteBehavior(behaviorId); }}
               divergenceBusy={semanticDivergenceLoading}
               canTriggerDivergence={canTriggerKeywordDivergence}
-              onTriggerDivergence={() => void triggerPostGateDivergence()}
+              onTriggerDivergence={() => {
+                setAiBehaviorCollapsed(false);
+                void triggerPostGateDivergence();
+              }}
             />
           </ResizableShell>
           </div>

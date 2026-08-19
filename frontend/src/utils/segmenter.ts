@@ -9,10 +9,14 @@
 import * as ort from "onnxruntime-web";
 
 // Model URLs are overridable at build time (VITE_SAM_ENCODER_URL /
-// VITE_SAM_DECODER_URL). Leave them unset to skip browser MobileSAM and
-// fall back to raycaster / backend viewport segmentation.
-const ENCODER_URL = String(import.meta.env.VITE_SAM_ENCODER_URL || "");
-const DECODER_URL = String(import.meta.env.VITE_SAM_DECODER_URL || "");
+// VITE_SAM_DECODER_URL). Default: Hugging Face MobileSAM ONNX. This is the
+// browser 2D hover/scribble mask only — 3D part cuts still go through GPU SAM3D.
+const ENCODER_URL =
+  import.meta.env.VITE_SAM_ENCODER_URL ??
+  "https://huggingface.co/Acly/MobileSAM/resolve/main/mobile_sam_image_encoder.onnx";
+const DECODER_URL =
+  import.meta.env.VITE_SAM_DECODER_URL ??
+  "https://huggingface.co/Acly/MobileSAM/resolve/main/mobile_sam_mask_decoder.onnx";
 
 const IMAGE_SIZE = 1024;
 const EMBEDDING_SIZE = 256;
@@ -69,19 +73,19 @@ async function loadSession(url: string): Promise<ort.InferenceSession> {
   const timeout = new Promise<never>((_, reject) => {
     window.setTimeout(() => reject(new Error(`segmenter model load timeout: ${url}`)), 30_000);
   });
-  return Promise.race([
-    ort.InferenceSession.create(url, {
+  const load = (async () => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`segmenter fetch ${response.status}: ${url}`);
+    const buffer = await response.arrayBuffer();
+    return ort.InferenceSession.create(buffer, {
       executionProviders: ["wasm"],
       graphOptimizationLevel: "all",
-    }),
-    timeout,
-  ]);
+    });
+  })();
+  return Promise.race([load, timeout]);
 }
 
 export async function ensureSegmenter(dataUrl: string): Promise<SegmenterState> {
-  if (!ENCODER_URL || !DECODER_URL) {
-    throw new Error("segmenter models not configured");
-  }
   if (statePromise) return statePromise;
   statePromise = (async () => {
     const [encoder, decoder, image] = await Promise.all([
@@ -104,6 +108,9 @@ export async function ensureSegmenter(dataUrl: string): Promise<SegmenterState> 
       scaleY,
     };
   })();
+  statePromise.catch(() => {
+    statePromise = null;
+  });
   return statePromise;
 }
 

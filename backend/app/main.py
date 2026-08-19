@@ -1563,23 +1563,39 @@ def create_app() -> FastAPI:
         target_dir = files_root / "viewport-segmentations" / artifact_id
         target_dir.mkdir(parents=True, exist_ok=True)
         image_path = target_dir / "viewport.png"
-        image_path.write_bytes(_decode_data_url(request.image_data_url))
+        try:
+            image_path.write_bytes(_decode_data_url(request.image_data_url))
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid viewport image: {exc}") from exc
         point_x = float(request.point.get("x", 0.5))
         point_y = float(request.point.get("y", 0.5))
-        remote_job = await remote_worker_adapter._post_json(
-            "/jobs/viewport-sam",
-            {
-                "flowstudio_job_id": f"viewport_sam_{artifact_id}",
-                "image_path": str(image_path),
-                "point_x": point_x,
-                "point_y": point_y,
-                "session_id": request.session_id,
-                "asset_id": request.asset_id,
-                "part_id": request.part_id,
-                "label": request.label,
-                "metadata": request.metadata,
-            },
-        )
+        try:
+            remote_job = await remote_worker_adapter._post_json(
+                "/jobs/viewport-sam",
+                {
+                    "flowstudio_job_id": f"viewport_sam_{artifact_id}",
+                    "image_path": str(image_path),
+                    "point_x": point_x,
+                    "point_y": point_y,
+                    "session_id": request.session_id,
+                    "asset_id": request.asset_id,
+                    "part_id": request.part_id,
+                    "label": request.label,
+                    "metadata": request.metadata,
+                },
+            )
+        except Exception as exc:
+            logger.warning("viewport-sam worker failed: %s", exc)
+            return ViewportSegmentationResponse(
+                session_id=request.session_id,
+                asset_id=request.asset_id,
+                part_id=request.part_id,
+                status="unavailable",
+                result={"note": str(exc)[:240]},
+                metadata={"error": str(exc)[:240]},
+            )
         worker_job_id = str(remote_job.get("job_id") or "")
         worker_result = await _poll_remote_worker_job(worker_job_id, timeout_sec=35)
         result_json = (
@@ -1734,7 +1750,7 @@ def create_app() -> FastAPI:
         filename = _export_filename(candidate.label or candidate.candidate_id, format)
         return Response(
             content=content,
-            media_type=content_type,
+            media_type="application/octet-stream",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 

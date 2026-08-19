@@ -611,7 +611,7 @@ def create_assets_router(
         filename = export_filename(asset.label or asset.asset_id, format)
         return Response(
             content=content,
-            media_type=content_type,
+            media_type="application/octet-stream",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 

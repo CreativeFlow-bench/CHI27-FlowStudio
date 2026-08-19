@@ -1114,6 +1114,87 @@ def test_drawing_location_without_text_locks_part_gate() -> None:
     assert question == "你想改变这个 鼻子 的形状或连接吗？"
 
 
+def test_generic_mesh_selection_does_not_invent_part_gate() -> None:
+    revision = IntentRevision(
+        revision_id="intent_generic_mesh",
+        session_id="session_generic_mesh",
+        intent_seq=1,
+        window_start_seq=1,
+        cutoff_seq=0,
+        user_text="",
+        source_context=SourceContext(
+            asset_id="asset_snowman",
+            object_type="snowman",
+            target_part_id="obj_group_12",
+        ),
+    )
+    realtime_observation_service._apply_fast_gate_draft(
+        revision,
+        [],
+        live_signals={"view_mode": "survey", "viewport_orbit_count": 3, "dwell_ms": 2400},
+    )
+    assert (revision.gate_target, revision.gate_scope) == ("snowman", "whole")
+    assert revision.gate_question == "你想改变这个 snowman 的整体轮廓吗？"
+    assert revision.source_context.target_part_id is None
+
+
+def test_unlabeled_drawing_on_generic_mesh_stays_whole() -> None:
+    revision = IntentRevision(
+        revision_id="intent_draw_generic",
+        session_id="session_draw_generic",
+        intent_seq=1,
+        window_start_seq=1,
+        cutoff_seq=1,
+        user_text="",
+        source_context=SourceContext(
+            asset_id="asset_snowman",
+            object_type="snowman",
+            target_part_id="Cube.001",
+        ),
+    )
+    behavior = BehaviorSession(
+        behavior_id="behavior_annotation_whole",
+        session_id=revision.session_id,
+        behavior_seq=1,
+        tool="annotation",
+        target={"part_id": "Cube.001", "label": "Cube.001"},
+        stroke_count=1,
+        operation_summary={"inferred_shape": "closed_contour"},
+    )
+    target, scope, question = realtime_observation_service._compress_revision_gate(
+        revision, [behavior], "Cube.001", "part"
+    )
+    assert (target, scope) == ("snowman", "whole")
+    assert question == "你想改变这个 snowman 的整体轮廓吗？"
+
+
+def test_closed_contour_drawing_without_named_part_is_whole() -> None:
+    revision = IntentRevision(
+        revision_id="intent_contour",
+        session_id="session_contour",
+        intent_seq=1,
+        window_start_seq=1,
+        cutoff_seq=1,
+        user_text="",
+        source_context=SourceContext(asset_id="asset_snowman", object_type="snowman"),
+        live_signals={"view_mode": "survey", "viewport_orbit_count": 2, "dwell_ms": 1800},
+    )
+    behavior = BehaviorSession(
+        behavior_id="behavior_contour",
+        session_id=revision.session_id,
+        behavior_seq=1,
+        tool="annotation",
+        target={"part_id": "", "label": ""},
+        stroke_count=1,
+        operation_summary={"inferred_shape": "closed_contour"},
+    )
+    target, scope, question = realtime_observation_service._compress_revision_gate(
+        revision, [behavior], None, None
+    )
+    assert (target, scope) == ("snowman", "whole")
+    assert question == "你想改变这个 snowman 的整体轮廓吗？"
+
+
 def test_invented_drawing_semantic_is_ignored_for_location() -> None:
     revision = IntentRevision(
         revision_id="intent_fake_semantic",
@@ -1185,6 +1266,48 @@ def test_compose_revision_gate_uses_llm_slots_then_fixed_template() -> None:
         realtime_observation_service.text_gateway = previous_gateway
     assert (target, scope) == ("帽子", "part")
     assert question == "你想改变这个 帽子 的形状或连接吗？"
+
+
+def test_compose_without_text_keeps_fast_gate_and_skips_llm() -> None:
+    class _BoomGateway:
+        profile = type("P", (), {"api_key": "test-key"})()
+
+        async def complete_json(self, *args, **kwargs):
+            raise AssertionError("Fast Gate should skip LLM when user_text is empty")
+
+    revision = IntentRevision(
+        revision_id="intent_fast_keep",
+        session_id="session_fast_keep",
+        intent_seq=1,
+        window_start_seq=1,
+        cutoff_seq=0,
+        user_text="",
+        source_context=SourceContext(
+            asset_id="asset_snowman",
+            object_type="snowman",
+            target_part_id="obj_group_01",
+        ),
+        live_signals={"view_mode": "survey", "viewport_orbit_count": 4, "dwell_ms": 2200},
+    )
+    previous = realtime_observation_service.gate_llm_enabled
+    previous_gateway = realtime_observation_service.text_gateway
+    realtime_observation_service.gate_llm_enabled = True
+    realtime_observation_service.text_gateway = _BoomGateway()
+    try:
+        realtime_observation_service._apply_fast_gate_draft(
+            revision, [], live_signals=revision.live_signals
+        )
+        target, scope, question = asyncio.run(
+            realtime_observation_service._compose_revision_gate(
+                revision, [], "obj_group_01", "part"
+            )
+        )
+    finally:
+        realtime_observation_service.gate_llm_enabled = previous
+        realtime_observation_service.text_gateway = previous_gateway
+    assert (revision.gate_target, revision.gate_scope) == ("snowman", "whole")
+    assert (target, scope) == ("snowman", "whole")
+    assert question == "你想改变这个 snowman 的整体轮廓吗？"
 
 
 def test_compressed_gate_updates_generation_intent_scope_and_target() -> None:

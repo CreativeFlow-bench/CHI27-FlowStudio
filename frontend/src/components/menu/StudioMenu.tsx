@@ -19,7 +19,7 @@ import type {
   ExperimentEvent,
   ExperimentExportRecord,
 } from "../../types";
-import { API_BASE, absoluteUrl, api, assetExportUrl, inferMeshExtension } from "../../api";
+import { API_BASE, absoluteUrl, api, downloadAssetExport, inferMeshExtension } from "../../api";
 import { benchmarkAssetGroups, benchmarkPreviewUrl } from "../../utils/appHelpers";
 import { EmptyState, KeyValue, Panel } from "../ui/primitives";
 import { ProjectSection } from "../project/ProjectSection";
@@ -405,14 +405,30 @@ export function StudioMenu({
                 <p className="export-note">Download only real mesh outputs from the active asset.</p>
                 <div className="case-link-row">
                   {asset.mesh_url && inferMeshExtension(asset.mesh_url) !== "obj" ? (
-                    <a href={assetExportUrl(asset.asset_id, "glb")} target="_blank" rel="noreferrer">
+                    <button
+                      type="button"
+                      className="export-file-link"
+                      onClick={() => {
+                        void downloadAssetExport(asset.asset_id, "glb", `${asset.label || "model"}.glb`).catch((error) => {
+                          window.alert(String(error).slice(0, 180));
+                        });
+                      }}
+                    >
                       Export GLB
-                    </a>
+                    </button>
                   ) : null}
                   {asset.obj_url || inferMeshExtension(asset.mesh_url ?? "") === "obj" ? (
-                    <a href={assetExportUrl(asset.asset_id, "obj")} target="_blank" rel="noreferrer">
+                    <button
+                      type="button"
+                      className="export-file-link"
+                      onClick={() => {
+                        void downloadAssetExport(asset.asset_id, "obj", `${asset.label || "model"}.obj`).catch((error) => {
+                          window.alert(String(error).slice(0, 180));
+                        });
+                      }}
+                    >
                       Export OBJ
-                    </a>
+                    </button>
                   ) : null}
                 </div>
               </Panel>

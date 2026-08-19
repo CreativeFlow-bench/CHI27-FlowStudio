@@ -129,8 +129,12 @@ export function AIBehaviorPanel({
   const noCurrentCandidate = selectedPromptTokens.length === 0;
   const generateDisabledReason = selectionPersistenceError
     ? "关键词保存失败，请重新选择后再生成"
-    : null;
-  const generateDisabled = !session || !asset || generationBusy || solutionSpaceGenerating || noCurrentCandidate || Boolean(generateDisabledReason);
+    : generationBusy || solutionSpaceGenerating
+      ? "正在生成…"
+      : noCurrentCandidate
+        ? "先点选至少一个关键词，再 Generate"
+        : null;
+  const generateDisabled = !session || !asset || generationBusy || solutionSpaceGenerating || noCurrentCandidate || Boolean(selectionPersistenceError);
   const scopeReady = presentation.creativeState !== "locked";
   const phaseText = divergencePhaseMessage ?? "Connecting to model…";
   return (
@@ -340,7 +344,7 @@ export function AIBehaviorPanel({
         >
           Generate
         </button>
-        {selectionPersistenceError && generateDisabledReason ? (
+        {generateDisabledReason ? (
           <p className="prompt-token-hint generate-disabled-reason" role="alert">
             {generateDisabledReason}
           </p>

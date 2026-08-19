@@ -117,6 +117,17 @@ function isObjectBehaviorAtom(atom: ActionAtom) {
 
 
 
+function isGenericMeshId(value: string | null | undefined) {
+  const text = String(value || "").trim();
+  if (!text) return true;
+  const lower = text.toLowerCase();
+  if (["object", "unknown", "item", "thing", "model", "asset", "部件", "当前部件"].includes(lower)) {
+    return true;
+  }
+  return /^(obj_group_|cube_|mesh_|mball)/i.test(text)
+    || /^(cube|sphere|plane|cylinder|torus|mesh|nurbs|suzanne|ico_sphere)(?:\.\d+)?$/i.test(text);
+}
+
 const EMPTY_LIVE_SIGNALS: LiveSignals = {
   dwell_ms: 0,
   compare_dwell_ms: 0,
@@ -455,6 +466,21 @@ export function useStudioStore() {
   const hoverModeRef = useRef(false);
   const hoverCommittedRef = useRef<string | null>(null);
   const hoverDwellTimerRef = useRef<number | null>(null);
+  const partFocusKeyRef = useRef<string | null>(null);
+  const partFocusStartedAtRef = useRef<number | null>(null);
+  const currentPartDwellMs = () => {
+    const started = partFocusStartedAtRef.current;
+    if (started == null) return 0;
+    return Math.min(12_000, Math.max(0, Date.now() - started));
+  };
+  const notePartFocus = (key: string | null) => {
+    const next = String(key || "").trim() || null;
+    if (next !== partFocusKeyRef.current) {
+      partFocusKeyRef.current = next;
+      partFocusStartedAtRef.current = next ? Date.now() : null;
+    }
+    return currentPartDwellMs();
+  };
   const [liveSignals, setLiveSignals] = useState<LiveSignals>(EMPTY_LIVE_SIGNALS);
   const [livePerception, setLivePerception] = useState<LivePerception>({
     summary: "Waiting for your first move.",
@@ -547,6 +573,8 @@ export function useStudioStore() {
     plannerNarrationTimerRef.current = null;
     hoverLabelRef.current = null;
     hoverCommittedRef.current = null;
+    partFocusKeyRef.current = null;
+    partFocusStartedAtRef.current = null;
     lastMeaningfulActionAtRef.current = null;
     fixationEnteredAtRef.current = null;
     setCandidates([]);
@@ -1584,6 +1612,7 @@ export function useStudioStore() {
             window.clearTimeout(hoverDwellTimerRef.current);
             hoverDwellTimerRef.current = null;
           }
+          notePartFocus(null);
           return;
         }
         // White models may have no registered parts yet: still surface the raw
@@ -1593,10 +1622,11 @@ export function useStudioStore() {
         if (fallback && fallback !== hoverLabelRef.current) {
           setHoverLabel(fallback);
           hoverLabelRef.current = fallback;
+          const dwellMs = notePartFocus(fallback);
           setLiveSignals((current) => ({
             ...current,
             hover_count: current.hover_count + 1,
-            dwell_ms: Math.max(current.dwell_ms, current.dwell_ms + 250),
+            dwell_ms: dwellMs,
           }));
           setLivePerception({
             summary: `User is inspecting the silhouette of ${fallback}.`,
@@ -1614,10 +1644,11 @@ export function useStudioStore() {
       const switched = hoverLabelRef.current !== part.label;
       setHoverLabel(part.label);
       hoverLabelRef.current = part.label;
+      const dwellMs = notePartFocus(part.part_id || part.label);
       setLiveSignals((current) => ({
         ...current,
         hover_count: current.hover_count + (switched ? 1 : 0),
-        dwell_ms: Math.max(current.dwell_ms, switched ? 250 : current.dwell_ms + 250),
+        dwell_ms: dwellMs,
       }));
       setLivePerception({
         summary:
@@ -2868,6 +2899,11 @@ export function useStudioStore() {
       return null;
     })();
     const selectedPartAtClick = selectedPart || null;
+    const namedPartAtClick = isGenericMeshId(selectedPartAtClick) ? null : selectedPartAtClick;
+    const liveSignalsAtClick = {
+      ...liveSignals,
+      dwell_ms: Math.max(liveSignals.dwell_ms, currentPartDwellMs()),
+    };
     const assetAtClick = asset;
     const versionAtClick = activeVersionId;
     const sourceModelAtClick = sculptedMeshObjUrl ?? asset.mesh_url ?? asset.obj_url;
@@ -2903,7 +2939,7 @@ export function useStudioStore() {
         version_id: versionAtClick,
         source_image_ref: null,
         source_model_ref: sourceModelAtClick,
-        target_part_id: selectedPartAtClick,
+        target_part_id: namedPartAtClick,
       },
       status: "planning",
       version: 1,
@@ -2913,7 +2949,7 @@ export function useStudioStore() {
       gate_question: trigger === "idle"
         ? "正在判断修改范围（系统推断）…"
         : "正在判断修改范围…",
-      gate_target: selectedPartAtClick,
+      gate_target: namedPartAtClick,
       gate_scope: null,
       gate_provisional: true,
       base_keywords: [],
@@ -2953,8 +2989,9 @@ export function useStudioStore() {
                   version_id: versionAtClick,
                   source_image_ref: null,
                   source_model_ref: sourceModelAtClick,
-                  target_part_id: selectedPartAtClick,
+                  target_part_id: namedPartAtClick,
                 },
+                live_signals: liveSignalsAtClick,
               }),
             },
           );
@@ -3046,8 +3083,9 @@ export function useStudioStore() {
                 version_id: versionAtClick,
                 source_image_ref: sourceImage?.url ?? null,
                 source_model_ref: sourceModelAtClick,
-                target_part_id: selectedPartAtClick,
+                target_part_id: namedPartAtClick,
               },
+              live_signals: liveSignalsAtClick,
             }),
           },
         );
@@ -3511,10 +3549,10 @@ export function useStudioStore() {
     }, 2000);
   };
 
-  // Composer Mana button: direct sandbox keyword diverge (no Gate / observation).
+  // Composer Mana: one-click whole-silhouette keyword diverge. Do not write
+  // Action History / Gate — those force a second click before keywords appear.
   const triggerPostGateDivergence = async () => {
     if (!session || semanticDivergenceLoading) return null;
-    recordActionAtom("text", { asset_id: asset?.asset_id ?? null }, { action: "trigger_divergence" });
     const invocationToken = ++divergenceCommitInvocationRef.current;
     const genericObjectNames = new Set([
       "",
@@ -3545,55 +3583,29 @@ export function useStudioStore() {
         .filter(Boolean);
       return candidates.find((item) => !isGenericName(item)) || candidates[0] || "design subject";
     })();
-    const part = parts.find((item) => item.part_id === selectedPart) ?? null;
-    const partId = part?.part_id ?? selectedPart ?? null;
-    const rawPartLabel = String(part?.label ?? partId ?? "").trim();
-    const partLabel = rawPartLabel && !isGenericName(rawPartLabel) ? rawPartLabel : null;
-    const scope = partLabel ? "part" : "whole";
-    const recentBehaviorSummary = behaviorSessions
-      .slice(-8)
-      .map((item) => {
-        const target = item.target as { label?: string; part_id?: string } | undefined;
-        const targetLabel = String(target?.label || target?.part_id || "").trim();
-        const cleanTarget = targetLabel && !isGenericName(targetLabel) ? targetLabel : "";
-        return `${item.tool}${cleanTarget ? `:${cleanTarget}` : ""}${item.stroke_count ? `×${item.stroke_count}` : ""}`;
-      })
-      .filter(Boolean)
-      .join("; ");
-    const drawingHint = String(liveSignals.drawing_content || "").trim();
-    const observationHint = String(
-      liveObserveNarrative || livePerception.summary || "",
-    ).trim();
-    const latestGate = [...intentRevisions]
-      .reverse()
-      .find((item) => item.gate_question && ["planning", "awaiting_gate", "accepted"].includes(item.status));
     const intentHint = intentText.trim();
     const userSemanticIntent = [
       intentHint || null,
       `主体是${objectName}`,
-      partLabel ? `当前关注部件：${partLabel}` : `当前关注整体：${objectName}`,
-      drawingHint && drawingHint !== "freehand_contour" ? `绘制语义：${drawingHint}` : null,
-      observationHint ? `观察：${observationHint.slice(0, 96)}` : null,
-      latestGate?.gate_question ? `Gate：${latestGate.gate_question}` : null,
-      !intentHint ? `围绕${objectName}提出具体可执行的造型/材质/连接方向` : null,
+      `当前关注整体轮廓：${objectName}`,
+      `围绕${objectName}的整体外形、比例与风格提出具体可执行方向`,
     ]
       .filter(Boolean)
       .join("。");
     const body = {
       object_type: objectName,
       asset_id: asset?.asset_id ?? null,
-      scope,
-      part_id: partLabel ? partId : null,
-      part_label: partLabel,
+      scope: "whole",
+      part_id: null,
+      part_label: null,
       user_semantic_intent: userSemanticIntent,
-      behavior_summary:
-        recentBehaviorSummary ||
-        `mana diverge on ${objectName}${partLabel ? ` / ${partLabel}` : ""}`,
-      gate_question: latestGate?.gate_question ?? null,
+      behavior_summary: `mana whole-silhouette diverge on ${objectName}`,
+      gate_question: `你想改变这个 ${objectName} 的整体轮廓吗？`,
       hard_constraints: [
         `preserve_object_identity:${objectName}`,
         `all candidates must remain about ${objectName}`,
-        partLabel ? `prefer_scope_part:${partLabel}` : `prefer_scope_whole:${objectName}`,
+        `prefer_scope_whole:${objectName}`,
+        "prefer_scope_silhouette",
       ],
       temperature: divergenceTemperature,
       strictness: 0.6,
@@ -3667,7 +3679,7 @@ export function useStudioStore() {
             divergence_id: `sandbox_${Date.now().toString(36)}`,
             run_id: "",
             decision_id: "",
-            request_key: `sandbox:${objectName}:${partLabel ?? "whole"}`,
+            request_key: `sandbox:${objectName}:whole`,
             status: "completed",
             generator_model: String(payload.model ?? "sandbox"),
             fallback_used: Boolean(payload.fallback_used),
@@ -3785,7 +3797,6 @@ export function useStudioStore() {
       return null;
     }
     setSolutionSpaceReadyPulse(false);
-    window.setTimeout(() => setSolutionSpaceReadyPulse(true), 30);
     setSolutionSpaceGenerating(true);
     setSolutionSpaceHeight((current) => Math.max(current, 280));
     const focusRevision = intentRevisionsRef.current.find((item) => item.revision_id === revisionId);
@@ -5012,9 +5023,10 @@ export function useStudioStore() {
       strokes,
       brushStrokes,
     });
+    const inferredShape = String(annotationPayload.metadata.inferred_shape || "freehand_contour");
     const nextLiveSignals = {
       ...liveSignals,
-      drawing_content: intentText.trim() || "freehand_contour",
+      drawing_content: intentText.trim() || inferredShape,
       annotation_count: liveSignals.annotation_count + 1,
     };
     setLiveSignals(nextLiveSignals);
@@ -5022,7 +5034,7 @@ export function useStudioStore() {
       summary: "User is drawing on the silhouette.",
       evidence: [
         `${annotationPayload.strokes.length} 2D pencil stroke${annotationPayload.strokes.length > 1 ? "s" : ""}`,
-        String(annotationPayload.metadata.inferred_shape ?? "freehand_contour"),
+        String(annotationPayload.metadata.inferred_shape ?? inferredShape),
       ],
       confidence: 0.82,
       source: "local",
@@ -5038,7 +5050,8 @@ export function useStudioStore() {
       ...annotationSession.evidence,
       annotation_mode: brushStrokes?.length ? "2d_brush" : "2d_pencil",
       text: intentText,
-      annotation_shape: "freehand_contour",
+      annotation_shape: inferredShape,
+      inferred_shape: inferredShape,
       brush_count: (Number(annotationSession.evidence.brush_count) || 0) + (brushStrokes?.length ?? 0),
       brush_kinds: [...new Set([
         ...((annotationSession.evidence.brush_kinds as string[] | undefined) ?? []),
@@ -5066,7 +5079,7 @@ export function useStudioStore() {
       asset_id: asset.asset_id,
       part_id: selectedPart || null,
       annotation_text: intentText,
-      annotation_shape: "freehand_contour",
+      annotation_shape: inferredShape,
       brush_count: brushStrokes?.length ?? 0,
       brush_kinds: [...new Set(brushStrokes?.map((stroke) => stroke.brush) ?? [])],
       stroke_count: annotationPayload.strokes.length,

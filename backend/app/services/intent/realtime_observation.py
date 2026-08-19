@@ -198,6 +198,17 @@ def _behavior_location(behaviors: list[BehaviorSession]) -> dict[str, str] | Non
     return None
 
 
+def _annotation_shape(behaviors: list[BehaviorSession]) -> str:
+    for item in reversed(behaviors):
+        if item.tool != "annotation":
+            continue
+        summary = item.operation_summary if isinstance(item.operation_summary, dict) else {}
+        shape = str(summary.get("inferred_shape") or summary.get("annotation_shape") or "").strip()
+        if shape:
+            return shape
+    return ""
+
+
 def _has_requested_scope_marker(text: str, markers: set[str]) -> bool:
     """Return true only when a scope word describes the requested edit.
 
@@ -501,7 +512,9 @@ class RealtimeObservationService:
                 user_text=request.user_text.strip(),
                 source_context=request.source_context,
             )
-            self._apply_fast_gate_draft(revision, behaviors)
+            self._apply_fast_gate_draft(
+                revision, behaviors, live_signals=request.live_signals
+            )
             self.store.save_revision(revision)
             # Fast Gate: surface provisional question immediately. LLM polish and
             # full planner encoding continue in background (plan_revision).
@@ -519,13 +532,20 @@ class RealtimeObservationService:
         self,
         revision: IntentRevision,
         behaviors: list[BehaviorSession],
+        live_signals: dict[str, Any] | None = None,
     ) -> None:
         """Fill a provisional Gate from text/behavior evidence before encoding."""
+        signals = dict(live_signals or revision.live_signals or {})
+        if signals:
+            revision.live_signals = signals
+        raw_part = str(revision.source_context.target_part_id or "").strip()
+        named_part = raw_part if raw_part and not _is_generic_mesh_id(raw_part) else None
         gate_target, gate_scope, gate_question = self._compress_revision_gate(
             revision,
             behaviors,
-            planner_target=revision.source_context.target_part_id,
-            planner_scope="part" if revision.source_context.target_part_id else None,
+            planner_target=named_part,
+            planner_scope="part" if named_part else None,
+            live_signals=signals,
         )
         revision.gate_target = gate_target
         revision.gate_scope = gate_scope
@@ -618,7 +638,9 @@ class RealtimeObservationService:
         except TimeoutError:
             logger.info("plan_revision timed out after 90s · keep Fast Gate for %s", revision_id)
             if not revision.gate_question:
-                self._apply_fast_gate_draft(revision, behaviors)
+                self._apply_fast_gate_draft(
+                    revision, behaviors, live_signals=revision.live_signals
+                )
             revision.status = IntentRevisionStatus.awaiting_gate
             revision.gate_provisional = True
             revision.error = "planner timed out; using fast gate"
@@ -1410,7 +1432,11 @@ class RealtimeObservationService:
     ) -> tuple[str, str, str]:
         """Evidence-first Gate: location / semantic / LLM fill, then fixed question."""
         fallback = self._compress_revision_gate(
-            revision, behaviors, planner_target, planner_scope
+            revision,
+            behaviors,
+            planner_target,
+            planner_scope,
+            live_signals=revision.live_signals,
         )
         gateway = self.text_gateway
         if (
@@ -1432,16 +1458,20 @@ class RealtimeObservationService:
                     "part_id": selected_part_id,
                     "label": selected_part_id,
                 }
+        # Fast Gate already locked scope from signals/location. Do not let the
+        # LLM invent a generic「部件」when the user typed nothing.
+        if not semantic:
+            return fallback
         # Strong deterministic evidence: skip LLM when text already names scope/part
         # or drawing locked a part and there is no conflicting semantic.
-        if semantic and (
+        if (
             infer_text_part(semantic)
             or _has_requested_scope_marker(semantic.lower(), _SURFACE_SCOPE_MARKERS)
             or _has_requested_scope_marker(semantic.lower(), _IDENTITY_TRANSFORM_MARKERS)
             or _has_requested_scope_marker(semantic.lower(), _WHOLE_SCOPE_MARKERS)
         ):
             return fallback
-        if location and location.get("label") and not semantic:
+        if location and location.get("label"):
             return fallback
 
         payload = {
@@ -1524,6 +1554,7 @@ class RealtimeObservationService:
         behaviors: list[BehaviorSession],
         planner_target: str | None,
         planner_scope: str | None,
+        live_signals: dict[str, Any] | None = None,
     ) -> tuple[str, str, str]:
         """Deterministic Gate from evidence channels.
 
@@ -1541,10 +1572,16 @@ class RealtimeObservationService:
 
         location = _behavior_location(behaviors)
         mesh_part_id = str(revision.source_context.target_part_id or "").strip()
+        if _is_generic_mesh_id(mesh_part_id):
+            mesh_part_id = ""
         if location is not None:
             loc_part = str(location.get("part_id") or "").strip()
             loc_label = str(location.get("label") or "").strip()
-            if not loc_part and not loc_label and mesh_part_id and not _is_generic_mesh_id(mesh_part_id):
+            if _is_generic_mesh_id(loc_part):
+                loc_part = ""
+            if _is_generic_mesh_id(loc_label):
+                loc_label = ""
+            if not loc_part and not loc_label and mesh_part_id:
                 loc_part = mesh_part_id
                 loc_label = mesh_part_id
             location_part_id = loc_part
@@ -1555,6 +1592,8 @@ class RealtimeObservationService:
 
         recent_target = behaviors[-1].target if behaviors else {}
         mesh_label = str(recent_target.get("label") or "").strip()
+        if _is_generic_mesh_id(mesh_label):
+            mesh_label = ""
         if text_part:
             part_id = text_part
             if (
@@ -1608,6 +1647,38 @@ class RealtimeObservationService:
             if scope in {"material_region", "surface"}:
                 scope = "material"
             elif scope not in {"part", "material"}:
+                scope = "whole"
+
+        live = live_signals if isinstance(live_signals, dict) and live_signals else {}
+        if not live and isinstance(getattr(revision, "live_signals", None), dict):
+            live = revision.live_signals
+        view_mode = str(live.get("view_mode") or "")
+        orbit = int(live.get("viewport_orbit_count") or 0)
+        zoom = int(live.get("viewport_zoom_count") or 0)
+        dwell = float(live.get("dwell_ms") or 0)
+        shape = _annotation_shape(behaviors)
+        named = bool(part_label or part_id) and not _is_generic_mesh_id(part_label or part_id)
+        generic_part = _is_generic_mesh_id(part_label or part_id or normalized_planner_target)
+        unlabeled_drawing = location is not None and not (location_part_id or location_label)
+        contour_drawing = shape in {
+            "closed_contour",
+            "horizontal_stroke",
+            "vertical_stroke",
+            "freehand_contour",
+            "point_mark",
+        }
+        if not text_part and not surface:
+            if scope == "part" and generic_part:
+                scope = "whole"
+                part_id = ""
+                part_label = ""
+            if not named and (unlabeled_drawing or contour_drawing):
+                scope = "whole"
+                part_id = ""
+                part_label = ""
+            elif named and view_mode == "detail" and dwell >= 800:
+                scope = "part"
+            elif not named and (view_mode in {"survey", "empty"} or orbit >= 2 or zoom >= 2):
                 scope = "whole"
 
         def _display_part_label(raw: str) -> str:
