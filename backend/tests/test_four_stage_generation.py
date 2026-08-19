@@ -151,6 +151,58 @@ def test_hy3d_job_payload_returns_mesh_when_completed() -> None:
     assert payload["obj_url"]
 
 
+def test_follow_hy3d_writes_mesh_ready_on_version_node(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.api import four_stage
+    from app.models import VersionGraphNode, VersionNodeStatus
+
+    four_stage._hy3d_follow_ids.clear()
+    node = VersionGraphNode(
+        node_id="n1",
+        session_id="s1",
+        version_number=2,
+        label="v2",
+        status=VersionNodeStatus.generating_3d,
+    )
+
+    class Store:
+        def get_version_node(self, node_id: str):
+            return node if node.node_id == node_id else None
+
+        def save_version_node(self, saved):
+            nonlocal node
+            node = saved
+            return saved
+
+    class Adapter:
+        async def get_job(self, job_id: str):
+            return {
+                "status": "completed",
+                "result": {
+                    "result_json": {
+                        "items": [{"ok": True, "mesh_pbr_glb": "/m.glb", "mesh_pbr_obj": "/m.obj"}],
+                    }
+                },
+            }
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr(four_stage.asyncio, "sleep", no_sleep)
+    asyncio.run(
+        four_stage.follow_four_stage_hy3d(
+            remote_job_id="rw1",
+            session_id="s1",
+            version_node_id="n1",
+            store=Store(),
+            remote_adapter=Adapter(),
+            websocket_manager=None,
+        )
+    )
+    assert node.status == VersionNodeStatus.mesh_ready
+    assert node.mesh_url
+    assert node.obj_url
+
+
 def test_image_batch_retries_rejections_and_returns_only_accepted_artifacts() -> None:
     attempts: list[tuple[int, int]] = []
 

@@ -933,7 +933,7 @@ class GenerationOrchestrator:
                 self.store.save_candidate(failed)
 
     async def _wait_for_remote_hy3d(self, job: JobRecord, remote_job_id: str) -> dict[str, Any]:
-        for _ in range(120):  # ponytail: ~10 min; this card finishes Hy3D in 2–5 min
+        for _ in range(360):  # 30 min at 5s; the old 10 min cap left GPU jobs orphaned
             self._abort_if_cancelled(job)
             remote = await self.remote_adapter.get_job(remote_job_id)
             status = remote.get("status")

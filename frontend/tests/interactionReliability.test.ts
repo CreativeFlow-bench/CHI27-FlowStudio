@@ -214,6 +214,16 @@ test("version nodes expose status and retry affordances", async () => {
   assert.doesNotMatch(css, /e8edf4/);
 });
 
+test("Hy3D keeps polling the GPU job instead of freezing after two minutes", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  assert.match(store, /HY3D_POLL_ATTEMPTS = 360/);
+  assert.match(store, /watchFourStageHy3dJob/);
+  assert.match(store, /version_node_id: versionNodeId/);
+  assert.doesNotMatch(store, /for \(let i = 0; i < 120; i \+= 1\)/);
+  assert.doesNotMatch(store, /仍在生成，未标记失败/);
+  assert.doesNotMatch(store, /void runFourStageHy3d\(candidate, node\.node_id, true\);\n      \} else \{\n        void generateCandidateHy3d/);
+});
+
 test("Hy3D success adopts the mesh and forces SAM3D part discovery", async () => {
   const store = await read("../src/state/studioStore.ts");
   const canvas = await read("../src/components/StudioCanvas.tsx");

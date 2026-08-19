@@ -216,6 +216,10 @@ function centeredActiveCanvasPan(shell?: HTMLElement | null) {
 // Gate is a single transient scope question.  Ignoring it closes the bubble;
 // it must never silently accept a direction or start generation.
 const GATE_TIMEOUT_MS = 10_000;
+// ponytail: Hunyuan + GPU queue is 3–15 min. 120×1s used to stop watching
+// while the worker was still running, so the version card looked hung.
+const HY3D_POLL_MS = 5_000;
+const HY3D_POLL_ATTEMPTS = 360;
 const REVISION_GATED_INTERACTION = true;
 
 type SelectionPersistenceTracker = {
@@ -509,6 +513,8 @@ export function useStudioStore() {
   const sourceSwitchSeqRef = useRef(0);
   const jobSourceSeqRef = useRef<Record<string, number>>({});
   const versionGraphRef = useRef<VersionGraphState>({ active_node_id: null, nodes: [] });
+  const hy3dWatchRef = useRef(new Map<string, Promise<void>>());
+  const hy3dAdoptedRef = useRef(new Set<string>());
   const versionViewModeRef = useRef<"active" | "overview">(versionViewMode);
   versionViewModeRef.current = versionViewMode;
   const sourceVersionCreationRef = useRef<Promise<VersionGraphState> | null>(null);
@@ -5873,6 +5879,9 @@ export function useStudioStore() {
     versionNodeId?: string,
   ) => {
     if (!session || (!meshUrl && !objUrl)) return null;
+    const adoptKey = versionNodeId || meshUrl || objUrl || "";
+    if (adoptKey && hy3dAdoptedRef.current.has(adoptKey)) return null;
+    if (adoptKey) hy3dAdoptedRef.current.add(adoptKey);
     try {
       const adopted = await api<AssetRecord>("/api/v1/assets", {
         method: "POST",
@@ -6078,11 +6087,6 @@ export function useStudioStore() {
         });
       }
       addLog("version", `Version ${node.version_number} 已载入可编辑 3D`);
-      if (candidate.metadata?.four_stage_artifact) {
-        void runFourStageHy3d(candidate, node.node_id, true);
-      } else {
-        void generateCandidateHy3d(candidate, node.node_id, true);
-      }
       return;
     }
     addLog("version", `Version ${node.version_number} 图片已出现，后台生成 3D`);
@@ -6175,55 +6179,66 @@ export function useStudioStore() {
     }
   };
 
-  const runFourStageHy3d = async (candidate: Candidate, versionNodeId?: string, force = false) => {
-    const runId = String(candidate.metadata?.run_id ?? fourStageRef.current.runId ?? "");
-    const artifactUrl = candidate.thumbnail_url ?? candidatePreviewUrl(candidate);
-    if (!runId || !artifactUrl || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
-    setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
-    setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
-    try {
-      const started = await api<{
-        status: string;
-        remote_job_id?: string | null;
-        message?: string | null;
-        progress?: number | null;
-        mesh_url?: string | null;
-        obj_url?: string | null;
-        preview_url?: string | null;
-        mesh_path?: string | null;
-        obj_path?: string | null;
-      }>(
-        `/api/v1/four-stage/runs/${runId}/hy3d-candidate`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            session_id: session?.session_id,
-            candidate_id: candidate.candidate_id,
-            image_url: artifactUrl,
-            prompt_index: Number(candidate.metadata?.prompt_index ?? 0),
-          }),
-        },
-      );
-      let updated = started;
-      const remoteJobId = String(started.remote_job_id || "").trim();
-      if (versionNodeId && remoteJobId) {
-        await patchVersionNode(versionNodeId, { hy3d_job_id: remoteJobId }).catch(() => undefined);
+  const watchFourStageHy3dJob = (
+    remoteJobId: string,
+    candidate: Candidate,
+    versionNodeId?: string,
+    seed?: {
+      status: string;
+      message?: string | null;
+      progress?: number | null;
+      mesh_url?: string | null;
+      obj_url?: string | null;
+      preview_url?: string | null;
+      mesh_path?: string | null;
+      obj_path?: string | null;
+    },
+  ) => {
+    const existing = hy3dWatchRef.current.get(remoteJobId);
+    if (existing) return existing;
+    const startedAt = Date.now();
+    const promise = (async () => {
+      let updated = seed ?? {
+        status: "running",
+        message: "Hunyuan3D 运行中",
+        progress: 0.08,
+        mesh_url: null,
+        obj_url: null,
+      };
+      if (!updated.mesh_url && !updated.obj_url) {
+        try {
+          updated = await api(`/api/v1/four-stage/hy3d-jobs/${encodeURIComponent(remoteJobId)}`);
+        } catch (error) {
+          const message = String(error);
+          if (!/failed to fetch|networkerror|timeout|504|524/i.test(message)) throw error;
+        }
       }
-      for (let i = 0; i < 120; i += 1) {
+      for (let i = 0; i < HY3D_POLL_ATTEMPTS; i += 1) {
+        const elapsed = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+        const clock = elapsed >= 60
+          ? `${Math.floor(elapsed / 60)}m${String(elapsed % 60).padStart(2, "0")}s`
+          : `${elapsed}s`;
+        const base = String(updated.message || "").trim() || "Hunyuan3D 运行中";
         setHy3dProgress({
-          message: String(updated.message || "").trim() || "Hunyuan3D 运行中",
+          message: `${base} · ${clock}`,
           progress: Number(updated.progress ?? 0.08),
         });
         if (updated.mesh_url || updated.obj_url) break;
         if (updated.status === "failed" || updated.status === "cancelled") {
-          throw new Error(updated.status);
+          throw new Error(String(updated.message || updated.status));
         }
-        if (!remoteJobId) break;
-        await new Promise((resolve) => window.setTimeout(resolve, 1000));
-        updated = await api(`/api/v1/four-stage/hy3d-jobs/${encodeURIComponent(remoteJobId)}`);
+        await new Promise((resolve) => window.setTimeout(resolve, HY3D_POLL_MS));
+        try {
+          updated = await api(`/api/v1/four-stage/hy3d-jobs/${encodeURIComponent(remoteJobId)}`);
+        } catch (error) {
+          const message = String(error);
+          if (/failed to fetch|networkerror|timeout|504|524/i.test(message)) {
+            continue;
+          }
+          throw error;
+        }
       }
       if (updated.mesh_url || updated.obj_url) {
-        // 把候选升级为带 mesh 的版本节点（用户已选中并拖入，mesh 回到画布）。
         const upgraded: Candidate = {
           ...candidate,
           mesh_url: updated.mesh_url ?? candidate.mesh_url,
@@ -6258,11 +6273,72 @@ export function useStudioStore() {
           remotePath,
           versionNodeId,
         );
-      } else if (updated.status === "running" || updated.status === "queued") {
-        addLog("hy3d", "Hunyuan3D 仍在生成，未标记失败");
-      } else {
-        throw new Error(updated.status || "Hy3D completed without a mesh URL");
+        return;
       }
+      throw new Error(String(updated.message || updated.status || "Hy3D timed out"));
+    })()
+      .catch(async (error) => {
+        const message = String(error);
+        const transient = /failed to fetch|networkerror|timeout|504|524/i.test(message);
+        const stillGenerating = versionNodeId
+          ? versionGraphRef.current.nodes.find((item) => item.node_id === versionNodeId)?.status === "generating_3d"
+          : false;
+        if (versionNodeId && stillGenerating && !transient) {
+          await patchVersionNode(versionNodeId, {
+            status: "mesh_failed",
+            error: message.slice(0, 500),
+          }).catch(() => undefined);
+        } else if (transient) {
+          addLog("hy3d", "请求中断，继续等待 GPU 上的 3D 任务");
+        }
+        addLog("hy3d", `四阶段候选 hy3d: ${message.slice(0, 160)}`);
+      })
+      .finally(() => {
+        hy3dWatchRef.current.delete(remoteJobId);
+        setHy3dCandidateIds((current) => current.filter((id) => id !== candidate.candidate_id));
+      });
+    hy3dWatchRef.current.set(remoteJobId, promise);
+    return promise;
+  };
+
+  const runFourStageHy3d = async (candidate: Candidate, versionNodeId?: string, force = false) => {
+    const runId = String(candidate.metadata?.run_id ?? fourStageRef.current.runId ?? "");
+    const artifactUrl = candidate.thumbnail_url ?? candidatePreviewUrl(candidate);
+    if (!runId || !artifactUrl || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
+    setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
+    setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
+    try {
+      const started = await api<{
+        status: string;
+        remote_job_id?: string | null;
+        message?: string | null;
+        progress?: number | null;
+        mesh_url?: string | null;
+        obj_url?: string | null;
+        preview_url?: string | null;
+        mesh_path?: string | null;
+        obj_path?: string | null;
+      }>(
+        `/api/v1/four-stage/runs/${runId}/hy3d-candidate`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            session_id: session?.session_id,
+            candidate_id: candidate.candidate_id,
+            image_url: artifactUrl,
+            prompt_index: Number(candidate.metadata?.prompt_index ?? 0),
+            version_node_id: versionNodeId ?? null,
+          }),
+        },
+      );
+      const remoteJobId = String(started.remote_job_id || "").trim();
+      if (versionNodeId && remoteJobId) {
+        await patchVersionNode(versionNodeId, { hy3d_job_id: remoteJobId }).catch(() => undefined);
+      }
+      if (!remoteJobId) {
+        throw new Error(started.status || "Hy3D worker did not return a job id");
+      }
+      await watchFourStageHy3dJob(remoteJobId, candidate, versionNodeId, started);
     } catch (error) {
       const message = String(error);
       const transient = /failed to fetch|networkerror|timeout|504|524/i.test(message);
@@ -6272,10 +6348,9 @@ export function useStudioStore() {
           error: message.slice(0, 500),
         }).catch(() => undefined);
       } else if (transient) {
-        addLog("hy3d", "请求中断，3D 任务仍在 GPU 上跑，未标记失败");
+        addLog("hy3d", "提交中断，后端会继续盯 GPU 上的 3D 任务");
       }
       addLog("hy3d", `四阶段候选 hy3d: ${message.slice(0, 160)}`);
-    } finally {
       setHy3dCandidateIds((current) => current.filter((id) => id !== candidate.candidate_id));
     }
   };
@@ -6342,6 +6417,20 @@ export function useStudioStore() {
       addLog("hy3d", `Version ${node.version_number} 无法重试 3D：缺少候选`);
       return;
     }
+    const existingJobId = String(node.hy3d_job_id || "").trim();
+    if (useFourStage && node.status === "generating_3d" && existingJobId) {
+      const watching = {
+        ...retryCandidate,
+        thumbnail_url: imageUrl,
+        metadata: { ...retryCandidate.metadata, four_stage_artifact: true, run_id: runId },
+      };
+      setHy3dCandidateIds((current) => (
+        current.includes(watching.candidate_id) ? current : [...current, watching.candidate_id]
+      ));
+      setHy3dProgress({ message: "Hunyuan3D 运行中", progress: 0.08 });
+      void watchFourStageHy3dJob(existingJobId, watching, nodeId);
+      return;
+    }
     await patchVersionNode(nodeId, { status: "generating_3d", error: null });
     setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
     if (useFourStage) {
@@ -6358,6 +6447,77 @@ export function useStudioStore() {
     }
     void generateCandidateHy3d(retryCandidate, nodeId, true);
   };
+
+  useEffect(() => {
+    if (!versionGraphHydrated) return;
+    for (const node of versionGraph.nodes) {
+      if (
+        node.status === "mesh_ready"
+        && node.parent_node_id
+        && node.hy3d_job_id
+        && (node.mesh_url || node.obj_url)
+      ) {
+        const live = node.candidate_id
+          ? allCandidates.find((item) => item.candidate_id === node.candidate_id)
+          : undefined;
+        void adoptHy3dMeshAsActiveAsset(
+          live ?? {
+            candidate_id: node.candidate_id ?? `version_${node.node_id}`,
+            job_id: node.hy3d_job_id,
+            session_id: session?.session_id ?? node.session_id,
+            source_asset_id: asset?.asset_id ?? "",
+            source_part_id: null,
+            label: node.label,
+            decision: "accepted",
+            mesh_url: node.mesh_url,
+            obj_url: node.obj_url,
+            thumbnail_url: node.preview_url,
+            scores: {},
+            metadata: { four_stage_artifact: true },
+          },
+          node.mesh_url,
+          node.obj_url,
+          node.preview_url,
+          remoteWorkerPathFromUrl(node.obj_url) || remoteWorkerPathFromUrl(node.mesh_url),
+          node.node_id,
+        );
+        continue;
+      }
+      const jobId = String(node.hy3d_job_id || "").trim();
+      if (node.status !== "generating_3d" || !jobId || hy3dWatchRef.current.has(jobId)) continue;
+      const live = node.candidate_id
+        ? allCandidates.find((item) => item.candidate_id === node.candidate_id)
+        : undefined;
+      const fourStageMatch = node.candidate_id ? /^fourstage_(.+)_(\d+)$/.exec(node.candidate_id) : null;
+      const runId = String(
+        live?.metadata?.run_id
+          ?? fourStageMatch?.[1]
+          ?? fourStageRef.current.runId
+          ?? "",
+      );
+      const candidate: Candidate = live ?? {
+        candidate_id: node.candidate_id ?? `version_${node.node_id}`,
+        job_id: runId,
+        session_id: session?.session_id ?? node.session_id,
+        source_asset_id: asset?.asset_id ?? "",
+        source_part_id: null,
+        label: node.label,
+        decision: "accepted",
+        mesh_url: node.mesh_url,
+        obj_url: node.obj_url,
+        thumbnail_url: node.preview_url,
+        scores: {},
+        metadata: {
+          four_stage_artifact: true,
+          run_id: runId || undefined,
+        },
+      };
+      setHy3dCandidateIds((current) => (
+        current.includes(candidate.candidate_id) ? current : [...current, candidate.candidate_id]
+      ));
+      void watchFourStageHy3dJob(jobId, candidate, node.node_id);
+    }
+  }, [versionGraphHydrated, versionGraph.nodes]);
 
   const fitCandidateToPart = async (candidate: Candidate) => {
     if (!session || fittingCandidateIds.includes(candidate.candidate_id)) return;

@@ -2136,6 +2136,20 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   border: 1px solid rgba(47, 123, 255, 0.22);
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 8px 20px rgba(42, 52, 66, 0.1);
+  animation: hy3d-progress-breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes hy3d-progress-breathe {
+  50% {
+    border-color: rgba(47, 123, 255, 0.55);
+    box-shadow: 0 8px 20px rgba(42, 52, 66, 0.1), 0 0 0 4px rgba(47, 123, 255, 0.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .version-hy3d-progress {
+    animation: none;
+  }
 }
 
 .version-hy3d-progress-line {

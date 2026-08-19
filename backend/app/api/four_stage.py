@@ -18,6 +18,7 @@ from app.models import (
     SemanticDivergenceParams,
     SemanticDivergenceResponse,
     SessionRecord,
+    VersionNodeStatus,
 )
 from app.services.pipeline.four_stage_orchestrator import (
     FourStageConflict,
@@ -91,7 +92,94 @@ def _hy3d_job_payload(status: dict[str, Any], remote_job_id: str) -> dict[str, A
         "mesh_path": mesh_path,
         "obj_path": obj_path,
         "detail": status,
+        "error": status.get("error"),
     }
+
+
+# ponytail: 30 min at 5s. Hunyuan+queue is 3–15 min; the old 10 min / 2 min
+# cutoffs left version nodes stuck on generating_3d.
+_HY3D_FOLLOW_SLEEP_SEC = 5.0
+_HY3D_FOLLOW_ATTEMPTS = 360
+_hy3d_follow_ids: set[str] = set()
+
+
+def _apply_hy3d_payload_to_node(
+    store: Any,
+    version_node_id: str | None,
+    session_id: str,
+    payload: dict[str, Any],
+) -> None:
+    if not version_node_id:
+        return
+    node = store.get_version_node(version_node_id)
+    if node is None or node.session_id != session_id:
+        return
+    status = str(payload.get("status") or "")
+    mesh_url = payload.get("mesh_url")
+    obj_url = payload.get("obj_url")
+    if mesh_url or obj_url:
+        node.status = VersionNodeStatus.mesh_ready
+        node.mesh_url = str(mesh_url or node.mesh_url or "") or None
+        node.obj_url = str(obj_url or node.obj_url or "") or None
+        if payload.get("preview_url"):
+            node.preview_url = str(payload["preview_url"])
+        node.error = None
+    elif status in {"failed", "cancelled"}:
+        node.status = VersionNodeStatus.mesh_failed
+        node.error = str(payload.get("error") or payload.get("message") or status)[:500]
+    if payload.get("remote_job_id"):
+        node.hy3d_job_id = str(payload["remote_job_id"])
+    store.save_version_node(node)
+
+
+async def follow_four_stage_hy3d(
+    *,
+    remote_job_id: str,
+    session_id: str,
+    version_node_id: str | None,
+    store: Any,
+    remote_adapter: Any,
+    websocket_manager: Any,
+) -> None:
+    """Poll the GPU job until it finishes and persist the version node."""
+    if not remote_job_id or remote_job_id in _hy3d_follow_ids:
+        return
+    _hy3d_follow_ids.add(remote_job_id)
+    try:
+        for _ in range(_HY3D_FOLLOW_ATTEMPTS):
+            try:
+                status = await remote_adapter.get_job(remote_job_id)
+            except Exception:
+                await asyncio.sleep(_HY3D_FOLLOW_SLEEP_SEC)
+                continue
+            payload = _hy3d_job_payload(status, remote_job_id)
+            if websocket_manager and session_id:
+                await websocket_manager.broadcast(session_id, "hy3d_progress", payload)
+            job_status = str(payload.get("status") or "")
+            if payload.get("mesh_url") or payload.get("obj_url"):
+                _apply_hy3d_payload_to_node(store, version_node_id, session_id, payload)
+                return
+            if job_status in {"failed", "cancelled"}:
+                _apply_hy3d_payload_to_node(store, version_node_id, session_id, payload)
+                return
+            if job_status == "completed":
+                payload["status"] = "failed"
+                payload["error"] = "Hy3D completed without a mesh URL"
+                _apply_hy3d_payload_to_node(store, version_node_id, session_id, payload)
+                return
+            await asyncio.sleep(_HY3D_FOLLOW_SLEEP_SEC)
+        timeout_payload = {
+            "status": "failed",
+            "remote_job_id": remote_job_id,
+            "message": "Hy3D timed out",
+            "error": "Hy3D timed out",
+            "progress": 0,
+        }
+        if websocket_manager and session_id:
+            await websocket_manager.broadcast(session_id, "hy3d_progress", timeout_payload)
+        _apply_hy3d_payload_to_node(store, version_node_id, session_id, timeout_payload)
+    finally:
+        _hy3d_follow_ids.discard(remote_job_id)
 
 
 def _http_error(exc: FourStageError) -> HTTPException:
@@ -179,23 +267,33 @@ def create_four_stage_router(
         payload = _hy3d_job_payload(hy3d_job, remote_job_id)
         if payload.get("mesh_url") or payload.get("obj_url"):
             payload["status"] = "completed"
+            version_node_id = str(request.get("version_node_id") or "").strip() or None
+            _apply_hy3d_payload_to_node(
+                orchestrator.store,
+                version_node_id,
+                str(request.get("session_id") or run.session_id or ""),
+                payload,
+            )
             return payload
         session_id = str(request.get("session_id") or run.session_id or "")
-        manager = getattr(orchestrator, "websocket_manager", None)
-        if manager and session_id:
-            await manager.broadcast(
-                session_id,
-                "hy3d_progress",
-                {
-                    "message": str(hy3d_job.get("message") or "排队等待 GPU"),
-                    "progress": hy3d_job.get("progress") or 0.08,
-                    "stage": hy3d_job.get("stage") or "queued",
-                    "status": str(hy3d_job.get("status") or "running"),
-                    "remote_job_id": remote_job_id,
-                },
+        version_node_id = str(request.get("version_node_id") or "").strip() or None
+        if version_node_id:
+            node = orchestrator.store.get_version_node(version_node_id)
+            if node is not None and node.session_id == session_id:
+                node.status = VersionNodeStatus.generating_3d
+                node.hy3d_job_id = remote_job_id
+                node.error = None
+                orchestrator.store.save_version_node(node)
+        asyncio.create_task(
+            follow_four_stage_hy3d(
+                remote_job_id=remote_job_id,
+                session_id=session_id,
+                version_node_id=version_node_id,
+                store=orchestrator.store,
+                remote_adapter=remote_worker_adapter,
+                websocket_manager=getattr(orchestrator, "websocket_manager", None),
             )
-        # ponytail: return immediately; Cloudflare/browser would kill a 3–10 min wait
-        # and the UI used to paint mesh_failed while GPU was still working.
+        )
         return {
             "status": str(hy3d_job.get("status") or "running"),
             "remote_job_id": remote_job_id,
