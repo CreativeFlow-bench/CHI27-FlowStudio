@@ -2359,7 +2359,7 @@ export function useStudioStore() {
         artifact,
         sessionId: session?.session_id ?? "",
         assetId: asset?.asset_id ?? "",
-        partId: revisionForRun?.source_context?.target_part_id ?? selectedPart || null,
+          partId: revisionForRun?.source_context?.target_part_id ?? (selectedPart || null),
         intentSeq: revisionForRun?.intent_seq,
         revisionId: revisionForRun?.revision_id,
         keywords,
