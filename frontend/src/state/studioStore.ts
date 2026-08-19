@@ -3,7 +3,6 @@ import { EditorScene } from "../editorScene";
 import { clamp01, formatScore, confidenceTone, stringValue, isActiveJobStatus } from "../utils/format";
 import { readCandidateMemory } from "../utils/session";
 import {
-  partSegmentationUrl,
   livePerceptionSummary,
   livePerceptionEvidence,
   CREATIVE_STATES,
@@ -39,6 +38,8 @@ import {
   partDiscoveryAdapter,
   partDiscoveryDisplayAdapter,
   partDiscoveryRemoteValue,
+  partSegmentationUrl,
+  remoteWorkerPathFromUrl,
   isRenderableBenchmarkAsset,
   findPartByViewportName,
   benchmarkAssetGroupLabel,
@@ -82,11 +83,13 @@ import {
   reduceSolutionSpaceVisibility,
 } from "../utils/solutionSpaceVisibility";
 import { mergeRealtimeRevisions } from "../utils/optimisticRevisions";
-import { computeCenteredActiveCanvasPan, layoutVersionGraph } from "../utils/versionGraph";
+import { computeCenteredActiveCanvasPan, computeOverviewCanvasCamera, layoutVersionGraph } from "../utils/versionGraph";
 import { createExperimentEventRecorder } from "../utils/experimentProject";
 import {
   buildSemanticDivergenceParameters,
   deriveSemanticDivergenceUiState,
+  isMeshJargonLabel,
+  isObjectStateNarrative,
 } from "../utils/workspacePresentation";
 import {
   describeDivergencePhase,
@@ -138,22 +141,15 @@ const EMPTY_LIVE_SIGNALS: LiveSignals = {
 
 
 
-function centeredActiveCanvasPan(shell?: HTMLElement | null) {
-  const width = shell?.clientWidth
+function freeCanvasBand(shell?: HTMLElement | null) {
+  const shellWidth = shell?.clientWidth
     ?? (typeof window === "undefined" ? 1440 : window.innerWidth);
-  const height = shell?.clientHeight
+  const shellHeight = shell?.clientHeight
     ?? (typeof window === "undefined" ? 900 : window.innerHeight);
-
-  const active = shell?.querySelector<HTMLElement>(".version-node.active");
-  const nodeX = active ? Number.parseFloat(active.style.left || "") || 640 : 640;
-  const nodeY = active ? Number.parseFloat(active.style.top || "") || 0 : 0;
-  // CSS overrides layout 520 with --active-editor-* — always prefer measured box.
-  const nodeWidth = active?.offsetWidth || Math.max(320, width - 48);
-  const nodeHeight = active?.offsetHeight || Math.max(360, height - 64);
-
-  // Free band between Perception (left float) and AI Behavior (right float).
-  let targetCenterX = width / 2;
-  let targetCenterY = height / 2;
+  let left = 0;
+  let top = 0;
+  let right = shellWidth;
+  let bottom = shellHeight;
   if (shell && typeof window !== "undefined") {
     const shellRect = shell.getBoundingClientRect();
     const perception = document.querySelector<HTMLElement>(".perception-float");
@@ -165,18 +161,38 @@ function centeredActiveCanvasPan(shell?: HTMLElement | null) {
     const topBound = Math.max(shellRect.top, solution?.getBoundingClientRect().bottom ?? shellRect.top);
     const bottomBound = Math.min(shellRect.bottom, composer?.getBoundingClientRect().top ?? shellRect.bottom);
     if (rightBound > leftBound + 80) {
-      targetCenterX = (leftBound + rightBound) / 2 - shellRect.left;
+      left = leftBound - shellRect.left;
+      right = rightBound - shellRect.left;
     }
     if (bottomBound > topBound + 80) {
-      targetCenterY = (topBound + bottomBound) / 2 - shellRect.top;
+      top = topBound - shellRect.top;
+      bottom = bottomBound - shellRect.top;
     }
   }
+  return {
+    shellWidth,
+    shellHeight,
+    width: right - left,
+    height: bottom - top,
+    centerX: (left + right) / 2,
+    centerY: (top + bottom) / 2,
+  };
+}
+
+function centeredActiveCanvasPan(shell?: HTMLElement | null) {
+  const band = freeCanvasBand(shell);
+  const active = shell?.querySelector<HTMLElement>(".version-node.active");
+  const nodeX = active ? Number.parseFloat(active.style.left || "") || 640 : 640;
+  const nodeY = active ? Number.parseFloat(active.style.top || "") || 0 : 0;
+  // CSS overrides layout 520 with --active-editor-* — always prefer measured box.
+  const nodeWidth = active?.offsetWidth || Math.max(320, band.shellWidth - 48);
+  const nodeHeight = active?.offsetHeight || Math.max(360, band.shellHeight - 64);
 
   return computeCenteredActiveCanvasPan({
-    shellWidth: width,
-    shellHeight: height,
-    targetCenterX,
-    targetCenterY,
+    shellWidth: band.shellWidth,
+    shellHeight: band.shellHeight,
+    targetCenterX: band.centerX,
+    targetCenterY: band.shellHeight / 2,
     nodeX,
     nodeY,
     nodeWidth,
@@ -235,6 +251,7 @@ export function useStudioStore() {
   const [partDiscovery, setPartDiscovery] = useState<PartDiscoveryResponse | null>(null);
   const [discoveringParts, setDiscoveringParts] = useState(false);
   const [hy3dCandidateIds, setHy3dCandidateIds] = useState<string[]>([]);
+  const [hy3dProgress, setHy3dProgress] = useState<{ message: string; progress: number } | null>(null);
   const [fittingCandidateIds, setFittingCandidateIds] = useState<string[]>([]);
   const [autoDiscoverParts, setAutoDiscoverParts] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -299,8 +316,18 @@ export function useStudioStore() {
   const [actionAtoms, setActionAtoms] = useState<ActionAtom[]>([]);
   const [referenceImages, setReferenceImages] = useState<ArtifactRecord[]>([]);
   const [referenceModels, setReferenceModels] = useState<ArtifactRecord[]>([]);
-  const [divergenceTemperature, setDivergenceTemperature] = useState(0.2);
-  const [divergencePerGroupCount, setDivergencePerGroupCount] = useState(5);
+  const [divergenceTemperature, setDivergenceTemperatureState] = useState(0.2);
+  const [divergencePerGroupCount, setDivergencePerGroupCountState] = useState(5);
+  const divergenceTemperatureRef = useRef(0.2);
+  const divergencePerGroupCountRef = useRef(5);
+  const setDivergenceTemperature = (value: number) => {
+    divergenceTemperatureRef.current = value;
+    setDivergenceTemperatureState(value);
+  };
+  const setDivergencePerGroupCount = (value: number) => {
+    divergencePerGroupCountRef.current = value;
+    setDivergencePerGroupCountState(value);
+  };
   // 四阶段发散关键词：由 retrieval 先验 / decision divergence_seeds 派生，
   // 是关键词面板的唯一数据源（替代旧 directions/suggest 输出）。
   const [divergenceKeywords, setDivergenceKeywords] = useState<PromptToken[]>([]);
@@ -316,6 +343,9 @@ export function useStudioStore() {
   const semanticDivergenceLastSettledKeyRef = useRef<string | null>(null);
   const semanticDivergenceLastSettledResponseRef = useRef<NonNullable<FourStageRun["semantic_divergence"]> | null>(null);
   const semanticDivergenceLatestRequestedKeyRef = useRef<string | null>(null);
+  const semanticDivergenceLiveParamsRef = useRef<{ temperature: number; perGroupCount: number } | null>(null);
+  const semanticDivergenceLiveRequestRef = useRef<Promise<NonNullable<FourStageRun["semantic_divergence"]>> | null>(null);
+  const divergenceCommitTimerRef = useRef(0);
   const preflightDivergenceStartedRef = useRef<Set<string>>(new Set());
   const intentRevisionsRef = useRef(intentRevisions);
   intentRevisionsRef.current = intentRevisions;
@@ -346,6 +376,10 @@ export function useStudioStore() {
   const canvasZoomRef = useRef(canvasZoom);
   canvasZoomRef.current = canvasZoom;
   const versionCanvasShellRef = useRef<HTMLDivElement | null>(null);
+  const [activeEditorExtent, setActiveEditorExtent] = useState(() => ({
+    width: typeof window === "undefined" ? 1440 : window.innerWidth,
+    height: typeof window === "undefined" ? 900 : window.innerHeight,
+  }));
   const [spacePanArmed, setSpacePanArmed] = useState(false);
   const [creativeState, setCreativeState] = useState<CreativeState>("idle");
   const [creativeStateConfidence, setCreativeStateConfidence] = useState(1);
@@ -1965,28 +1999,23 @@ export function useStudioStore() {
     return undefined;
   }, [plannerNarration]);
 
-  // UI-only LLM canvas observer: does not touch Gate / revision / generation.
+  // UI-only LLM 3D-context narrator: look at the viewport screenshot, then describe it.
   useEffect(() => {
     if (!session?.session_id) return undefined;
-    const recentActions = behaviorSessions
-      .slice(-8)
-      .map((item) => {
-        const target = item.target as { label?: string; part_id?: string } | undefined;
-        const label = target?.label || target?.part_id || "";
-        return `${item.tool}${label ? `:${label}` : ""}`;
-      })
-      .filter(Boolean);
-    const partLabel = activeSelectedPart?.label ?? selectedPart ?? null;
+    const objectName = [asset?.label, asset?.object_type]
+      .map((item) => String(item || "").trim())
+      .find((item) => item && !isMeshJargonLabel(item)) || "3D model";
+    const fallback = `This is a ${objectName}.`;
     const signature = [
-      recentActions.join("|"),
-      partLabel ?? "",
-      liveSignals.brush_count,
-      liveSignals.hover_count,
-      liveSignals.annotation_count,
-      Math.floor((liveSignals.dwell_ms || 0) / 4000),
-      intentText.trim().slice(0, 48),
-      plannerNarration.slice(0, 48),
+      objectName,
+      asset?.asset_id ?? "",
+      asset?.mesh_url ?? "",
+      asset?.obj_url ?? "",
+      sculptedMeshObjUrl ?? "",
+      String(liveSignals.viewport_orbit_count),
+      String(liveSignals.viewport_zoom_count),
     ].join("::");
+    if (!isObjectStateNarrative(liveObserveNarrative)) setLiveObserveNarrative(fallback);
     if (signature === liveObserveSignatureRef.current) return undefined;
     if (liveObserveTimerRef.current) window.clearTimeout(liveObserveTimerRef.current);
     liveObserveTimerRef.current = window.setTimeout(() => {
@@ -1996,57 +2025,55 @@ export function useStudioStore() {
       liveObserveAbortRef.current = controller;
       void (async () => {
         try {
+          let preview: string | null = null;
+          for (let attempt = 0; attempt < 6; attempt += 1) {
+            const captured = threeViewportRef.current?.captureJpeg?.(360, 0.48) ?? null;
+            if (captured?.startsWith("data:image/") && captured.length <= 380_000) {
+              preview = captured;
+              break;
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 450));
+            if (controller.signal.aborted) return;
+          }
+          if (!preview) {
+            setLiveObserveNarrative(fallback);
+            return;
+          }
           const response = await fetch(`${API_BASE}/api/v1/sandbox/observe-narrative`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             signal: controller.signal,
             body: JSON.stringify({
-              object_type: asset?.label || asset?.object_type || "model",
-              part_label: partLabel,
-              part_id: activeSelectedPart?.part_id ?? null,
-              intent_text: intentText.trim() || null,
-              recent_actions: recentActions,
-              signals: {
-                brush_count: liveSignals.brush_count,
-                hover_count: liveSignals.hover_count,
-                annotation_count: liveSignals.annotation_count,
-                viewport_orbit_count: liveSignals.viewport_orbit_count,
-                viewport_zoom_count: liveSignals.viewport_zoom_count,
-                dwell_ms: liveSignals.dwell_ms,
-                view_mode: liveSignals.view_mode,
-              },
-              rule_summary: plannerNarration,
+              object_type: objectName,
+              parts: [],
+              part_label: null,
+              part_id: null,
+              preview_image: preview,
             }),
           });
           if (!response.ok) return;
           const data = (await response.json()) as { narrative?: string };
           const narrative = String(data.narrative || "").trim();
-          if (narrative) setLiveObserveNarrative(narrative);
+          if (isObjectStateNarrative(narrative)) setLiveObserveNarrative(narrative);
         } catch (error) {
           if ((error as { name?: string })?.name === "AbortError") return;
         }
       })();
-    }, 1400);
+    }, 1800);
     return () => {
       if (liveObserveTimerRef.current) window.clearTimeout(liveObserveTimerRef.current);
     };
   }, [
     session?.session_id,
+    asset?.asset_id,
     asset?.label,
     asset?.object_type,
-    behaviorSessions,
-    activeSelectedPart?.label,
-    activeSelectedPart?.part_id,
-    selectedPart,
-    liveSignals.brush_count,
-    liveSignals.hover_count,
-    liveSignals.annotation_count,
+    asset?.mesh_url,
+    asset?.obj_url,
+    sculptedMeshObjUrl,
     liveSignals.viewport_orbit_count,
     liveSignals.viewport_zoom_count,
-    liveSignals.dwell_ms,
-    liveSignals.view_mode,
-    intentText,
-    plannerNarration,
+    liveObserveNarrative,
   ]);
 
   const solutionSpaceSignature = [job?.job_id ?? "", ...solutionBatches.map((batch) => batch.batch_id)].join("|");
@@ -2496,6 +2523,13 @@ export function useStudioStore() {
           setReferenceImages((current) => upsertArtifact(current, artifact));
         }
       }
+      if (message.type === "hy3d_progress") {
+        const payload = message.payload ?? {};
+        setHy3dProgress({
+          message: String(payload.message ?? "").trim() || "Hunyuan3D 运行中",
+          progress: Number(payload.progress ?? 0),
+        });
+      }
       if (message.type === "job_update") {
         setJob((current) => ({ ...(current ?? {}), ...message.payload }) as JobRecord);
         if (!isActiveJobStatus(message.payload?.status)) setSolutionSpaceGenerating(false);
@@ -2540,6 +2574,8 @@ export function useStudioStore() {
             candidate_id: `source:${targetAsset.asset_id}`,
             label: targetAsset.label || "Source model",
             preview_url: targetAsset.thumbnail_url ?? null,
+            mesh_url: targetAsset.mesh_url ?? null,
+            obj_url: targetAsset.obj_url ?? null,
             status: "mesh_ready",
           }),
         },
@@ -3035,8 +3071,8 @@ export function useStudioStore() {
             {
               divergence_params: {
                 ...buildSemanticDivergenceParameters({
-                  temperature: divergenceTemperature,
-                  perGroupCount: divergencePerGroupCount,
+                  temperature: divergenceTemperatureRef.current,
+                  perGroupCount: divergencePerGroupCountRef.current,
                 }),
                 inherited_keywords: inheritedRevisionKeywords,
               },
@@ -3094,19 +3130,22 @@ export function useStudioStore() {
   const commitDivergenceParameters = async (options?: {
     preflight?: boolean;
     revisionId?: string;
+    force?: boolean;
+    temperature?: number;
+    perGroupCount?: number;
   }) => {
     const preflight = Boolean(options?.preflight);
     const capturedRevisionId = options?.revisionId ?? activeRevisionIdRef.current;
-    // Reuse an in-flight / attaching stream instead of bumping the invocation
-    // token (which would silence onPhase / onPartial for the first stream).
+    const temperature = options?.temperature ?? divergenceTemperatureRef.current;
+    const perGroupCount = options?.perGroupCount ?? divergencePerGroupCountRef.current;
+    const liveParams = semanticDivergenceLiveParamsRef.current;
+    const liveRequest = semanticDivergenceLiveRequestRef.current;
     if (
-      capturedRevisionId &&
-      (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId ||
-        semanticDivergenceInFlightRef.current.size > 0)
+      liveRequest &&
+      liveParams?.temperature === temperature &&
+      liveParams?.perGroupCount === perGroupCount
     ) {
-      const existing = [...semanticDivergenceInFlightRef.current.values()][0];
-      if (existing) return existing;
-      return null;
+      return liveRequest;
     }
     const invocationToken = ++divergenceCommitInvocationRef.current;
     if (capturedRevisionId) {
@@ -3122,7 +3161,10 @@ export function useStudioStore() {
       for (let attempt = 0; attempt < 90; attempt += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 1000));
         if (activeRevisionIdRef.current !== capturedRevisionId) {
-          if (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId) {
+          if (
+            divergenceCommitInvocationRef.current === invocationToken &&
+            semanticDivergenceAttachingRevisionRef.current === capturedRevisionId
+          ) {
             semanticDivergenceAttachingRevisionRef.current = null;
           }
           return null;
@@ -3136,7 +3178,10 @@ export function useStudioStore() {
       }
     }
     if (!revision || !allowedStatuses.has(revision.status) || !revision.run_id) {
-      if (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId) {
+      if (
+        divergenceCommitInvocationRef.current === invocationToken &&
+        semanticDivergenceAttachingRevisionRef.current === capturedRevisionId
+      ) {
         semanticDivergenceAttachingRevisionRef.current = null;
       }
       setDivergencePhaseMessage(
@@ -3151,8 +3196,8 @@ export function useStudioStore() {
     const capturedRunId = revision.run_id;
     const capturedParameters = {
       ...buildSemanticDivergenceParameters({
-        temperature: divergenceTemperature,
-        perGroupCount: divergencePerGroupCount,
+        temperature,
+        perGroupCount,
       }),
       preflight,
     };
@@ -3178,10 +3223,6 @@ export function useStudioStore() {
       divergenceCommitInvocationRef.current === invocationToken &&
       activeRevisionIdRef.current === capturedRevisionId &&
       Boolean(capturedRunId);
-    // Phase/partial updates stay live for the active revision even if a later
-    // commit bumped the invocation token (should be rare after attaching guard).
-    const isLiveDivergenceRevision = () =>
-      activeRevisionIdRef.current === capturedRevisionId && Boolean(capturedRunId);
 
     try {
       if (!isCurrentDivergenceInvocation()) return null;
@@ -3232,7 +3273,7 @@ export function useStudioStore() {
       ]);
       semanticDivergenceLatestRequestedKeyRef.current = commitKey;
       const applyCurrentResponse = (response: NonNullable<FourStageRun["semantic_divergence"]>) => {
-        if (!isLiveDivergenceRevision()) return response;
+        if (!isCurrentDivergenceInvocation()) return response;
         setSemanticDivergence(response);
         setDivergenceKeywords(semanticCandidateTokens({ ...run, semantic_divergence: response }));
         // Keep user selection while divergence settles — do not wipe tokens here.
@@ -3248,6 +3289,7 @@ export function useStudioStore() {
         return response;
       };
       if (
+        !options?.force &&
         semanticDivergenceLastSettledKeyRef.current === commitKey &&
         semanticDivergenceLastSettledResponseRef.current
       ) {
@@ -3267,12 +3309,12 @@ export function useStudioStore() {
             streamParams,
             {
               onPhase: (event) => {
-                if (!isLiveDivergenceRevision()) return;
+                if (!isCurrentDivergenceInvocation()) return;
                 const message = describeDivergencePhase(event);
                 if (message) setDivergencePhaseMessage(message);
               },
               onPartial: (partial) => {
-                if (!isLiveDivergenceRevision()) return;
+                if (!isCurrentDivergenceInvocation()) return;
                 setSemanticDivergence(partial);
                 setDivergenceKeywords(
                   semanticCandidateTokens({ ...run, semantic_divergence: partial }),
@@ -3288,23 +3330,31 @@ export function useStudioStore() {
             if (semanticDivergenceInFlightRef.current.get(commitKey) === request) {
               semanticDivergenceInFlightRef.current.delete(commitKey);
             }
+            if (semanticDivergenceLiveRequestRef.current === request) {
+              semanticDivergenceLiveRequestRef.current = null;
+            }
           },
           () => {
             if (semanticDivergenceInFlightRef.current.get(commitKey) === request) {
               semanticDivergenceInFlightRef.current.delete(commitKey);
             }
+            if (semanticDivergenceLiveRequestRef.current === request) {
+              semanticDivergenceLiveRequestRef.current = null;
+            }
           },
         );
       }
+      semanticDivergenceLiveParamsRef.current = { temperature, perGroupCount };
+      semanticDivergenceLiveRequestRef.current = request;
       const response = await request;
       if (semanticDivergenceLatestRequestedKeyRef.current === commitKey) {
         semanticDivergenceLastSettledKeyRef.current = commitKey;
         semanticDivergenceLastSettledResponseRef.current = response;
       }
-      if (!isLiveDivergenceRevision()) return response;
+      if (!isCurrentDivergenceInvocation()) return response;
       return applyCurrentResponse(response);
     } catch (error) {
-      if (isLiveDivergenceRevision()) {
+      if (isCurrentDivergenceInvocation()) {
         setSemanticDivergenceLoading(false);
         setDivergencePhaseMessage(null);
         setSemanticDivergenceError(String(error).slice(0, 160));
@@ -3312,10 +3362,24 @@ export function useStudioStore() {
       }
       return null;
     } finally {
-      if (semanticDivergenceAttachingRevisionRef.current === capturedRevisionId) {
+      if (
+        divergenceCommitInvocationRef.current === invocationToken &&
+        semanticDivergenceAttachingRevisionRef.current === capturedRevisionId
+      ) {
         semanticDivergenceAttachingRevisionRef.current = null;
       }
     }
+  };
+
+  const scheduleDivergenceParametersCommit = () => {
+    window.clearTimeout(divergenceCommitTimerRef.current);
+    divergenceCommitTimerRef.current = window.setTimeout(() => {
+      void commitDivergenceParameters({
+        force: true,
+        temperature: divergenceTemperatureRef.current,
+        perGroupCount: divergencePerGroupCountRef.current,
+      });
+    }, 2000);
   };
 
   // Composer Mana button: direct sandbox keyword diverge (no Gate / observation).
@@ -5200,7 +5264,7 @@ export function useStudioStore() {
 
   const discoverPartsForAsset = async (
     targetAsset: AssetRecord,
-    trigger: "manual" | "upload" | "brush",
+    trigger: "manual" | "upload" | "brush" | "hy3d",
   ): Promise<PartDiscoveryResponse | null> => {
     if (!session) return null;
     const sourceSeq = sourceSwitchSeqRef.current;
@@ -5217,12 +5281,18 @@ export function useStudioStore() {
             partfield_real: true,
             granularity: "medium",
             max_parts: 8,
+            ...(trigger === "hy3d"
+              ? { sam3d_real: true, segmentation_real: true, wait_timeout_sec: 480 }
+              : {}),
           },
         }),
       });
       if (sourceSeq !== sourceSwitchSeqRef.current) return null;
       setPartDiscovery(response);
       setParts(response.parts);
+      setAsset((current) => (current && current.asset_id === targetAsset.asset_id
+        ? { ...current, parts: response.parts }
+        : current));
       if (response.parts.length) setSelectedPart(response.parts[0].part_id);
       addLog(
         "parts",
@@ -5610,12 +5680,57 @@ export function useStudioStore() {
       { method: "PATCH", body: JSON.stringify(update) },
     );
     mergeVersionGraphNode(node, versionGraphRef.current.active_node_id === nodeId);
+    if (update.status === "mesh_ready" || update.status === "mesh_failed") {
+      setHy3dProgress(null);
+    }
     return node;
+  };
+
+  const adoptHy3dMeshAsActiveAsset = async (
+    candidate: Candidate,
+    meshUrl: string | null | undefined,
+    objUrl: string | null | undefined,
+    previewUrl: string | null | undefined,
+    remotePath: string | null | undefined,
+  ) => {
+    if (!session || (!meshUrl && !objUrl)) return null;
+    try {
+      const adopted = await api<AssetRecord>("/api/v1/assets", {
+        method: "POST",
+        body: JSON.stringify({
+          session_id: session.session_id,
+          object_type: asset?.object_type || "object",
+          label: candidate.label || asset?.label || "generated model",
+          mesh_url: meshUrl ?? null,
+          obj_url: objUrl ?? null,
+          thumbnail_url: previewUrl ?? candidate.thumbnail_url ?? null,
+          metadata: {
+            source: "hy3d_generated",
+            source_candidate_id: candidate.candidate_id,
+            parent_asset_id: asset?.asset_id ?? null,
+            remote_asset: remotePath ? { path: remotePath } : undefined,
+          },
+        }),
+      });
+      setAsset(adopted);
+      setParts(adopted.parts);
+      addLog("hy3d", `mesh adopted as ${adopted.asset_id}`);
+      const discovered = await discoverPartsForAsset(adopted, "hy3d");
+      const segmented = partSegmentationUrl(discovered?.parts ?? adopted.parts);
+      if (segmented) {
+        setAsset((current) => (current ? { ...current, mesh_url: segmented, parts: discovered?.parts ?? current.parts } : current));
+      }
+      return adopted;
+    } catch (error) {
+      addLog("hy3d", `adopt mesh failed: ${String(error).slice(0, 160)}`);
+      return null;
+    }
   };
 
   const generateCandidateHy3d = async (candidate: Candidate, versionNodeId?: string, force = false) => {
     if (!session || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
     setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
+    setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
     addLog("hy3d", `started ${candidate.candidate_id}`);
     try {
       const updated = await api<Candidate>(`/api/v1/candidates/${candidate.candidate_id}/hy3d`, {
@@ -5641,6 +5756,19 @@ export function useStudioStore() {
         });
       }
       addLog("hy3d", updated.mesh_url || updated.obj_url ? "mesh ready" : "completed without mesh");
+      if (updated.mesh_url || updated.obj_url) {
+        const remotePath =
+          String(updated.metadata?.remote_mesh_obj || updated.metadata?.remote_mesh_glb || "").trim() ||
+          remoteWorkerPathFromUrl(updated.obj_url) ||
+          remoteWorkerPathFromUrl(updated.mesh_url);
+        void adoptHy3dMeshAsActiveAsset(
+          updated,
+          updated.mesh_url,
+          updated.obj_url,
+          candidatePreviewUrl(updated),
+          remotePath,
+        );
+      }
     } catch (error) {
       if (versionNodeId) {
         await patchVersionNode(versionNodeId, {
@@ -5676,14 +5804,7 @@ export function useStudioStore() {
     const graph = await ensureSourceVersionNode(session, asset);
     const sourceNodeId = graph.nodes.find((node) => node.parent_node_id === null)?.node_id;
     const activeNode = graph.nodes.find((node) => node.node_id === graph.active_node_id);
-    // Mind-map rule: Solution Space drops fan under Version 1, unless the user
-    // is editing a mesh-ready branch and diverging from that node.
-    const parentNodeId =
-      activeNode &&
-      activeNode.parent_node_id !== null &&
-      activeNode.status === "mesh_ready"
-        ? activeNode.node_id
-        : sourceNodeId;
+    const parentNodeId = activeNode?.node_id ?? sourceNodeId;
     if (!parentNodeId) throw new Error("Version 1 尚未就绪");
     const existing = graph.nodes.find(
       (node) => node.parent_node_id === parentNodeId && node.candidate_id === candidate.candidate_id,
@@ -5709,13 +5830,16 @@ export function useStudioStore() {
     // Render before the persistence round-trip so the image node appears in the
     // same frame as the drop. The server node replaces this provisional id.
     mergeVersionGraphNode(optimisticNode, true);
-    // Stay in the focused active editor; never jump to overview/fit-all.
     setVersionViewMode("active");
     setSolutionSpaceReleased((current) =>
       reduceSolutionSpaceVisibility(current, { type: "collapse" }),
     );
-    setCanvasPan(centeredActiveCanvasPan(versionCanvasShellRef.current));
     setCanvasZoom(1);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setCanvasPan(centeredActiveCanvasPan(versionCanvasShellRef.current));
+      });
+    });
     setSelectedCandidateId(candidate.candidate_id);
     setAcceptedCandidateIds((current) => Array.from(new Set([...current, candidate.candidate_id])));
     setPreviewCandidate(candidate);
@@ -5763,27 +5887,55 @@ export function useStudioStore() {
         });
       }
       addLog("version", `Version ${node.version_number} 已载入可编辑 3D`);
+      if (candidate.metadata?.four_stage_artifact) {
+        void runFourStageHy3d(candidate, node.node_id, true);
+      } else {
+        void generateCandidateHy3d(candidate, node.node_id, true);
+      }
       return;
     }
     addLog("version", `Version ${node.version_number} 图片已出现，后台生成 3D`);
-    if (existing && ["generating_3d", "mesh_ready"].includes(existing.status)) return;
+    if (existing?.status === "generating_3d") return;
     if (node.status !== "generating_3d") {
       await patchVersionNode(node.node_id, { status: "generating_3d", error: null });
     }
     if (candidate.metadata?.four_stage_artifact) {
-      void runFourStageHy3d(candidate, node.node_id);
+      void runFourStageHy3d(candidate, node.node_id, true);
       return;
     }
-    void generateCandidateHy3d(candidate, node.node_id);
+    void generateCandidateHy3d(candidate, node.node_id, true);
+  };
+
+  /** 全览里点选高亮：不进入编辑，作为下一次 Solution Space 拖入的接入点。 */
+  const highlightVersionNode = async (nodeId: string, candidate: Candidate | null) => {
+    setActiveVersionId(nodeId);
+    applyVersionGraph({ ...versionGraphRef.current, active_node_id: nodeId });
+    if (candidate) {
+      setSelectedCandidateId(candidate.candidate_id);
+    }
+    if (!session) return;
+    try {
+      const graph = await api<VersionGraphState>(
+        `/api/v1/sessions/${session.session_id}/active-version/${nodeId}`,
+        { method: "PUT" },
+      );
+      applyVersionGraph({ ...graph, active_node_id: nodeId });
+    } catch (error) {
+      addLog("version", `高亮版本保存失败：${String(error).slice(0, 120)}`);
+    }
   };
 
   /** 激活持久化版本；先本地切换，再把活动节点写回服务器。 */
   const activateVersionNode = async (nodeId: string, candidate: Candidate | null) => {
     setActiveVersionId(nodeId);
     setVersionViewMode("active");
-    setCanvasPan(centeredActiveCanvasPan());
     setCanvasZoom(1);
     applyVersionGraph({ ...versionGraphRef.current, active_node_id: nodeId });
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setCanvasPan(centeredActiveCanvasPan(versionCanvasShellRef.current));
+      });
+    });
     if (candidate) {
       setSelectedCandidateId(candidate.candidate_id);
       if (candidate.mesh_url || candidate.obj_url || candidatePreviewUrl(candidate)) {
@@ -5837,12 +5989,15 @@ export function useStudioStore() {
     const artifactUrl = candidate.thumbnail_url ?? candidatePreviewUrl(candidate);
     if (!runId || !artifactUrl || (!force && hy3dCandidateIds.includes(candidate.candidate_id))) return;
     setHy3dCandidateIds((current) => [...current, candidate.candidate_id]);
+    setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
     try {
       const updated = await api<{
         status: string;
         mesh_url?: string | null;
         obj_url?: string | null;
         preview_url?: string | null;
+        mesh_path?: string | null;
+        obj_path?: string | null;
       }>(
         `/api/v1/four-stage/runs/${runId}/hy3d-candidate`,
         {
@@ -5879,6 +6034,19 @@ export function useStudioStore() {
           });
         }
         addLog("hy3d", "四阶段 mesh ready — 已原位升级当前版本");
+        const remotePath =
+          String(updated.obj_path || updated.mesh_path || "").trim()
+          || remoteWorkerPathFromUrl(upgraded.obj_url)
+          || remoteWorkerPathFromUrl(upgraded.mesh_url);
+        void adoptHy3dMeshAsActiveAsset(
+          upgraded,
+          upgraded.mesh_url,
+          upgraded.obj_url,
+          candidatePreviewUrl(upgraded),
+          remotePath,
+        );
+      } else if (updated.status === "running" || updated.status === "queued") {
+        addLog("hy3d", "Hunyuan3D 仍在生成，未标记失败");
       } else {
         throw new Error(updated.status || "Hy3D completed without a mesh URL");
       }
@@ -5897,7 +6065,7 @@ export function useStudioStore() {
 
   const retryVersionNode = async (nodeId: string) => {
     const node = versionGraphRef.current.nodes.find((item) => item.node_id === nodeId);
-    if (!node || node.status !== "mesh_failed") return;
+    if (!node || node.status === "mesh_ready") return;
     const live = node.candidate_id
       ? allCandidates.find((item) => item.candidate_id === node.candidate_id)
       : undefined;
@@ -5935,6 +6103,7 @@ export function useStudioStore() {
       return;
     }
     await patchVersionNode(nodeId, { status: "generating_3d", error: null });
+    setHy3dProgress({ message: "已提交 Hunyuan3D", progress: 0.08 });
     if (useFourStage) {
       void runFourStageHy3d(
         {
@@ -5977,8 +6146,13 @@ export function useStudioStore() {
   };
 
   const versionLayout = useMemo(
-    () => layoutVersionGraph(versionGraph.nodes, versionGraph.active_node_id, versionViewMode === "active"),
-    [versionGraph, versionViewMode],
+    () => layoutVersionGraph(
+      versionGraph.nodes,
+      versionGraph.active_node_id,
+      versionViewMode === "active",
+      versionViewMode === "active" ? activeEditorExtent : undefined,
+    ),
+    [versionGraph, versionViewMode, activeEditorExtent],
   );
 
   const versionNodes = useMemo(
@@ -5988,6 +6162,12 @@ export function useStudioStore() {
         ? allCandidates.find((item) => item.candidate_id === graphNode.candidate_id) ?? null
         : null;
       const isSource = graphNode.parent_node_id === null;
+      const previewUrl = absoluteUrl(
+        graphNode.preview_url
+          ?? (candidate ? candidatePreviewUrl(candidate) : null)
+          ?? (isSource ? asset?.thumbnail_url ?? null : null)
+          ?? "",
+      ) || null;
       return {
         id: graphNode.node_id,
         kind: isSource ? "source" as const : "branch" as const,
@@ -5997,14 +6177,13 @@ export function useStudioStore() {
         y: layoutNode.y,
         width: layoutNode.width,
         height: layoutNode.height,
-        previewUrl: absoluteUrl(
-          graphNode.preview_url
-            ?? (candidate ? candidatePreviewUrl(candidate) : null)
-            ?? (isSource ? asset?.thumbnail_url ?? null : null)
-            ?? "",
-        ) || null,
-        meshUrl: graphNode.mesh_url ?? (isSource ? asset?.mesh_url ?? null : null),
-        objUrl: graphNode.obj_url ?? (isSource ? asset?.obj_url ?? null : null),
+        previewUrl,
+        meshUrl: graphNode.mesh_url || candidate?.mesh_url || (isSource ? asset?.mesh_url : null) || null,
+        objUrl: graphNode.obj_url || candidate?.obj_url || (isSource ? asset?.obj_url : null) || (
+          previewUrl && /\.preview\.png(?:\?|$)/i.test(previewUrl)
+            ? previewUrl.replace(/\.preview\.png/i, ".obj")
+            : null
+        ),
         status: graphNode.status,
         error: graphNode.error,
         isActivePath: layoutNode.isActivePath,
@@ -6036,17 +6215,9 @@ export function useStudioStore() {
     }
     setVersionViewMode("overview");
     const overviewNodes = layoutVersionGraph(versionGraph.nodes, versionGraph.active_node_id, false).nodes;
-    const maxX = Math.max(...overviewNodes.map((node) => node.x + node.width), 520);
-    const maxY = Math.max(...overviewNodes.map((node) => node.y + node.height), 520);
-    const minY = Math.min(...overviewNodes.map((node) => node.y), 0);
-    const spanX = maxX + 160;
-    const spanY = maxY - minY + 160;
-    const nextZoom = Math.max(0.45, Math.min(1, Math.min(980 / spanX, 640 / spanY)));
-    setCanvasZoom(nextZoom);
-    setCanvasPan({
-      x: 80,
-      y: 90 - minY * nextZoom,
-    });
+    const camera = computeOverviewCanvasCamera(overviewNodes, freeCanvasBand(versionCanvasShellRef.current));
+    setCanvasZoom(camera.zoom);
+    setCanvasPan(camera.pan);
   };
 
   // Keep the focused 3D node centered when panels / window / editor size change.
@@ -6058,7 +6229,14 @@ export function useStudioStore() {
     const recenter = () => {
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        setCanvasPan(centeredActiveCanvasPan(versionCanvasShellRef.current));
+        const currentShell = versionCanvasShellRef.current;
+        setCanvasPan(centeredActiveCanvasPan(currentShell));
+        const activeNode = currentShell?.querySelector<HTMLElement>(".version-node.active");
+        const width = Math.round(activeNode?.offsetWidth || window.innerWidth);
+        const height = Math.round(activeNode?.offsetHeight || window.innerHeight);
+        setActiveEditorExtent((prev) => (
+          prev.width === width && prev.height === height ? prev : { width, height }
+        ));
       });
     };
     recenter();
@@ -6076,7 +6254,7 @@ export function useStudioStore() {
       observer.disconnect();
       window.removeEventListener("resize", recenter);
     };
-  }, [versionViewMode, studioDrawerOpen, menuWidth, activeVersionId]);
+  }, [versionViewMode, studioDrawerOpen, menuWidth, activeVersionId, versionGraph.nodes.length]);
 
   const zoomCanvasBy = (factor: number) => {
     const current = canvasZoomRef.current;
@@ -6383,6 +6561,7 @@ export function useStudioStore() {
     discoveringParts,
     setDiscoveringParts,
     hy3dCandidateIds,
+    hy3dProgress,
     setHy3dCandidateIds,
     fittingCandidateIds,
     setFittingCandidateIds,
@@ -6574,6 +6753,7 @@ export function useStudioStore() {
     versionViewMode,
     versionGraph,
     dropCandidateIntoVersionGraph,
+    highlightVersionNode,
     activateVersionNode,
     deleteVersionNode,
     retryVersionNode,
@@ -6617,6 +6797,7 @@ export function useStudioStore() {
     selectIntentRevision,
     resolveIntentRevisionGate,
     commitDivergenceParameters,
+    scheduleDivergenceParametersCommit,
     triggerPostGateDivergence,
     startActiveRevisionGeneration,
     finalizeSculptBehavior,

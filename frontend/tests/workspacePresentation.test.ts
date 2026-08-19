@@ -1,17 +1,50 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import * as workspacePresentation from "../src/utils/workspacePresentation.ts";
 
 const { buildAiBehaviorPresentation } = workspacePresentation;
 
-test("observe narrative hides asset ids and jargon", () => {
+test("observe narrative hides asset ids and mesh jargon", () => {
   assert.equal(
     workspacePresentation.humanizeObserveNarrative(
-      "Comparing the current part of asset_0a8a397439 while orbiting the viewport and repeatedly hovering over local details.",
+      "This is a Santa Head made from asset_0a8a397439 with Mball.005.",
     ),
-    "Comparing the current part of the model while turning the model around and looking closely at a small area.",
+    "",
   );
+  assert.equal(
+    workspacePresentation.humanizeObserveNarrative(
+      "This is a Santa Head made from asset_0a8a397439 with a wrinkled face.",
+    ),
+    "This is a Santa Head made from the model with a wrinkled face.",
+  );
+});
+
+test("user-action observe lines are not treated as 3D object state", () => {
+  assert.equal(
+    workspacePresentation.isObjectStateNarrative(
+      "You are holding the Santa head model and observing it carefully before taking any action.",
+    ),
+    false,
+  );
+  assert.equal(
+    workspacePresentation.isObjectStateNarrative("This is a cute Santa Claus head with rounded, wrinkled clay-like features."),
+    true,
+  );
+  assert.equal(
+    workspacePresentation.isObjectStateNarrative(
+      "This is a Christmas Santa Head with this part this part, Sphere.",
+    ),
+    false,
+  );
+});
+
+test("mesh jargon labels are not treated as 3D context parts", () => {
+  assert.equal(workspacePresentation.isMeshJargonLabel("Mball.005"), true);
+  assert.equal(workspacePresentation.isMeshJargonLabel("Cube.001"), true);
+  assert.equal(workspacePresentation.isMeshJargonLabel("Sphere"), true);
+  assert.equal(workspacePresentation.isMeshJargonLabel("Santa hat"), false);
 });
 
 test("content amount is presented as an exact per-dimension count", () => {
@@ -50,7 +83,7 @@ test("semantic divergence requests keep strictness internal and send the per-dim
   });
 });
 
-test("AI Behavior exposes one narrative and never projects UiBrief next_question", () => {
+test("AI Behavior narrative is the 3D object state, not a Gate question", () => {
   const gateQuestion = "你想改变这个帽子的形状或连接吗？";
   const view = buildAiBehaviorPresentation({
     uiBrief: {
@@ -63,17 +96,33 @@ test("AI Behavior exposes one narrative and never projects UiBrief next_question
       details_ref: "revision-1",
       pending_decision_count: 1,
     },
-    plannerTypedText: "fallback narrative",
+    plannerTypedText: "User is orbiting to inspect the form's parts.",
     plannerNarration: "full model evidence",
+    liveObserveNarrative: "This is a Santa Claus head with a wrinkled face.",
     semanticDivergenceLoading: false,
     semanticDivergenceError: null,
     hasDivergenceContent: false,
   });
 
-  assert.equal(view.narrative, "正在理解你对帽子的调整。");
+  assert.equal(view.narrative, "This is a Santa Claus head with a wrinkled face.");
   assert.equal(view.details, "full model evidence");
   assert.equal(view.creativeState, "locked");
   assert.doesNotMatch(JSON.stringify(view), new RegExp(gateQuestion));
+  assert.doesNotMatch(view.narrative, /orbiting|inspect/i);
+});
+
+test("AI Behavior drops user-action observe lines", () => {
+  const view = buildAiBehaviorPresentation({
+    uiBrief: null,
+    plannerTypedText: "",
+    plannerNarration: "",
+    liveObserveNarrative:
+      "You are holding the Santa head model and observing it carefully before taking any action.",
+    semanticDivergenceLoading: false,
+    semanticDivergenceError: null,
+    hasDivergenceContent: false,
+  });
+  assert.equal(view.narrative, "Waiting for the 3D model.");
 });
 
 test("creative state uses error, loading, ready, locked precedence", () => {
@@ -119,4 +168,15 @@ test("Gate acknowledgement keeps divergence visibly loading until candidates hyd
     derive?.({ revisionStatus: "failed", revisionError: "model timeout", resultStatus: null, hasCandidates: false }),
     { loading: false, error: "model timeout" },
   );
+});
+
+test("observe narrative looks at a viewport screenshot instead of part names", async () => {
+  const store = await readFile(new URL("../src/state/studioStore.ts", import.meta.url), "utf8");
+  const start = store.indexOf("look at the viewport screenshot");
+  const block = store.slice(start, store.indexOf("solutionSpaceSignature", start));
+  assert.match(block, /captureJpeg\?\.\(360, 0\.48\)/);
+  assert.match(block, /preview_image: preview/);
+  assert.match(block, /parts: \[\]/);
+  assert.match(block, /viewport_orbit_count/);
+  assert.doesNotMatch(block, /humanParts/);
 });

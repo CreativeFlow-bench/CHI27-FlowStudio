@@ -52,9 +52,32 @@ test("Gate-started divergence automatically reveals AI Behavior on small screens
 
 test("canvas navigation stays viewport-anchored instead of covering top workspace panels", async () => {
   const layout = await read("../src/workspaceLayout.css");
+  const css = await read("../src/styles.css");
+  const canvas = await read("../src/components/StudioCanvas.tsx");
 
   assert.match(layout, /\.canvas-nav\s*\{[^}]*position:\s*fixed;[^}]*bottom:/s);
   assert.match(layout, /@media \(max-width:\s*1149px\)[\s\S]*?\.canvas-nav\s*\{[^}]*--workspace-safe-bottom/s);
+  assert.match(css, /\.version-canvas-shell\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0/s);
+  assert.match(canvas, /createPortal\(shell, shellHost\)/);
+  assert.match(layout, /--active-editor-width:\s*calc\(100vw - var\(--workspace-safe-left\) - var\(--workspace-safe-right\)\)/);
+});
+
+test("collapsing Perception does not shift the rest of the workspace", async () => {
+  const layout = await read("../src/workspaceLayout.css");
+  assert.match(layout, /\.studio-shell\.perception-collapsed \.perception-float\s*\{/);
+  assert.doesNotMatch(
+    layout,
+    /\.studio-shell\.perception-collapsed\s*\{[^}]*--workspace-safe-left/s,
+  );
+});
+
+test("collapsing AI Behavior does not shift the rest of the workspace", async () => {
+  const layout = await read("../src/workspaceLayout.css");
+  assert.match(layout, /\.studio-shell\.ai-behavior-collapsed \.ai-behavior-float\s*\{/);
+  assert.doesNotMatch(
+    layout,
+    /\.studio-shell\.ai-behavior-collapsed\s*\{[^}]*--workspace-safe-right/s,
+  );
 });
 
 test("motion-heavy UI honors reduced-motion preferences", async () => {
@@ -99,6 +122,7 @@ test("Solution Space can be collapsed, reopened, and stays collapsed while image
   assert.match(main, /aria-label="Open Solution Space"/);
   assert.match(main, /is-ready/);
   assert.match(rail, />\s*收起\s*</);
+  assert.doesNotMatch(rail, /roundChips\.length\) return null/);
   assert.match(css, /\.solution-space-collapse\s*\{[^}]*min-width:\s*56px/s);
   assert.match(main, /type: "expand"/);
   assert.match(visibility, /action\.type === "expand"\) return false/);
@@ -107,6 +131,7 @@ test("Solution Space can be collapsed, reopened, and stays collapsed while image
 
 test("version canvas is an accessible candidate drop target", async () => {
   const canvas = await read("../src/components/StudioCanvas.tsx");
+  assert.match(canvas, /cloneElement\(gateOverlay/);
   assert.match(canvas, /aria-label="Version history canvas drop target"/);
   assert.match(canvas, /onDragOver=/);
   assert.match(canvas, /onDrop=/);
@@ -145,21 +170,54 @@ test("version nodes expose status and retry affordances", async () => {
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const css = await read("../src/styles.css");
   assert.match(canvas, /Version \{node\.versionNumber\}/);
-  assert.match(canvas, /正在生成 3D/);
-  assert.match(canvas, /可编辑 3D/);
-  assert.match(canvas, /3D 失败/);
+  assert.doesNotMatch(canvas, /<span>\{node\.label\}<\/span>/);
+  assert.doesNotMatch(canvas, /3D 失败/);
   assert.match(canvas, /aria-label=\{`重试 Version \$\{node\.versionNumber\} 的 3D 生成`\}/);
+  assert.match(canvas, /hy3dProgress\?\.message/);
+  assert.doesNotMatch(canvas, /HY3D_PROGRESS_LINES/);
+  assert.doesNotMatch(canvas, /setInterval/);
+  assert.match(css, /\.version-hy3d-progress\s*\{/);
   assert.match(css, /\.version-canvas-shell\.is-drop-target/);
   assert.match(css, /\.version-link\.is-active-path/);
+  assert.match(canvas, /luma > 242 && spread < 18/);
+  assert.match(canvas, /const liveMesh = Boolean/);
+  assert.match(canvas, /version-thumb-media/);
+  assert.match(css, /mix-blend-mode:\s*multiply/);
+  assert.match(css, /\.version-thumb-media/);
+  assert.match(canvas, /!src\.startsWith\(window\.location\.origin\)/);
+  assert.match(css, /\.version-active-image\s*\{[^}]*background:\s*transparent/s);
+  assert.doesNotMatch(css, /e8edf4/);
 });
 
-test("version focus has an explicit overview exit and every thumbnail can re-enter", async () => {
+test("Hy3D success adopts the mesh and forces SAM3D part discovery", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const canvas = await read("../src/components/StudioCanvas.tsx");
+  const helpers = await read("../src/utils/appHelpers.ts");
+  assert.match(store, /adoptHy3dMeshAsActiveAsset/);
+  assert.match(store, /source: "hy3d_generated"/);
+  assert.match(store, /remote_asset: remotePath \? \{ path: remotePath \}/);
+  assert.match(store, /discoverPartsForAsset\(adopted, "hy3d"\)/);
+  assert.match(store, /sam3d_real: true/);
+  assert.match(store, /wait_timeout_sec: 480/);
+  assert.match(canvas, /partSegmentationUrl\(parts\) \?\? node\.meshUrl/);
+  assert.match(helpers, /export function remoteWorkerPathFromUrl/);
+  assert.match(helpers, /export function partViewportMatchName/);
+});
+
+test("version overview keeps the focused node highlighted and re-enters on double-click", async () => {
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const main = await read("../src/main.tsx");
+  const store = await read("../src/state/studioStore.ts");
+  const css = await read("../src/styles.css");
   assert.match(canvas, /aria-label="查看全部版本"/);
-  assert.match(canvas, /versionViewMode === "active"/);
-  assert.match(main, /versionViewMode=\{versionViewMode\}/);
+  assert.match(canvas, /onHighlightVersion/);
+  assert.match(canvas, /onDoubleClick=\{\(\) => onActivateVersion/);
+  assert.match(canvas, /单击高亮接入点/);
   assert.match(main, /onShowOverview=\{\(\) => focusVersionCanvas\("all"\)\}/);
+  assert.match(main, /onHighlightVersion=\{\(nodeId, candidate\) => void highlightVersionNode/);
+  assert.match(store, /const parentNodeId = activeNode\?\.node_id \?\? sourceNodeId/);
+  assert.match(css, /\.version-node\.thumbnail\.is-active-version/);
+  assert.match(css, /\.version-node\.thumbnail:not\(\.is-active-version\)/);
 });
 
 test("floating panels stay inside the viewport after resize", async () => {

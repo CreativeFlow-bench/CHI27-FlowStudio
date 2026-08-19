@@ -59,8 +59,8 @@ test("keeps the first branch on the horizontal spine", () => {
   const result = layoutVersionGraph([source, v2], "v2");
   const byId = Object.fromEntries(result.nodes.map((item) => [item.id, item]));
 
-  assert.equal(byId.source.y, 0);
   assert.equal(byId.v2.y, 0);
+  assert.equal(byId.source.y, 0);
   assert.ok(byId.source.x < byId.v2.x);
 });
 
@@ -70,7 +70,7 @@ test("opens a ternary fan: forward, then up, then down", () => {
   const byId = Object.fromEntries(result.nodes.map((item) => [item.id, item]));
 
   assert.equal(byId.source.y, 0);
-  assert.equal(byId.v2.y, 0, "first sibling stays horizontal");
+  assert.equal(byId.v2.y, 0, "first sibling stays on the spine");
   assert.ok(byId.sibling.y < 0, "second sibling goes up");
   assert.ok(byId.third.y > 0, "third sibling goes down");
 });
@@ -101,6 +101,39 @@ test("keeps an active 520px node from covering a sibling history node", () => {
 });
 
 
+test("keeps an expanded active node from covering its first child", () => {
+  const result = layoutVersionGraph([source, v2], "source");
+  const byId = Object.fromEntries(result.nodes.map((item) => [item.id, item]));
+  const overlaps = !(
+    byId.source.x + byId.source.width <= byId.v2.x
+    || byId.v2.x + byId.v2.width <= byId.source.x
+    || byId.source.y + byId.source.height <= byId.v2.y
+    || byId.v2.y + byId.v2.height <= byId.source.y
+  );
+
+  assert.equal(overlaps, false);
+});
+
+
+test("keeps a viewport-sized active node from covering its first child", () => {
+  const result = layoutVersionGraph([source, v2], "source", true, { width: 1400, height: 900 });
+  const byId = Object.fromEntries(result.nodes.map((item) => [item.id, item]));
+
+  assert.equal(byId.source.width, 1400);
+  assert.ok(byId.source.x + byId.source.width <= byId.v2.x);
+});
+
+
+test("keeps a branch's descendants on that branch's row", () => {
+  const nephew = node("nephew", 6, "sibling");
+  const result = layoutVersionGraph([source, v2, sibling, nephew], "source");
+  const byId = Object.fromEntries(result.nodes.map((item) => [item.id, item]));
+
+  assert.equal(byId.nephew.y, byId.sibling.y);
+  assert.notEqual(byId.nephew.y, byId.v2.y);
+});
+
+
 test("keeps the active node at the main editing anchor", () => {
   const active = layoutVersionGraph([source, v2], "v2").nodes.find(
     (item) => item.id === "v2",
@@ -114,8 +147,9 @@ test("keeps the active node at the main editing anchor", () => {
 });
 
 test("centers the active editor on the free-area midpoint", () => {
-  const { computeCenteredActiveCanvasPan } = versionGraph as typeof versionGraph & {
+  const { computeCenteredActiveCanvasPan, computeOverviewCanvasCamera } = versionGraph as typeof versionGraph & {
     computeCenteredActiveCanvasPan: typeof versionGraph.computeCenteredActiveCanvasPan;
+    computeOverviewCanvasCamera: typeof versionGraph.computeOverviewCanvasCamera;
   };
   assert.deepEqual(
     computeCenteredActiveCanvasPan({
@@ -129,6 +163,23 @@ test("centers the active editor on the free-area midpoint", () => {
       nodeHeight: 600,
     }),
     { x: -500, y: 100 },
+  );
+  assert.deepEqual(
+    computeOverviewCanvasCamera(
+      [{ x: 640, y: 0, width: 220, height: 220 }],
+      { width: 1000, height: 800, centerX: 500, centerY: 400 },
+    ),
+    { zoom: 1, pan: { x: -250, y: 290 } },
+  );
+});
+
+
+test("overview layout stays put when the highlighted node changes", () => {
+  const highlightedLeaf = layoutVersionGraph([source, v2, v3], "v3", false);
+  const highlightedRoot = layoutVersionGraph([source, v2, v3], "source", false);
+  assert.deepEqual(
+    highlightedLeaf.nodes.map((item) => ({ id: item.id, x: item.x, y: item.y })),
+    highlightedRoot.nodes.map((item) => ({ id: item.id, x: item.x, y: item.y })),
   );
 });
 

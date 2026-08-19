@@ -728,6 +728,25 @@ export function partDiscoveryRemoteValue(response: PartDiscoveryResponse, key: s
   return String(value);
 }
 
+export function partViewportMatchName(part: PartRecord): string {
+  return [part.part_id, part.label, String(part.metadata?.source_part_id ?? "")]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(",");
+}
+
+export function remoteWorkerPathFromUrl(url: string | null | undefined): string | null {
+  const text = String(url || "").trim();
+  if (!text) return null;
+  const match = /[?&]path=([^&]+)/.exec(text);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
 export function partSegmentationUrl(parts: PartRecord[]) {
   for (const part of parts) {
     const value = part.metadata?.segmented_mesh_url;
@@ -745,11 +764,21 @@ export function isRenderableBenchmarkAsset(asset: BenchmarkAsset) {
 export function findPartByViewportName(parts: PartRecord[], name: string) {
   const normalized = name.trim();
   if (!normalized) return null;
+  const tokens = normalized.split(/[,|;/]/).map((item) => item.trim()).filter(Boolean);
+  const matches = (part: PartRecord, token: string) => {
+    const source = String(part.metadata?.source_part_id ?? "").trim();
+    const sourceTokens = source.split(/[,|;/]/).map((item) => item.trim()).filter(Boolean);
+    return (
+      part.part_id === token
+      || part.label === token
+      || source === token
+      || sourceTokens.includes(token)
+    );
+  };
   return (
-    parts.find((part) => part.part_id === normalized) ??
-    parts.find((part) => part.label === normalized) ??
-    parts.find((part) => String(part.metadata?.source_part_id ?? "") === normalized) ??
-    null
+    parts.find((part) => matches(part, normalized))
+    ?? tokens.map((token) => parts.find((part) => matches(part, token))).find(Boolean)
+    ?? null
   );
 }
 

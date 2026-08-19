@@ -60,7 +60,7 @@ test("AI Behavior keeps the approved insight hierarchy around More Creative", as
     }));
 
     assert.match(html, /More Creative\?/);
-    assert.match(html, />CURRENT PHENOMENON</);
+    assert.doesNotMatch(html, />CURRENT PHENOMENON</);
     assert.doesNotMatch(html, />MODEL DETAILS</);
     assert.doesNotMatch(html, /Confirm scope to start divergence/);
     assert.doesNotMatch(html, /请先选择至少一个当前发散候选/);
@@ -75,9 +75,10 @@ test("AI Behavior keeps the approved insight hierarchy around More Creative", as
 
     const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
     const layoutCss = await readFile(new URL("../src/workspaceLayout.css", import.meta.url), "utf8");
+    assert.doesNotMatch(css, /先确认当前改动范围/);
     assert.match(
       layoutCss,
-      /--ai-behavior-width:\s*clamp\(320px,\s*25vw,\s*380px\)/,
+      /--ai-behavior-width:\s*378px/,
     );
     assert.match(
       css,

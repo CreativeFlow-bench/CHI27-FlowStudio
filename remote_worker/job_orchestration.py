@@ -82,6 +82,59 @@ class PersistentJobStore(dict[str, WorkerJob]):
 
 jobs: PersistentJobStore = PersistentJobStore(RUN_ROOT)
 processes: dict[str, asyncio.subprocess.Process] = {}
+HY3D_PROGRESS_MARKER = "HY3D_PROGRESS "
+
+
+def apply_hy3d_progress_line(job: WorkerJob, line: str) -> bool:
+    """Update a live Hy3D job from a subprocess progress marker."""
+    index = line.find(HY3D_PROGRESS_MARKER)
+    if index < 0:
+        return False
+    try:
+        payload = json.loads(line[index + len(HY3D_PROGRESS_MARKER) :].strip())
+    except Exception:
+        return False
+    if not isinstance(payload, dict):
+        return False
+    message = payload.get("message")
+    if message:
+        job.message = str(message)
+    stage = payload.get("stage")
+    if stage:
+        job.stage = str(stage)
+    if payload.get("progress") is not None:
+        try:
+            job.progress = max(0.0, min(1.0, float(payload["progress"])))
+        except (TypeError, ValueError):
+            return False
+    job.updated_at = now_iso()
+    return True
+
+
+async def _watch_job_stdout(job_id: str, proc: asyncio.subprocess.Process, stdout_path: Path) -> None:
+    position = 0
+    while True:
+        ended = proc.returncode is not None
+        try:
+            data = stdout_path.read_bytes()
+        except FileNotFoundError:
+            data = b""
+        chunk = data[position:]
+        position = len(data)
+        if chunk:
+            job = jobs.get(job_id)
+            if job is not None:
+                changed = False
+                for line in chunk.decode("utf-8", errors="replace").splitlines():
+                    if apply_hy3d_progress_line(job, line):
+                        changed = True
+                if changed:
+                    jobs[job_id] = job
+        if ended:
+            return
+        await asyncio.sleep(0.4)
+
+
 def _v1_job_response(job: WorkerJob) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "job_id": job.job_id,
@@ -141,19 +194,27 @@ async def _run_job(job_id: str, cmd: list[str], env: dict[str, str], expected_re
     job = jobs[job_id]
     job.status = "running"
     job.stage = job.kind
-    job.progress = 0.2
-    job.message = "Process started"
+    if job.progress <= 0:
+        job.progress = 0.2
+    if not job.message:
+        job.message = "Process started"
     job.updated_at = now_iso()
     jobs[job_id] = job
 
+    env = dict(env)
+    env["PYTHONUNBUFFERED"] = "1"
     stdout_path = Path(job.work_dir) / "stdout.log"
     stderr_path = Path(job.work_dir) / "stderr.log"
-    with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+    with stdout_path.open("wb", buffering=0) as stdout, stderr_path.open("wb", buffering=0) as stderr:
         proc = await asyncio.create_subprocess_exec(*cmd, stdout=stdout, stderr=stderr, env=env)
         processes[job_id] = proc
         job.pid = proc.pid
         jobs[job_id] = job
-        return_code = await proc.wait()
+        watcher = asyncio.create_task(_watch_job_stdout(job_id, proc, stdout_path))
+        try:
+            return_code = await proc.wait()
+        finally:
+            await watcher
 
     job.updated_at = now_iso()
     job.progress = 1
@@ -174,6 +235,8 @@ async def _run_job(job_id: str, cmd: list[str], env: dict[str, str], expected_re
         job.stage = "failed"
         job.message = "Process failed"
         job.error = _clean_log_text(stderr_path.read_text(encoding="utf-8", errors="replace"))[-4000:]
+        if not job.error.strip():
+            job.error = _clean_log_text(stdout_path.read_text(encoding="utf-8", errors="replace"))[-4000:]
         result_path = _find_result(Path(job.work_dir), expected_result_name)
         job.result = {
             "return_code": return_code,

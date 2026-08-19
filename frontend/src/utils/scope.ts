@@ -17,14 +17,14 @@ export function inferredChangeScope(
 
 export function inferChangeScopeFromText(text: string, _selectedPartLabel?: string | null): "contour" | "part" | "material" {
   const normalized = text.toLowerCase();
-  if (/material|texture|surface|color|fabric|finish|材质|纹理|颜色|表面/.test(normalized)) return "material";
+  if (/material|texture|surface|color|fabric|finish|\bwood(?:en)?\b|\bmetal(?:lic)?\b|marble|材质|纹理|颜色|表面|木质|木头|金属/.test(normalized)) return "material";
   if (/part|component|local|brush|部件|组件|局部|某个部分|当前部分/.test(normalized)) return "part";
   return "contour";
 }
 
 export function explicitScopeFromText(text: string): "contour" | "part" | "material" | null {
   const normalized = text.toLowerCase();
-  if (/material|texture|surface|color|fabric|finish|材质|纹理|颜色|表面/.test(normalized)) return "material";
+  if (/material|texture|surface|color|fabric|finish|\bwood(?:en)?\b|\bmetal(?:lic)?\b|marble|材质|纹理|颜色|表面|木质|木头|金属/.test(normalized)) return "material";
   if (/part|component|local|brush|部件|组件|局部|某个部分|当前部分/.test(normalized)) return "part";
   if (/contour|silhouette|outline|shape|form|整体|轮廓|外形|形体|造型/.test(normalized)) return "contour";
   return null;

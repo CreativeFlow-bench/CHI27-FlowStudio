@@ -320,6 +320,7 @@ export type RemoteWorkerHealth = {
   ok: boolean;
   configured?: boolean;
   pipeline_root?: string;
+  python_bin?: string;
   python_bin_exists?: boolean;
   original_pipeline_exists?: boolean;
   transfer_script_exists?: boolean;

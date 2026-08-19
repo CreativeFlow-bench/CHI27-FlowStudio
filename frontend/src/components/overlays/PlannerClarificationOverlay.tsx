@@ -25,21 +25,24 @@ function bubblePlacement(anchor: ModelAnchor | null | undefined, index: number) 
     const side = index % 3 === 1 ? "left" : index % 3 === 2 ? "top" : "right";
     return { side, style: undefined as CSSProperties | undefined };
   }
-  const modelCenterX = anchor.left + anchor.width / 2;
-  const preferRight = modelCenterX < anchor.columnWidth * 0.55;
-  const side = preferRight ? "right" : "left";
   const bubbleWidth = 220;
-  const gap = 18;
+  const gap = 12;
   const top = Math.max(12, Math.min(
     anchor.columnHeight - 120,
     anchor.top + anchor.height * 0.35 - 24 + index * 96,
   ));
+  const rightLeft = anchor.left + anchor.width + gap;
+  const leftLeft = anchor.left - bubbleWidth - gap;
+  const fitsRight = rightLeft + bubbleWidth <= anchor.columnWidth - 8;
+  const fitsLeft = leftLeft >= 8;
+  const preferRight = fitsRight && (!fitsLeft || (anchor.left + anchor.width / 2) < anchor.columnWidth * 0.55);
   const left = preferRight
-    ? Math.min(anchor.columnWidth - bubbleWidth - 12, anchor.left + anchor.width + gap)
-    : Math.max(12, anchor.left - bubbleWidth - gap);
+    ? Math.min(anchor.columnWidth - bubbleWidth - 8, Math.max(8, rightLeft))
+    : Math.max(8, Math.min(anchor.columnWidth - bubbleWidth - 8, leftLeft));
   return {
-    side,
+    side: preferRight ? "right" : "left",
     style: {
+      position: "absolute",
       left,
       top,
       right: "auto",
@@ -78,7 +81,7 @@ export function PlannerClarificationOverlay({
   const visibleGateModes = gateModes?.length ? gateModes : gateMode ? [gateMode] : [];
   if (visibleGateModes.length) {
     return (
-      <div className={`planner-clarification-overlay pending multi-gate${modelAnchor ? " is-anchored" : ""}`} aria-label="Intent Gate questions">
+      <div className="planner-clarification-overlay pending multi-gate is-anchored" aria-label="Intent Gate questions">
         {visibleGateModes.map((mode, index) => {
           const placement = bubblePlacement(modelAnchor, index);
           return (
@@ -133,7 +136,7 @@ export function PlannerClarificationOverlay({
         : [];
   if (!bubbles.length) return null;
   return (
-    <div className={`planner-clarification-overlay pending${modelAnchor ? " is-anchored" : ""}`} aria-label="Planner clarification bubbles">
+    <div className="planner-clarification-overlay pending is-anchored" aria-label="Planner clarification bubbles">
       {bubbles.map((bubble, index) => {
         const placement = bubblePlacement(modelAnchor, index);
         return (

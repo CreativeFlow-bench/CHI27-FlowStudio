@@ -171,8 +171,7 @@ export function AIBehaviorPanel({
       </header>
       <div className="ai-behavior-panel-body">
         <div className="ai-insight-stack">
-          <section className="ai-insight-card ai-phenomenon-card" aria-labelledby="current-phenomenon-title">
-            <span id="current-phenomenon-title">CURRENT PHENOMENON</span>
+          <section className="ai-insight-card ai-phenomenon-card" aria-label="Current phenomenon">
             <p aria-live="polite" className="ai-phenomenon-typewriter">{typedNarrative}<span className="ai-phenomenon-caret" aria-hidden="true" /></p>
           </section>
         </div>
@@ -203,9 +202,18 @@ export function AIBehaviorPanel({
               value={divergenceTemperature}
               disabled={!scopeReady}
               onChange={(event) => onDivergenceTemperatureChange(Number(event.target.value))}
-              onPointerUp={onDivergenceParametersCommit}
-              onKeyUp={onDivergenceParametersCommit}
-              onBlur={onDivergenceParametersCommit}
+              onPointerUp={(event) => {
+                onDivergenceTemperatureChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
+              onKeyUp={(event) => {
+                onDivergenceTemperatureChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
+              onBlur={(event) => {
+                onDivergenceTemperatureChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
             />
           </label>
           <label className="mc-param mc-content-param">
@@ -220,9 +228,18 @@ export function AIBehaviorPanel({
               value={divergencePerGroupCount}
               disabled={!scopeReady}
               onChange={(event) => onDivergencePerGroupCountChange(Number(event.target.value))}
-              onPointerUp={onDivergenceParametersCommit}
-              onKeyUp={onDivergenceParametersCommit}
-              onBlur={onDivergenceParametersCommit}
+              onPointerUp={(event) => {
+                onDivergencePerGroupCountChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
+              onKeyUp={(event) => {
+                onDivergencePerGroupCountChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
+              onBlur={(event) => {
+                onDivergencePerGroupCountChange(Number(event.currentTarget.value));
+                onDivergenceParametersCommit();
+              }}
             />
             <span className="mc-content-segments" aria-hidden="true">
               {[5, 6, 7, 8].map((amount) => (

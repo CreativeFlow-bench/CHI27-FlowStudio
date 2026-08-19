@@ -3,7 +3,7 @@
   --workspace-gap: 16px;
   /* Live panel sizes (overridden from React when panels resize). */
   --perception-width: 320px;
-  --ai-behavior-width: 340px;
+  --ai-behavior-width: 378px;
   --solution-space-height: 168px;
   --solution-space-left: calc(var(--workspace-edge) + var(--perception-width) + var(--workspace-gap));
   --solution-space-right: var(--workspace-edge);
@@ -15,8 +15,8 @@
   --workspace-safe-right: calc(var(--ai-behavior-width) + var(--workspace-edge) + var(--workspace-gap));
   --workspace-safe-bottom: var(--composer-reserve);
   --workspace-safe-left: calc(var(--perception-width) + var(--workspace-edge) + var(--workspace-gap));
-  --active-editor-width: calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right) - 24px);
-  --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom) - 24px);
+  --active-editor-width: calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right));
+  --active-editor-height: calc(100dvh - var(--workspace-safe-top) - var(--workspace-safe-bottom));
   width: 100vw;
   height: 100dvh;
   min-height: 0;
@@ -28,15 +28,28 @@
   --solution-space-right: var(--workspace-safe-right);
 }
 
-.studio-shell.ai-behavior-collapsed {
-  --workspace-safe-right: calc(52px + var(--workspace-edge) + var(--workspace-gap));
-}
-
 .workspace,
-.canvas-column,
-.workspace-chrome {
+.canvas-column {
   min-width: 0;
   min-height: 0;
+  pointer-events: none;
+}
+
+.workspace {
+  z-index: 2;
+}
+
+.canvas-loading,
+.perception-float-shell,
+.ai-behavior-float-shell,
+.canvas-composer-shell-resizable,
+.canvas-nav,
+.solution-space-rail,
+.solution-space-launcher,
+.planner-clarification-overlay,
+.intent-bead-overlay,
+.clear-history-fab {
+  pointer-events: auto;
 }
 
 .canvas-column {
@@ -140,6 +153,33 @@
 
 .studio-shell.ai-behavior-collapsed .ai-behavior-float-shell .resize-handle,
 .studio-shell.ai-behavior-collapsed .mobile-panel-toggle {
+  display: none;
+}
+
+.studio-shell.perception-collapsed .perception-float {
+  width: auto;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.studio-shell.perception-collapsed .perception-float .float-panel-label > span,
+.studio-shell.perception-collapsed .perception-float .observe-current,
+.studio-shell.perception-collapsed .perception-float .observe-toggle,
+.studio-shell.perception-collapsed .perception-float .observe-log,
+.studio-shell.perception-collapsed .perception-float .perception-eye {
+  display: none;
+}
+
+.studio-shell.perception-collapsed .perception-float .observe-head {
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-bottom: 0;
+}
+
+.studio-shell.perception-collapsed .perception-float-shell .resize-handle {
   display: none;
 }
 
@@ -273,8 +313,14 @@
 
 .canvas-composer-shell {
   position: fixed;
+  left: calc(var(--workspace-safe-left) + (100vw - var(--workspace-safe-left) - var(--workspace-safe-right)) / 2);
   bottom: 24px;
-  width: min(var(--shell-width, 576px), calc(100vw - 48px));
+  z-index: 16;
+  transform: translateX(-50%);
+  width: min(
+    var(--shell-width, 400px),
+    calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right) - 32px)
+  );
   max-height: calc(100dvh - 48px);
 }
 

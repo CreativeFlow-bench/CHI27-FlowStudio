@@ -2,7 +2,7 @@
  * Privacy-safe summary of the user's current interaction and recent operations.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Eye } from "lucide-react";
+import { ChevronDown, Eye, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { BehaviorSession, LiveObservationState, LivePerception } from "../../types";
 import {
   buildPerceptionDisplay,
@@ -44,6 +44,8 @@ export function PerceptionPanel({
   liveObservation,
   behaviorSessions,
   hasModel,
+  collapsed = false,
+  onCollapsedChange,
 }: {
   perceptionHistoryOpen: boolean;
   onToggleHistory: () => void;
@@ -52,6 +54,8 @@ export function PerceptionPanel({
   liveObservation?: LiveObservationState | null;
   behaviorSessions: BehaviorSession[];
   hasModel: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);
@@ -93,7 +97,7 @@ export function PerceptionPanel({
 
   return (
     <section
-      className={`perception-float float-panel observe-float${perceptionHistoryOpen ? " is-open" : ""}${expanded ? " is-expanded" : ""}`}
+      className={`perception-float float-panel observe-float${perceptionHistoryOpen ? " is-open" : ""}${expanded ? " is-expanded" : ""}${collapsed ? " is-collapsed" : ""}`}
       aria-label="Perception"
       style={{ left: styleLeft }}
     >
@@ -122,6 +126,17 @@ export function PerceptionPanel({
             onClick={onToggleHistory}
           >
             <ChevronDown size={15} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="drawer-toggle"
+            aria-label={collapsed ? "Expand Perception" : "Collapse Perception"}
+            aria-pressed={collapsed}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Expand Perception" : "Collapse Perception"}
+            onClick={() => onCollapsedChange?.(!collapsed)}
+          >
+            {collapsed ? <PanelLeftOpen size={15} aria-hidden="true" /> : <PanelLeftClose size={15} aria-hidden="true" />}
           </button>
         </div>
       </header>

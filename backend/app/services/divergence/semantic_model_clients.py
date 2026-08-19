@@ -18,7 +18,10 @@ from app.services.model_api.types import ModelStage
 _SYSTEM_PROMPT = """You are FlowStudio's semantic-divergence generator.
 Return a JSON object whose candidates field follows the exact count and group quotas in
 the response schema. Each display_label_zh
-must be 2–8个字, not a complete sentence. Never use Aesthetic, Structural, Functional,
+must be 2–8个字, not a complete sentence. Mix lengths in every group: some 2–4字 everyday
+words a designer can picture at a glance (绒帽, 金缝, 扎染, 波点, 编织), plus some 5–7字
+specific phrases (针织红帽, 荧光接缝). Do not pad every label to 6–8 stacked compounds
+such as 分形切面多彩体 or 像素方块矩阵. Never use Aesthetic, Structural, Functional,
 Cross-domain, shape, connection, material, surface, silhouette, or ornament as a label.
 Each item must contain group, target_ref, operation, semantic_anchor, prompt_phrase,
 attribute_delta, and scores. candidate_id must be unique; label_en is required. group must
@@ -158,7 +161,7 @@ class _SemanticGenerator:
                 "candidates": [
                     {
                         "candidate_id": "unique_short_id",
-                        "display_label_zh": "2–8个字",
+                        "display_label_zh": "短词或短语，如绒帽/彩虹灯串",
                         "label_en": "short concrete English label",
                         "group": "shape | connection | surface | semantic_transfer",
                         "target_ref": {
@@ -186,6 +189,7 @@ class _SemanticGenerator:
                 **({"group_quotas": group_quotas} if group_quotas is not None else {}),
                 "requirements": [
                     f"Return exactly {candidate_count} candidates and keep every text field concise.",
+                    "Mix short (2–4字) and longer (5–7字) display_label_zh in each group; keep labels concrete and easy to read.",
                     "Return only the JSON object; do not rename keys.",
                     (
                         f"Return exactly {per_group_count} candidates in each of shape, connection, surface, and semantic_transfer."

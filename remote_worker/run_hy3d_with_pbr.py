@@ -15,10 +15,11 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 
-PYTHON_BIN = Path(os.getenv("CF_WORKER_PYTHON", "/root/autodl-tmp/venvs/torch5090/bin/python"))
+PYTHON_BIN = Path(os.getenv("CF_WORKER_PYTHON") or os.getenv("CF_HY3D_PYTHON") or sys.executable)
 PBR_SCRIPT = Path(
     os.getenv(
         "CF_PBR_SCRIPT",
@@ -40,13 +41,7 @@ BLENDER = Path(
 
 
 def _run(cmd: list[str], timeout: int = 1800) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [str(part) for part in cmd],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=timeout,
-    )
+    return subprocess.run([str(part) for part in cmd], timeout=timeout)
 
 
 def _texture_item(item: dict, out_dir: Path) -> dict:
@@ -71,8 +66,12 @@ def _texture_item(item: dict, out_dir: Path) -> dict:
     pbr_obj = pbr_dir / "mesh_pbr.obj"
     if pbr.returncode != 0 or not pbr_obj.exists():
         print(f"PBR skipped for {candidate_id}: rc={pbr.returncode}", flush=True)
-        print((pbr.stdout or "")[-1200:], flush=True)
         return item
+    print(
+        "HY3D_PROGRESS "
+        + json.dumps({"stage": "export", "progress": 0.84, "message": "导出 GLB"}, ensure_ascii=False),
+        flush=True,
+    )
     pbr_glb = pbr_dir / "mesh_pbr.glb"
     convert = _run(
         [
@@ -89,7 +88,6 @@ def _texture_item(item: dict, out_dir: Path) -> dict:
     )
     if convert.returncode != 0 or not pbr_glb.exists():
         print(f"PBR GLB convert skipped for {candidate_id}: rc={convert.returncode}", flush=True)
-        print((convert.stdout or "")[-1200:], flush=True)
         return item
     item["mesh_glb"] = str(pbr_glb)
     item["mesh_obj"] = str(pbr_obj)
@@ -131,21 +129,35 @@ def main() -> int:
         "--max-candidates",
         str(args.max_candidates),
     ]
+    print(
+        "HY3D_PROGRESS "
+        + json.dumps({"stage": "shape", "progress": 0.22, "message": "重建形体"}, ensure_ascii=False),
+        flush=True,
+    )
     hy3d = _run(hy3d_cmd, timeout=2400)
     summary_path = out_dir / "hunyuan3d_post_summary.json"
     if hy3d.returncode != 0:
-        print("Hy3D failed:", (hy3d.stdout or "")[-3000:], flush=True)
+        print(f"Hy3D failed: rc={hy3d.returncode}", flush=True)
         return hy3d.returncode
     if not summary_path.exists():
         print(f"Hy3D summary missing: {summary_path}", flush=True)
-        print((hy3d.stdout or "")[-3000:], flush=True)
         return 1
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     if args.pbr:
+        print(
+            "HY3D_PROGRESS "
+            + json.dumps({"stage": "pbr", "progress": 0.62, "message": "绘制 PBR 材质"}, ensure_ascii=False),
+            flush=True,
+        )
         items = summary.get("items") or []
         textured = [_texture_item(item, out_dir) for item in items]
         summary["items"] = textured
         summary["pbr_enabled"] = True
+    print(
+        "HY3D_PROGRESS "
+        + json.dumps({"stage": "export", "progress": 0.9, "message": "写入网格"}, ensure_ascii=False),
+        flush=True,
+    )
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2),
         encoding="utf-8",

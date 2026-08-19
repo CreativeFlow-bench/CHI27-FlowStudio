@@ -13,7 +13,7 @@ import type { CanvasDisplayMode, CanvasPrimitive } from "../../types";
 
 export function buildPrimitiveObject(primitive: Exclude<CanvasPrimitive, null>) {
   const material = new THREE.MeshStandardMaterial({
-    color: "#b7c4d4",
+    color: "#6b7c93",
     roughness: 0.72,
     metalness: 0.03,
   });
@@ -121,10 +121,16 @@ export function applyDisplayMaterial(
   index: number,
   partCount: number,
 ) {
+  const hasMaps = Boolean(material.map || material.roughnessMap || material.metalnessMap || material.normalMap);
   if (displayMode === "textured") {
+    if (hasMaps) {
+      material.envMapIntensity = 1;
+      return;
+    }
+    material.envMapIntensity = 0;
     const luminance = 0.2126 * material.color.r + 0.7152 * material.color.g + 0.0722 * material.color.b;
-    if (!material.map && luminance > 0.72) {
-      material.color.set("#9eacbd");
+    if (luminance > 0.72) {
+      material.color.set("#6b7c93");
       material.metalness = 0.02;
     }
     material.roughness = Math.min(material.roughness, 0.68);
@@ -134,6 +140,7 @@ export function applyDisplayMaterial(
   material.normalMap = null;
   material.roughnessMap = null;
   material.metalness = 0.02;
+  material.envMapIntensity = 0;
   if (displayMode === "parts") {
     const palette = ["#4f7bd9", "#45a67b", "#d99b3d", "#c65f79", "#7d65c7", "#49aebd"];
     material.color = new THREE.Color(palette[index % Math.max(1, Math.min(partCount || 1, palette.length))]);
@@ -146,7 +153,7 @@ export function applyDisplayMaterial(
     material.roughness = 0.5;
     return;
   }
-  material.color = new THREE.Color("#b9c1cc");
+  material.color = new THREE.Color("#6b7c93");
   material.roughness = 0.82;
 }
 
@@ -199,7 +206,7 @@ export function fitLoadedModel(
   root.position.sub(center);
   root.scale.setScalar(2.5 / maxDimension);
   controls.target.set(0, 0, 0);
-  camera.position.set(0, Math.max(1.2, size.y / maxDimension), 5.2);
+  camera.position.set(0, 0, 5.2);
   camera.lookAt(controls.target);
   controls.update();
 }
@@ -215,13 +222,27 @@ export function stageLoadedModel(
   root.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.material = standardizeMeshMaterial(child.material);
-      trackMesh(child, interactive, child.name || "body");
+      const inherited = child.name || child.parent?.name || "body";
+      trackMesh(child, interactive, inherited);
     }
   });
   const firstMesh = root.getObjectByProperty("isMesh", true) as THREE.Mesh | undefined;
   group.scale.setScalar(1);
   group.add(root);
   return firstMesh?.geometry ?? null;
+}
+
+function nameTokens(value: string) {
+  return value.split(/[,|;/]/).map((item) => item.trim()).filter(Boolean);
+}
+
+export function meshNameMatches(meshName: string, target: string) {
+  if (!meshName || !target) return false;
+  if (meshName === target) return true;
+  const meshTokens = nameTokens(meshName);
+  const targetTokens = nameTokens(target);
+  if (targetTokens.includes(meshName) || meshTokens.includes(target)) return true;
+  return targetTokens.some((token) => meshTokens.includes(token));
 }
 
 export function updateSceneMaterials(
@@ -236,8 +257,8 @@ export function updateSceneMaterials(
     for (const material of materials) {
       if (material instanceof THREE.MeshStandardMaterial) {
         applyDisplayMaterial(material, displayMode, index, partCount);
-        const isSelected = mesh.name === selectedName;
-        const isHovered = !isSelected && hoverName && mesh.name === hoverName;
+        const isSelected = meshNameMatches(mesh.name, selectedName);
+        const isHovered = !isSelected && Boolean(hoverName) && meshNameMatches(mesh.name, hoverName);
         material.emissive = new THREE.Color(isSelected ? "#2563eb" : isHovered ? "#f59e0b" : "#000000");
         material.emissiveIntensity = isSelected ? 0.28 : isHovered ? 0.18 : 0;
       }
@@ -275,7 +296,7 @@ export function loadStudioModel(url: string, fallbackUrl: string | null, handler
       loadObjWithOptionalMtl(resolved, targetUrl, (object) => {
         object.traverse((child) => {
           if (child instanceof THREE.Mesh) {
-            child.name = child.name || "body";
+            child.name = child.name || child.parent?.name || "body";
           }
         });
         onLoaded(object);

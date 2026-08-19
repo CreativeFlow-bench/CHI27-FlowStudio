@@ -371,15 +371,35 @@ export function createMeshSelectionHandlers(opts: {
   onHover(name: string): void;
 }) {
   const { renderer, camera, raycaster, pointer, interactive, isSculpting, onSelect, onHover } = opts;
-  const throttleMs = opts.hoverThrottleMs ?? 250;
+  const throttleMs = opts.hoverThrottleMs ?? 40;
+  const pickHitName = (hits: THREE.Intersection[]) => {
+    if (!hits.length) return "";
+    const nearest = hits[0];
+    const near = hits.filter((hit) => hit.distance <= nearest.distance + 0.02);
+    const spanOf = (object: THREE.Object3D) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.geometry) return Number.POSITIVE_INFINITY;
+      if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+      const radius = mesh.geometry.boundingSphere?.radius ?? 1;
+      const scale = mesh.scale;
+      return radius * Math.max(scale.x, scale.y, scale.z);
+    };
+    near.sort((left, right) => spanOf(left.object) - spanOf(right.object));
+    const smallest = spanOf(near[0].object);
+    const names = near
+      .filter((hit) => spanOf(hit.object) <= smallest * 1.5)
+      .map((hit) => hit.object.name)
+      .filter(Boolean);
+    return [...new Set(names)].join(", ");
+  };
   const onPointerDown = (event: PointerEvent) => {
     if (isSculpting()) return;
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(interactive, true)[0];
-    if (hit?.object.name) onSelect(hit.object.name);
+    const name = pickHitName(raycaster.intersectObjects(interactive, true));
+    if (name) onSelect(name);
   };
   const onPointerMove = (event: PointerEvent) => {
     if (isSculpting()) return;
@@ -389,8 +409,7 @@ export function createMeshSelectionHandlers(opts: {
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(interactive, true)[0];
-    const name = hit?.object.name || "";
+    const name = pickHitName(raycaster.intersectObjects(interactive, true));
     if (name === opts.lastHover.name) return;
     opts.lastHover.name = name;
     opts.lastHover.at = now;

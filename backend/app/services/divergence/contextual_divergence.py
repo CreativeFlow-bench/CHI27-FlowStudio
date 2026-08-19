@@ -253,11 +253,11 @@ def _llm_enrich_fragments(
     )[:12]
     def build_messages(length_mode: str) -> list[dict[str, str]]:
         if length_mode == "short":
-            length_rule = "输出4个2-3个字的短词（不要超过3个字，也不要只有1个字）。"
-            example = '["霜感","堆雪","哑光","磨砂"]'
+            length_rule = "输出4个2-4个字、一眼能看懂的短词（如绒帽、金缝、扎染）。"
+            example = '["绒帽","金缝","扎染","波点"]'
         else:
-            length_rule = "输出4个6-12个字的描述性长短语（不要短于6个字）。"
-            example = '["雪面冰晶颗粒","仿皮毛抓雪纹理","粗糙雪粒堆积","冰晶雾面质感"]'
+            length_rule = "输出4个4-6个字的具体短语（不要堆抽象复合词，如不要写分形切面多彩体）。"
+            example = '["针织红帽","荧光接缝","彩虹灯串","水磨石面"]'
         return [
             {
                 "role": "system",
@@ -309,9 +309,9 @@ def _llm_enrich_fragments(
         attempt_items = parse_items(content)
         for item in attempt_items:
             label_len = len(item["label"])
-            if length_mode == "short" and not (2 <= label_len <= 3):
+            if length_mode == "short" and not (2 <= label_len <= 4):
                 continue
-            if length_mode == "long" and label_len < 6:
+            if length_mode == "long" and not (4 <= label_len <= 8):
                 continue
             if item["label"] not in {known["label"] for known in items}:
                 items.append(item)
@@ -320,8 +320,8 @@ def _llm_enrich_fragments(
     audit_info: dict[str, Any] = {
         "status": "ok",
         "count": len(items),
-        "shorts": sum(1 for item in items if len(item["label"]) <= 3),
-        "longs": sum(1 for item in items if len(item["label"]) >= 6),
+        "shorts": sum(1 for item in items if len(item["label"]) <= 4),
+        "longs": sum(1 for item in items if len(item["label"]) >= 5),
     }
     fragments: list[dict[str, Any]] = []
     seen = set(existing)

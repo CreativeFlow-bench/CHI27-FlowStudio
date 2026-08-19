@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import textwrap
 import urllib.error
 import urllib.parse
@@ -40,6 +41,7 @@ from mesh_utils import (
     transform_obj,
 )
 
+from hy3d_gpu_pool import gpu_pool
 from job_orchestration import (
     PersistentJobStore,
     WorkerJob,
@@ -59,34 +61,60 @@ from job_orchestration import (
 
 WORKER_ROOT = Path(__file__).resolve().parent
 PIPELINE_ROOT = Path(os.getenv("CF_PIPELINE_ROOT", "/root/creativeflow_pipeline"))
-PYTHON_BIN = Path(os.getenv("CF_WORKER_PYTHON", "/root/autodl-tmp/venvs/torch5090/bin/python"))
+PYTHON_BIN = Path(os.getenv("CF_WORKER_PYTHON") or os.getenv("CF_HY3D_PYTHON") or sys.executable)
 TRANSFER_SCRIPT = PIPELINE_ROOT / "pipeline_transfer_engine.py"
 TRANSFER_MINIMAL_SCRIPT = PIPELINE_ROOT / "pipeline_transfer_engine_minimal.py"
 ORIGINAL_PIPELINE_SCRIPT = PIPELINE_ROOT / "pipeline.py"
 HY3D_SCRIPT = PIPELINE_ROOT / "pipeline_hunyuan3d_post.py"
 MESH_WORKER_SCRIPT = PIPELINE_ROOT / "step4_mesh_worker_mv.py"
+_MV_MODEL_PATH = Path("/root/autodl-tmp/models/Hunyuan3D-2mv")
+
+
+def _hy3d_subprocess_env(device: str | None = None) -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(_read_env_exports(Path("/root/.oss_env")))
+    env.setdefault("CF_HY3D_PYTHON", str(PYTHON_BIN))
+    env.setdefault("HY21_ROOT", "/root/Hunyuan3D-2.1")
+    env.setdefault("HY21_MODEL_ROOT", "/root/models")
+    env.setdefault("CUDA_HOME", "/usr/local/cuda-12.4")
+    env["PYTHONUNBUFFERED"] = "1"
+    if device is not None:
+        env["CUDA_VISIBLE_DEVICES"] = device
+    if not _MV_MODEL_PATH.exists():
+        env.setdefault("CF_ENABLE_MULTIVIEW", "0")
+    return env
+
+
 RUN_ROOT = Path(os.getenv("FLOWSTUDIO_WORKER_RUN_ROOT", "/root/autodl-tmp/flowstudio_worker_runs"))
 ASSET_ROOT = Path(os.getenv("FLOWSTUDIO_WORKER_ASSET_ROOT", "/root/autodl-tmp/flowstudio_worker_assets"))
 BENCHMARK_INPUT_ROOT = Path(
     os.getenv("FLOWSTUDIO_BENCHMARK_INPUT_ROOT", str(PIPELINE_ROOT / "benchmark_inputs"))
 )
 OSS_PREFIX_ROOT = os.getenv("FLOWSTUDIO_OSS_PREFIX_ROOT", "creativeflow/flowstudio")
-QWEN_IMAGE_URL = os.getenv("CF_QWEN_IMAGE_URL", "http://127.0.0.1:18082/generate")
-QWEN_CONDITIONED_URL = os.getenv(
-    "CF_QWEN_CONDITIONED_URL", "http://127.0.0.1:18082/generate-conditioned"
-)
-# Live qwen3-planner (GPU2 tunnel).  Local 18084 is the legacy dead endpoint;
-# keep it only as a last-resort fallback when CF_PLANNER_API_BASE is unset.
-PLANNER_API_BASE = os.getenv(
-    "CF_PLANNER_API_BASE", "http://127.0.0.1:18085/v1"
-).rstrip("/")
-LEGACY_PLANNER_API_BASE = os.getenv(
-    "CF_LEGACY_PLANNER_API_BASE", "http://127.0.0.1:18084/v1"
-).rstrip("/")
+QWEN_IMAGE_URL = os.getenv("CF_QWEN_IMAGE_URL", "").strip()
+QWEN_CONDITIONED_URL = os.getenv("CF_QWEN_CONDITIONED_URL", "").strip()
+PLANNER_API_BASE = os.getenv("CF_PLANNER_API_BASE", "").rstrip("/")
+LEGACY_PLANNER_API_BASE = os.getenv("CF_LEGACY_PLANNER_API_BASE", "").rstrip("/")
 MODEL_PHASE_SCRIPT = Path(
     os.getenv("CF_MODEL_PHASE_SCRIPT", str(WORKER_ROOT / "model_phase.sh"))
 )
-HY3D_SEMAPHORE = asyncio.Semaphore(1)
+async def _run_hy3d_job(job_id: str, cmd: list[str], env: dict[str, str], expected_result_name: str) -> None:
+    job = jobs.get(job_id)
+    if job is not None:
+        job.message = "排队等待 GPU"
+        job.updated_at = now_iso()
+        jobs[job_id] = job
+    device = await gpu_pool().acquire()
+    try:
+        bound = dict(env)
+        bound["CUDA_VISIBLE_DEVICES"] = device
+        if job is not None:
+            job.message = f"已提交 Hunyuan3D · GPU {device}"
+            job.updated_at = now_iso()
+            jobs[job_id] = job
+        await _run_job(job_id, cmd, bound, expected_result_name)
+    finally:
+        gpu_pool().release(device)
 PROMPT_LIBRARY_PATH = Path(
     os.getenv("CF_PROMPT_LIBRARY_PATH", str(WORKER_ROOT / "prompt_library.json"))
 )
@@ -1286,6 +1314,13 @@ def _probe_url_with_env(
     timeout: float = 4.0,
     env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    if not (url or "").strip():
+        return {
+            "reachable": False,
+            "status": None,
+            "elapsed_sec": 0,
+            "error": "not configured",
+        }
     opener = urllib.request.build_opener(
         urllib.request.ProxyHandler(env or {})
     )
@@ -1635,7 +1670,8 @@ async def submit_transfer(req: TransferJobRequest) -> WorkerJob:
         env.setdefault("http_proxy", proxy)
         env.setdefault("CF_KB_CURL_PROXY", proxy)
         env.setdefault("CF_KG_PROXY", proxy)
-    env.setdefault("CF_QWEN_IMAGE_URL", "http://127.0.0.1:18082/generate")
+    if QWEN_IMAGE_URL:
+        env.setdefault("CF_QWEN_IMAGE_URL", QWEN_IMAGE_URL)
     env.setdefault("CF_QWEN_IMAGE_WIDTH", "512")
     env.setdefault("CF_QWEN_IMAGE_HEIGHT", "512")
     env.setdefault("CF_QWEN_IMAGE_STEPS", "4")
@@ -2586,19 +2622,23 @@ async def _run_staged_hy3d(
     job = jobs[job_id]
     job.stage = "mesh_generation"
     job.progress = 0.92
-    job.message = "Generating rough staged mesh with Hy3D"
+    job.message = "排队等待 GPU"
     job.updated_at = now_iso()
     jobs[job_id] = job
-    # Hunyuan3D is memory-heavy. Multiple CreativeFlow jobs may generate
-    # images concurrently, but their mesh stages must not overlap on one GPU.
-    async with HY3D_SEMAPHORE:
+    device = await gpu_pool().acquire()
+    try:
+        job.message = f"Generating rough staged mesh with Hy3D · GPU {device}"
+        job.updated_at = now_iso()
+        jobs[job_id] = job
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            env={**os.environ.copy(), **_read_env_exports(Path("/root/.oss_env"))},
+            env=_hy3d_subprocess_env(device),
         )
         stdout, stderr = await proc.communicate()
+    finally:
+        gpu_pool().release(device)
     summary_path = hy3d_out / "hunyuan3d_post_summary.json"
     summary: dict[str, Any] = {
         "cmd": cmd,
@@ -2816,9 +2856,12 @@ async def submit_hy3d(req: Hy3DJobRequest) -> WorkerJob:
         job.updated_at = now_iso()
         jobs[job.job_id] = job
         return job
-    env = os.environ.copy()
-    env.update(_read_env_exports(Path("/root/.oss_env")))
-    asyncio.create_task(_run_job(job.job_id, cmd, env, "hunyuan3d_post_summary.json"))
+    env = _hy3d_subprocess_env()
+    job.message = "已提交 Hunyuan3D"
+    job.progress = 0.08
+    job.updated_at = now_iso()
+    jobs[job.job_id] = job
+    asyncio.create_task(_run_hy3d_job(job.job_id, cmd, env, "hunyuan3d_post_summary.json"))
     return job
 
 
@@ -2900,9 +2943,12 @@ async def submit_hy3d_from_staged(req: Hy3DFromStagedJobRequest) -> WorkerJob:
         job.updated_at = now_iso()
         jobs[job.job_id] = job
         return job
-    env = os.environ.copy()
-    env.update(_read_env_exports(Path("/root/.oss_env")))
-    asyncio.create_task(_run_job(job.job_id, cmd, env, "hunyuan3d_post_summary.json"))
+    env = _hy3d_subprocess_env()
+    job.message = "已提交 Hunyuan3D"
+    job.progress = 0.08
+    job.updated_at = now_iso()
+    jobs[job.job_id] = job
+    asyncio.create_task(_run_hy3d_job(job.job_id, cmd, env, "hunyuan3d_post_summary.json"))
     return job
 
 

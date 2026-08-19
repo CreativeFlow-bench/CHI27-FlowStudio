@@ -26,7 +26,7 @@ from typing import Any
 
 
 REMOTE_WORKER = Path(__file__).resolve().parent
-PYTHON = os.getenv("CF_PYTHON", "/root/autodl-tmp/venvs/torch5090/bin/python")
+PYTHON = os.getenv("CF_PYTHON", "/root/miniconda3/envs/hunyuan3d21/bin/python")
 QWEN_BASE_URL = os.getenv("CF_QWEN_IMAGE_URL", "http://127.0.0.1:18082").rstrip("/")
 BLENDER = os.getenv(
     "CF_BLENDER",

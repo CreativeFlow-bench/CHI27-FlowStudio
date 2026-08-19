@@ -2702,6 +2702,18 @@ def test_cancel_job_forwards_to_remote_worker_and_records_results(monkeypatch) -
     ]
 
 
+def test_artifact_path_from_remote_worker_url() -> None:
+    from app.services.generation.autopartgen_adapter import _artifact_path_from_url
+
+    assert (
+        _artifact_path_from_url(
+            "/api/v1/remote-worker/artifact-file?path=%2Fremote%2Fhy3d%2Fmesh.glb"
+        )
+        == "/remote/hy3d/mesh.glb"
+    )
+    assert _artifact_path_from_url("/local/mesh.glb") is None
+
+
 def test_part_discovery_updates_asset_parts() -> None:
     session_id = client.post("/api/v1/sessions", json={"title": "Parts"}).json()["session_id"]
     asset = client.post(

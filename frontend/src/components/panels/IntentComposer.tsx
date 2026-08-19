@@ -2,7 +2,7 @@
  * Intent composer float panel: prompt input, sculpt/annotation tool bar,
  * primitive menu and pending behavior atom tray (refactor plan P1a).
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MousePointer2, Paintbrush, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { absoluteUrl } from "../../api";
 import type {
@@ -85,6 +85,7 @@ export function IntentComposer({
   onTriggerDivergence?: () => void;
   sculptSlot?: ReactNode;
 }) {
+  const intentRef = useRef<HTMLTextAreaElement>(null);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | null>(null);
   const behaviors = useMemo(
     () => [...behaviorSessions].sort((a, b) => a.behavior_seq - b.behavior_seq),
@@ -101,6 +102,13 @@ export function IntentComposer({
     setSelectedBehaviorId((current) => (current === behaviorId ? null : current));
   };
 
+  useLayoutEffect(() => {
+    const field = intentRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${field.scrollHeight}px`;
+  }, [intentText]);
+
   return (
     <div className="canvas-composer-shell">
       {sculptSlot}
@@ -108,8 +116,10 @@ export function IntentComposer({
         className={`canvas-composer float-panel${addMenuOpen ? " has-menu" : " is-compact"}`}
         aria-label="Intent composer"
       >
-      <input
+      <textarea
+        ref={intentRef}
         name="design-intent"
+        rows={1}
         autoComplete="off"
         value={intentText}
         aria-label="Design intent"
@@ -117,7 +127,7 @@ export function IntentComposer({
         onChange={(event) => onIntentChange(event.target.value)}
         onBlur={onIntentBlur}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.nativeEvent.isComposing && !sendDisabled) {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && !sendDisabled) {
             event.preventDefault();
             onSend();
           }

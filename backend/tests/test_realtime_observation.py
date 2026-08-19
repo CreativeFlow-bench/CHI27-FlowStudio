@@ -922,6 +922,37 @@ def test_material_request_is_not_negated_by_later_identity_constraint() -> None:
     assert revision["gate_question"] == "你想改变这个 snowman 的表面或材质吗？"
 
 
+def test_wooden_identity_uses_object_material_and_contour_not_hover_part() -> None:
+    revision = IntentRevision(
+        revision_id="intent_wooden_identity",
+        session_id="session_wooden_identity",
+        intent_seq=1,
+        window_start_seq=1,
+        cutoff_seq=1,
+        user_text="make this become a wooden one",
+        source_context=SourceContext(
+            asset_id="asset_santa",
+            object_type="Santa Head",
+            target_part_id="Mball.005",
+        ),
+    )
+    behavior = BehaviorSession(
+        behavior_id="behavior_hover_mball",
+        session_id=revision.session_id,
+        behavior_seq=1,
+        tool="brush",
+        target={"part_id": "Mball.005", "label": "Mball.005"},
+    )
+    target, scope, question = realtime_observation_service._compress_revision_gate(
+        revision,
+        [behavior],
+        "部件",
+        "part",
+    )
+    assert (target, scope) == ("Santa Head", "whole")
+    assert question == "你想改变这个 Santa Head 的材质和轮廓吗？"
+
+
 def test_stone_statue_narrative_routes_to_material_gate_not_silhouette() -> None:
     sid = _session()
     response = client.post(

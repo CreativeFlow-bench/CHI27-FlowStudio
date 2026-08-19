@@ -22,7 +22,7 @@ from urllib.request import Request, urlopen
 
 # id -> definition.  `start` is optional; when present, all paths inside the
 # command/cwd must exist before the service is offered as "startable".
-# Single-host deploy (westb): no Qwen planner / second-GPU tunnel.
+# Single-host deploy (weste): Hunyuan worker, no local Qwen-Image / planner.
 _SERVICE_DEFS: list[dict[str, Any]] = [
     {
         "id": "backend",
@@ -48,7 +48,7 @@ _SERVICE_DEFS: list[dict[str, Any]] = [
         "start": {
             "cwd": "/root/flowstudio_app/remote_worker",
             "cmd": [
-                "/root/autodl-tmp/venvs/torch5090/bin/python",
+                "/root/miniconda3/envs/hunyuan3d21/bin/python",
                 "-m",
                 "uvicorn",
                 "app:app",
@@ -57,7 +57,11 @@ _SERVICE_DEFS: list[dict[str, Any]] = [
                 "--port",
                 "18100",
             ],
-            "env": {"CF_QWEN_IMAGE_URL": "http://127.0.0.1:18082/generate"},
+            "env": {
+                "CF_WORKER_PYTHON": "/root/miniconda3/envs/hunyuan3d21/bin/python",
+                "CF_HY3D_PYTHON": "/root/miniconda3/envs/hunyuan3d21/bin/python",
+                "CF_HY3D_SLOTS_PER_GPU": "2",
+            },
         },
         "start_timeout_sec": 60,
     },
@@ -382,19 +386,13 @@ def bootstrap_status() -> dict[str, Any]:
 async def auto_bootstrap_infra() -> list[dict[str, Any]]:
     """Start infrastructure + required GPU model services on boot.
 
-    Cheap services (tunnel / worker / frontend / kg gateway) start synchronously
-    so the backend is usable quickly; GPU model services (planner tunnel,
-    Qwen-Image) are started in background tasks because first model load can
-    take minutes and must not block backend startup.
+    Cheap services (worker / frontend / kg gateway) start on boot.
+    Local Qwen-Image / planner are retired; images go through MODEL_API.
     """
     infra_ids = {
-        "planner_llm",
-        "intent_vlm",
         "kg_gateway",
-        "creativeflow_api",
         "remote_worker",
         "frontend",
-        "qwen_image",
     }
     started: list[dict[str, Any]] = []
     for definition in _definitions():
@@ -403,7 +401,7 @@ async def auto_bootstrap_infra() -> list[dict[str, Any]]:
         current = await _probe_one(definition)
         if current["state"] == "up":
             continue
-        if definition["id"] in {"qwen_image", "creativeflow_api", "kg_gateway"}:
+        if definition["id"] in {"kg_gateway"}:
             # GPU/network services: background so the backend does not wait.
             async def _boot_service(service_id: str = definition["id"]) -> None:
                 try:

@@ -10,7 +10,7 @@ CreativeFlow pipeline:
   /root/creativeflow_pipeline
 
 Python environment:
-  /root/autodl-tmp/venvs/torch5090/bin/python
+  /root/miniconda3/envs/hunyuan3d21/bin/python
 
 Transfer script:
   /root/creativeflow_pipeline/pipeline_transfer_engine.py
@@ -23,7 +23,7 @@ Run on the server:
 
 ```bash
 cd /path/to/remote_worker
-/root/autodl-tmp/venvs/torch5090/bin/uvicorn app:app --host 0.0.0.0 --port 18100
+/root/miniconda3/envs/hunyuan3d21/bin/python -m uvicorn app:app --host 0.0.0.0 --port 18100
 ```
 
 Endpoints:

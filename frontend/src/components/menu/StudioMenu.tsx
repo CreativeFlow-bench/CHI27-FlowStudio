@@ -12,6 +12,7 @@ import type {
   CaseRecord,
   JobRecord,
   ModelApiProbeResult,
+  RemoteWorkerHealth,
   SessionRecord,
   SystemServiceInfo,
   ExperimentProjectDetail,
@@ -171,6 +172,16 @@ export function StudioMenu({
   const [modelProbe, setModelProbe] = useState<ModelApiProbeResult | null>(null);
   const [modelProbeBusy, setModelProbeBusy] = useState(false);
   const [modelProbeError, setModelProbeError] = useState<string | null>(null);
+  const [hy3dProbe, setHy3dProbe] = useState<{
+    ok: boolean;
+    latencyMs: number;
+    python: string;
+    error: string | null;
+    workerOk: boolean;
+    pythonOk: boolean;
+    hy3dOk: boolean;
+  } | null>(null);
+  const [hy3dProbeBusy, setHy3dProbeBusy] = useState(false);
   const activeBenchmarkGroup = openBenchmarkGroup ?? defaultOpenGroup;
 
   const runModelProbe = async (includeImage: boolean) => {
@@ -186,6 +197,41 @@ export function StudioMenu({
       setModelProbeError(String(error).slice(0, 180));
     } finally {
       setModelProbeBusy(false);
+    }
+  };
+  const runHy3dProbe = async () => {
+    setHy3dProbeBusy(true);
+    const started = Date.now();
+    try {
+      const health = await api<RemoteWorkerHealth>("/api/v1/remote-worker/health");
+      const pythonOk = Boolean(health.python_bin_exists);
+      const hy3dOk = Boolean(
+        health.hy3d_script_exists
+        && health.mesh_worker_exists
+        && (health.creativeflow_pipeline?.hy3d_ready ?? pythonOk),
+      );
+      const workerOk = Boolean(health.ok) && !health.error;
+      setHy3dProbe({
+        ok: workerOk && pythonOk && hy3dOk,
+        latencyMs: Date.now() - started,
+        python: health.python_bin || "python",
+        error: health.error ?? null,
+        workerOk,
+        pythonOk,
+        hy3dOk,
+      });
+    } catch (error) {
+      setHy3dProbe({
+        ok: false,
+        latencyMs: Date.now() - started,
+        python: "—",
+        error: String(error).slice(0, 180),
+        workerOk: false,
+        pythonOk: false,
+        hy3dOk: false,
+      });
+    } finally {
+      setHy3dProbeBusy(false);
     }
   };
   useEffect(() => {
@@ -470,8 +516,7 @@ export function StudioMenu({
                 </ul>
               )}
               <p className="service-note">
-                初始化自动拉起全部必需服务（Qwen-Image 常驻、planner、worker、前端、KG 代理、CreativeFlow API）。
-                可选服务（intent_vlm）未安装；点击 Start 逐个启动缺失服务。
+                初始化只拉起本机服务：worker、前端、KG 代理。图片走 Model API，不再启动本地 Qwen / planner。
               </p>
             </Panel>
             </div>
@@ -482,7 +527,7 @@ export function StudioMenu({
               <Wifi size={15} aria-hidden="true" />
               <div>
                 <strong>Model API</strong>
-                <small>实验前先测大模型 / 图片模型联通</small>
+                <small>实验前先测大模型、图片模型和 3D worker</small>
               </div>
             </div>
             <div className="service-toolbar">
@@ -504,12 +549,23 @@ export function StudioMenu({
               >
                 <Wifi size={14} /> {modelProbeBusy ? "Probing…" : "测文本+图片"}
               </button>
+              <button
+                className="ghost compact"
+                type="button"
+                disabled={hy3dProbeBusy}
+                onClick={() => void runHy3dProbe()}
+                title="检查 3D worker 是否在线、Python 与 Hunyuan 脚本是否就绪"
+              >
+                <Box size={14} /> {hy3dProbeBusy ? "探测中…" : "测3D"}
+              </button>
             </div>
             {modelProbeError ? (
               <p className="service-note is-error">{modelProbeError}</p>
             ) : null}
-            {modelProbe ? (
+            {modelProbe || hy3dProbe ? (
               <ul className="model-probe-list">
+                {modelProbe ? (
+                  <>
                 <li className={modelProbe.text.ok ? "is-ok" : "is-bad"}>
                   <span className="service-dot" />
                   <span>
@@ -534,11 +590,42 @@ export function StudioMenu({
                     </em>
                   </span>
                 </li>
+                  </>
+                ) : null}
+                {hy3dProbe ? (
+                  <>
+                    <li className={hy3dProbe.workerOk ? "is-ok" : "is-bad"}>
+                      <span className="service-dot" />
+                      <span>
+                        3D worker
+                        <em>
+                          {hy3dProbe.workerOk
+                            ? `online · ${hy3dProbe.latencyMs}ms`
+                            : hy3dProbe.error || "offline"}
+                        </em>
+                      </span>
+                    </li>
+                    <li className={hy3dProbe.pythonOk ? "is-ok" : "is-bad"}>
+                      <span className="service-dot" />
+                      <span>
+                        Python
+                        <em>{hy3dProbe.pythonOk ? hy3dProbe.python : `missing · ${hy3dProbe.python}`}</em>
+                      </span>
+                    </li>
+                    <li className={hy3dProbe.hy3dOk ? "is-ok" : "is-bad"}>
+                      <span className="service-dot" />
+                      <span>
+                        Hunyuan3D
+                        <em>{hy3dProbe.hy3dOk ? "scripts ready" : "pipeline not ready"}</em>
+                      </span>
+                    </li>
+                  </>
+                ) : null}
               </ul>
             ) : (
               <p className="service-note">
-                {modelProbeBusy
-                  ? "正在联通云端模型，图片探测可能需要半分钟…"
+                {modelProbeBusy || hy3dProbeBusy
+                  ? "正在探测…"
                   : "未测试。不通时可稍后再点，或改用本地部署模型。"}
               </p>
             )}

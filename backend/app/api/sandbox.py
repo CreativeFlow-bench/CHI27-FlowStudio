@@ -97,6 +97,8 @@ class SandboxObserveNarrativeRequest(BaseModel):
     object_type: str = "object"
     part_label: str | None = None
     part_id: str | None = None
+    parts: list[str] = Field(default_factory=list, max_length=12)
+    preview_image: str | None = Field(default=None, max_length=400_000)
     intent_text: str | None = None
     recent_actions: list[str] = Field(default_factory=list, max_length=16)
     signals: dict[str, Any] = Field(default_factory=dict)
@@ -113,14 +115,64 @@ class SandboxDrawingSemanticRequest(BaseModel):
     brush_summary: str | None = None
 
 
-_OBSERVE_NARRATIVE_SYSTEM = """You are FlowStudio's canvas observation narrator.
-Given the user's 3D canvas actions and current focus, output ONE plain English sentence (8–20 words) a person would say.
+_OBSERVE_NARRATIVE_SYSTEM = """You are FlowStudio's 3D context narrator.
+A screenshot of the current 3D model is attached. Describe ONLY what is visible in that image.
+Output ONE plain English sentence (10–24 words).
 Rules:
-1. Describe only what is happening, in everyday words (turning the model, looking closely, brushing a surface). No instructions.
-2. Never mention IDs, asset_*, Cube.*, obj_group_*, mesh names, or the word viewport.
-3. Prefer "the model" / a human part name. Output JSON only: {"narrative":"You're turning the model around and looking closely at a small area."}.
-4. The reply must start with { and end with }. English only.
+1. The sentence MUST start with "This is". Name the object, then its visible style and form.
+2. Style/form examples: cute, cartoon, toy-like, realistic, rounded edges, sharp edges, wrinkled, blocky, smooth clay.
+3. Do not invent a cute look if the form is hard or faceted. Do not list parts.
+4. Forbidden: you/you're/holding/observing/looking/watching/orbit/zoom/hover/inspect/action.
+5. Never mention IDs, asset_*, Cube, Sphere, Mball, mesh names, "this part", or viewport.
+6. Output JSON only: {"narrative":"This is a cute Santa Claus head with rounded, wrinkled clay-like features."}.
 """
+
+
+def _is_mesh_jargon(label: str | None) -> bool:
+    import re
+
+    text = str(label or "").strip()
+    if not text:
+        return True
+    if re.search(r"(?i)(?:^|_)(asset_|obj_group_|mesh_)", text):
+        return True
+    if re.search(r"(?i)\b(?:cube|mball|sphere|cylinder|torus|plane|mesh)(?:\.\d+)?\b", text):
+        return True
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9]*\.\d+", text))
+
+
+def _display_object_name(object_type: str | None) -> str:
+    obj = str(object_type or "").strip() or "3D model"
+    if _is_mesh_jargon(obj) or obj.lower() in {"object", "unknown", "item", "thing", "model", "asset"}:
+        return "3D model"
+    return obj
+
+
+def _human_part_names(*labels: str | None) -> list[str]:
+    names: list[str] = []
+    for label in labels:
+        text = str(label or "").strip()
+        if not text or _is_mesh_jargon(text) or text in names:
+            continue
+        names.append(text)
+    return names[:6]
+
+
+def _is_object_state_narrative(text: str) -> bool:
+    import re
+
+    stripped = str(text or "").strip()
+    if not re.match(r"(?i)^(?:this is|it is|it's)\b", stripped):
+        return False
+    if re.search(
+        r"(?i)\b(?:this part|obj_group_|mball|cube\.\d|mesh_|sphere|cylinder|torus)\b",
+        stripped,
+    ):
+        return False
+    return not re.search(
+        r"(?i)\b(?:you(?:'re| are)|the user|holding|observing|looking at|watching|orbit|hover|inspect|brushing|before taking)\b",
+        stripped,
+    )
 
 
 def _scrub_observe_narrative(text: str) -> str:
@@ -128,36 +180,27 @@ def _scrub_observe_narrative(text: str) -> str:
 
     text = re.sub(r"(?i)\basset_[a-z0-9]+\b", "the model", text)
     text = re.sub(r"(?i)\b(?:obj_group_|mesh_)[a-z0-9_]+\b", "this part", text)
-    text = re.sub(r"(?i)\bCube\.\d+\b", "this part", text)
-    text = re.sub(r"(?i)\borbiting the viewport\b", "turning the model around", text)
-    text = re.sub(r"(?i)\brepeatedly hovering over local details\b", "looking closely at a small area", text)
+    text = re.sub(r"(?i)\b(?:Cube|Mball|Sphere|Cylinder|Torus|Plane|Mesh)\.\d+\b", "this part", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _observe_user_content(prompt: str, preview_image: str | None) -> str | list[dict[str, Any]]:
+    image = str(preview_image or "").strip()
+    if image.startswith("data:image/") and len(image) <= 400_000:
+        return [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": image}},
+        ]
+    return prompt
+
+
 def _humanize_observe_fallback(
-    rule_summary: str | None,
     part_label: str | None,
     object_type: str | None,
+    parts: list[str] | None = None,
 ) -> str:
-    import re
-
-    text = str(rule_summary or "").strip()
-    label = str(part_label or "").strip()
-    obj = str(object_type or "").strip() or "model"
-    if re.search(r"(?i)^asset_", obj):
-        obj = "model"
-    if label and re.search(r"(?i)^(cube\.|obj_group_|mesh_|mesh\.)", label):
-        label = "this part"
-    if label and re.search(r"(?i)cube\.|obj_group_|mesh_|asset_", label):
-        label = "this part"
-    if text:
-        text = _scrub_observe_narrative(text)
-        text = re.split(r"\.\s+When the prompt chips", text, maxsplit=1)[0].strip()
-        if text and re.search(r"[A-Za-z]", text):
-            return text[:120]
-    if label:
-        return f"Looking at {label} on the {obj}."[:120]
-    return f"Looking at the {obj}."[:120]
+    del part_label, parts
+    return f"This is a {_display_object_name(object_type)}."[:120]
 
 
 def create_sandbox_router(
@@ -217,30 +260,19 @@ def create_sandbox_router(
     @router.post("/api/v1/sandbox/observe-narrative")
     async def sandbox_observe_narrative(body: SandboxObserveNarrativeRequest) -> dict[str, object]:
         """Return a short observation line for the AI Behavior panel only."""
-        fallback = _humanize_observe_fallback(body.rule_summary, body.part_label, body.object_type)
+        fallback = _humanize_observe_fallback(body.part_label, body.object_type, body.parts)
+        preview = str(body.preview_image or "").strip()
+        has_preview = preview.startswith("data:image/") and len(preview) <= 400_000
         if text_gateway is None or not getattr(getattr(text_gateway, "profile", None), "api_key", None):
             return {"narrative": fallback, "source": "fallback"}
         if "pytest" in __import__("sys").modules:
             return {"narrative": fallback, "source": "fallback"}
+        if not has_preview:
+            return {"narrative": fallback, "source": "fallback"}
 
         from app.services.model_api.types import ModelStage
 
-        part_hint = body.part_label or body.part_id or "the model"
-        if __import__("re").search(r"(?i)cube\.|obj_group_|mesh_|asset_", str(part_hint)):
-            part_hint = "a part of the model"
-        action_line = ", ".join(body.recent_actions[-8:]) or "no clear action yet"
-        signal_line = ", ".join(
-            f"{key}={body.signals.get(key)}"
-            for key in (
-                "brush_count",
-                "hover_count",
-                "annotation_count",
-                "viewport_orbit_count",
-                "dwell_ms",
-                "view_mode",
-            )
-            if key in body.signals
-        ) or "none"
+        object_name = _display_object_name(body.object_type)
 
         def pick_narrative(raw: dict[str, Any]) -> str:
             import re
@@ -251,28 +283,30 @@ def create_sandbox_router(
                     continue
                 if re.search(r"[\u4e00-\u9fff]", text):
                     raise ValueError("narrative must be English-only")
-                return _scrub_observe_narrative(text)[:120]
+                scrubbed = _scrub_observe_narrative(text)[:160]
+                if not _is_object_state_narrative(scrubbed):
+                    raise ValueError("narrative must start with 'This is' and describe the screenshot")
+                return scrubbed
             raise ValueError(f"missing narrative in {list(raw)[:6]}")
 
         user_prompt = (
-            "Write one English-only observation sentence. Do not use Chinese.\n"
-            f"Object: {body.object_type}\n"
-            f"Focus: {part_hint}\n"
-            f"Recent actions: {action_line}\n"
-            f"Signals: {signal_line}\n"
-            'Output only: {"narrative":"..."}\n'
-            'Example: {"narrative":"You are turning the model around and looking closely at a small area."}'
+            "A screenshot of the current 3D model is attached. Describe only that image.\n"
+            f"Name hint: {object_name}. Ignore the hint if the image shows something else.\n"
+            "Write one English sentence starting with 'This is'. Mention visible style and form.\n"
+            "Do not list parts or mesh names. Do not mention a user, hands, camera, or any action.\n"
+            'Output only: {"narrative":"This is a cute Santa Claus head with rounded, wrinkled clay-like features."}'
         )
+        user_content = _observe_user_content(user_prompt, body.preview_image)
         try:
             raw = await text_gateway.transport.chat_json(
                 model=text_gateway.profile.fast_text_model,
                 messages=[
                     {"role": "system", "content": _OBSERVE_NARRATIVE_SYSTEM},
-                    {"role": "user", "content": user_prompt},
+                    {"role": "user", "content": user_content},
                 ],
                 stage=ModelStage.PHENOMENON,
                 temperature=0.2,
-                max_tokens=120,
+                max_tokens=140,
                 timeout_sec=16.0,
                 max_retries=1,
             )
@@ -289,13 +323,16 @@ def create_sandbox_router(
                         {"role": "system", "content": _OBSERVE_NARRATIVE_SYSTEM},
                         {
                             "role": "user",
-                            "content": user_prompt
-                            + "\nIMPORTANT: English only. Zero Chinese characters.",
+                            "content": _observe_user_content(
+                                user_prompt
+                                + "\nIMPORTANT: Start with 'This is'. Include style and form. Never write You are / holding / observing.",
+                                body.preview_image,
+                            ),
                         },
                     ],
                     stage=ModelStage.PHENOMENON,
                     temperature=0.1,
-                    max_tokens=120,
+                    max_tokens=140,
                     timeout_sec=12.0,
                     max_retries=0,
                 )

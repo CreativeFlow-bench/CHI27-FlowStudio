@@ -171,12 +171,17 @@ class AutoPartGenAdapter:
         result = await asyncio.to_thread(self._post_json, endpoint, payload)
         if result.get("status") == "completed" and result.get("result", {}).get("result_json"):
             return result
+        try:
+            timeout = float(request.metadata.get("wait_timeout_sec") or self.wait_timeout_sec)
+        except (TypeError, ValueError):
+            timeout = self.wait_timeout_sec
         if use_real and result.get("job_id"):
-            return await self._wait_for_remote_job(str(result["job_id"]))
+            return await self._wait_for_remote_job(str(result["job_id"]), timeout)
         return result
 
-    async def _wait_for_remote_job(self, job_id: str) -> dict:
-        deadline = asyncio.get_running_loop().time() + self.wait_timeout_sec
+    async def _wait_for_remote_job(self, job_id: str, timeout_sec: float | None = None) -> dict:
+        limit = self.wait_timeout_sec if timeout_sec is None else max(30.0, float(timeout_sec))
+        deadline = asyncio.get_running_loop().time() + limit
         latest: dict = {"job_id": job_id, "status": "queued"}
         while asyncio.get_running_loop().time() < deadline:
             latest = await asyncio.to_thread(self._get_json, f"/jobs/{job_id}")
@@ -187,7 +192,7 @@ class AutoPartGenAdapter:
         latest["timeout"] = True
         latest["error"] = (
             f"Timed out waiting for {self.segmentation_adapter} job "
-            f"after {self.wait_timeout_sec:.0f}s"
+            f"after {limit:.0f}s"
         )
         return latest
 
@@ -208,6 +213,10 @@ class AutoPartGenAdapter:
                 asset.metadata["remote_asset"] = uploaded
                 self.store.assets[asset.asset_id] = asset
                 return str(uploaded["path"])
+        for url in (asset.obj_url, asset.mesh_url):
+            parsed_path = _artifact_path_from_url(url)
+            if parsed_path:
+                return parsed_path
         if asset.mesh_url and os.path.isabs(asset.mesh_url):
             return asset.mesh_url
         return None
@@ -294,11 +303,12 @@ class AutoPartGenAdapter:
         for index, row in enumerate(rows, start=1):
             source_part_id = str(row.get("part_id") or f"part_{index:02d}")
             part_id = f"seg_part_{index:02d}"
-            bbox = row.get("bbox")
+            bbox = row.get("bbox") or row.get("bbox3d")
             metadata = {
                 "source": self.segmentation_adapter,
                 "lifecycle": "segmented_3d",
                 "source_part_id": source_part_id,
+                "cluster_id": row.get("cluster_id"),
                 "face_count": row.get("face_count"),
                 "bbox3d": bbox,
                 "confidence": row.get("confidence"),
@@ -409,3 +419,13 @@ def _is_local_white_model(asset: AssetRecord) -> bool:
             and benchmark_metadata.get("source") == "local_white_model"
         )
     )
+
+
+def _artifact_path_from_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(str(url)).query)
+    values = query.get("path") or []
+    if not values:
+        return None
+    return urllib.parse.unquote(str(values[0]))

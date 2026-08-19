@@ -6,7 +6,7 @@ const read = (path: string) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("intent composer gives the input and every icon action an accessible name", async () => {
   const source = await read("../src/components/panels/IntentComposer.tsx");
-  assert.match(source, /<input[\s\S]*?aria-label="Design intent"/);
+  assert.match(source, /<textarea[\s\S]*?aria-label="Design intent"/);
   for (const label of ["Hover mode", "Brush sculpt", "Annotation", "Drag sculpt", "Smooth sculpt", "Add primitive", "Send intent"]) {
     assert.match(source, new RegExp(`aria-label=[{\"]+[^\\n]*${label}`, "i"));
   }

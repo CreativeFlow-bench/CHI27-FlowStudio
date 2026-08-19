@@ -2,8 +2,9 @@
  * Version canvas shell: pannable/zoomable canvas with ThreeViewport,
  * branch thumbnails and sculpt controls panel.
  */
-import { useEffect, useRef, useState } from "react";
-import { Box, GitBranch, GripHorizontal, RotateCcw, Trash2, X } from "lucide-react";
+import { cloneElement, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { createPortal } from "react-dom";
+import { Box, GripHorizontal, Maximize2, RotateCcw, Trash2, X } from "lucide-react";
 import type {
   AnnotationStroke,
   AssetRecord,
@@ -23,6 +24,7 @@ import type { ThreeViewportHandle } from "../types";
 import { ThreeViewport } from "./ThreeViewport";
 import { AnnotationCanvasOverlay } from "./overlays/AnnotationCanvasOverlay";
 import { compactVersionLabel, FLOWSTUDIO_CANDIDATE_MIME } from "../utils/versionGraph";
+import { partSegmentationUrl } from "../utils/appHelpers";
 
 // Native drag payload: application/x-flowstudio-candidate.
 
@@ -55,6 +57,26 @@ export type VersionCanvasLink = {
   isActivePath: boolean;
 };
 
+function Hy3dProgressTicker({
+  active,
+  message,
+  progress,
+}: {
+  active: boolean;
+  message: string | null;
+  progress: number;
+}) {
+  if (!active) return null;
+  const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
+  const text = (message ?? "").trim() || "Hunyuan3D 运行中";
+  const line = pct > 0 ? `${text} · ${pct}%` : text;
+  return (
+    <div className="version-hy3d-progress" role="status" aria-live="polite" aria-label="3D 生成进度">
+      <span key={line} className="version-hy3d-progress-line">{line}</span>
+    </div>
+  );
+}
+
 function VersionPreviewImage({ src, alt }: { src: string; alt: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fallback, setFallback] = useState(false);
@@ -62,7 +84,9 @@ function VersionPreviewImage({ src, alt }: { src: string; alt: string }) {
     let revoked = false;
     setFallback(false);
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (/^https?:/i.test(src) && !src.startsWith(window.location.origin)) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       const canvas = canvasRef.current;
       if (!canvas || revoked) return;
@@ -78,7 +102,12 @@ function VersionPreviewImage({ src, alt }: { src: string; alt: string }) {
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = data.data;
         for (let i = 0; i < pixels.length; i += 4) {
-          if (pixels[i] > 250 && pixels[i + 1] > 250 && pixels[i + 2] > 250) pixels[i + 3] = 0;
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+          const spread = Math.max(r, g, b) - Math.min(r, g, b);
+          if (luma > 242 && spread < 18) pixels[i + 3] = 0;
         }
         ctx.putImageData(data, 0, 0);
       } catch {
@@ -161,6 +190,7 @@ export function VersionCanvas({
   onPreviewBranch,
   activeVersionId,
   versionViewMode,
+  onHighlightVersion,
   onActivateVersion,
   onShowOverview,
   onDeleteVersion,
@@ -169,7 +199,8 @@ export function VersionCanvas({
   onRetryVersionNode,
   gatePlanning = false,
   acceptedIntentMarkers = [],
-  onModelAnchorChange,
+  gateOverlay = null,
+  hy3dProgress = null,
 }: {
   shellRef: React.RefObject<HTMLDivElement | null>;
   dragRef: React.MutableRefObject<CanvasDragRef | null>;
@@ -206,6 +237,7 @@ export function VersionCanvas({
   onPreviewBranch: (candidate: Candidate) => void;
   activeVersionId: string;
   versionViewMode: "active" | "overview";
+  onHighlightVersion: (nodeId: string, candidate: Candidate | null) => void;
   onActivateVersion: (nodeId: string, candidate: Candidate | null) => void;
   onShowOverview: () => void;
   onDeleteVersion?: (nodeId: string) => void | Promise<void>;
@@ -214,10 +246,12 @@ export function VersionCanvas({
   onRetryVersionNode: (nodeId: string) => void | Promise<void>;
   gatePlanning?: boolean;
   acceptedIntentMarkers?: Array<{ id: string; intentSeq: number; label: string; detail?: string }>;
-  onModelAnchorChange?: (anchor: ModelAnchor | null) => void;
+  gateOverlay?: ReactElement<{ modelAnchor?: ModelAnchor | null }> | null;
+  hy3dProgress?: { message: string; progress: number } | null;
 }) {
   const [dropTargetActive, setDropTargetActive] = useState(false);
   const [modelBounds, setModelBounds] = useState<ModelScreenBounds | null>(null);
+  const [meshAnchor, setMeshAnchor] = useState<ModelAnchor | null>(null);
   useEffect(() => {
     let frame = 0;
     const tick = () => {
@@ -236,38 +270,43 @@ export function VersionCanvas({
         }
         return bounds;
       });
-      const mount = shellRef.current?.querySelector(".viewport") as HTMLElement | null;
-      const column = shellRef.current?.closest(".canvas-column") as HTMLElement | null;
-      if (!onModelAnchorChange) {
-        frame = window.requestAnimationFrame(tick);
-        return;
-      }
-      if (!bounds || !mount || !column) {
-        onModelAnchorChange(null);
+      const frameEl = shellRef.current?.querySelector(".version-node.active .version-node-frame") as HTMLElement | null;
+      if (!bounds || !frameEl) {
+        setMeshAnchor(null);
       } else {
-        const mountRect = mount.getBoundingClientRect();
-        const columnRect = column.getBoundingClientRect();
-        onModelAnchorChange({
-          left: mountRect.left - columnRect.left + bounds.x,
-          top: mountRect.top - columnRect.top + bounds.y,
+        const next = {
+          left: bounds.x,
+          top: bounds.y,
           width: bounds.width,
           height: bounds.height,
-          columnWidth: columnRect.width,
-          columnHeight: columnRect.height,
+          columnWidth: frameEl.clientWidth,
+          columnHeight: frameEl.clientHeight,
+        };
+        setMeshAnchor((current) => {
+          if (
+            current
+            && Math.abs(current.left - next.left) < 0.5
+            && Math.abs(current.top - next.top) < 0.5
+            && Math.abs(current.width - next.width) < 0.5
+            && Math.abs(current.height - next.height) < 0.5
+            && Math.abs(current.columnWidth - next.columnWidth) < 0.5
+            && Math.abs(current.columnHeight - next.columnHeight) < 0.5
+          ) {
+            return current;
+          }
+          return next;
         });
       }
       frame = window.requestAnimationFrame(tick);
     };
     frame = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frame);
-  }, [onModelAnchorChange, shellRef, threeViewportRef]);
-  const statusLabel = (status: VersionNodeStatus) => {
-    if (status === "generating_3d") return "正在生成 3D";
-    if (status === "mesh_ready") return "可编辑 3D";
-    if (status === "mesh_failed") return "3D 失败";
-    return "图片已就绪";
-  };
-  return (
+  }, [shellRef, threeViewportRef]);
+  const [shellHost, setShellHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setShellHost(document.querySelector("main.studio-shell"));
+  }, []);
+  const shell = (
     <div
       className={`version-canvas-shell${dropTargetActive ? " is-drop-target" : ""}`}
       aria-label="Version history canvas drop target"
@@ -305,7 +344,7 @@ export function VersionCanvas({
           // Trackpad pinch over the 3D viewport must zoom the camera only;
           // the 2D canvas zoom is reserved for the empty canvas area.
           const target = event.target as HTMLElement | null;
-          if (target && !target.closest(".version-node-frame")) {
+          if (target && !target.closest(".version-node-frame, .version-thumb-viewport")) {
             event.preventDefault();
             zoomCanvasBy(event.deltaY > 0 ? 0.9 : 1.1);
           }
@@ -381,8 +420,13 @@ export function VersionCanvas({
           ))}
         </svg>
 
-        {versionNodes.map((node) =>
-          node.id === activeVersionId && versionViewMode === "active" ? (
+        {versionNodes.map((node) => {
+          const liveMesh = Boolean(
+            node.meshUrl
+            || node.objUrl
+            || (node.kind === "source" && (asset?.mesh_url || asset?.obj_url)),
+          );
+          return node.id === activeVersionId && versionViewMode === "active" ? (
             <div
               className={`version-node active status-${node.status}${node.isActivePath ? " is-active-path" : ""}`}
               key={node.id}
@@ -392,7 +436,7 @@ export function VersionCanvas({
                 <strong>V{node.versionNumber}</strong>
                 <span>{compactVersionLabel(node.label)}</span>
                 <button type="button" aria-label="查看全部版本" title="查看全部版本" onClick={onShowOverview}>
-                  <GitBranch size={15} aria-hidden="true" />
+                  <Maximize2 size={15} aria-hidden="true" />
                 </button>
                 {onDeleteVersion && versionNodes.length > 1 ? (
                   <button
@@ -410,7 +454,7 @@ export function VersionCanvas({
                 {node.status === "mesh_ready" ? <ThreeViewport
                   ref={threeViewportRef}
                   asset={asset}
-                  previewMeshUrl={node.meshUrl ?? node.objUrl ?? activePreviewUrl}
+                  previewMeshUrl={partSegmentationUrl(parts) ?? node.meshUrl ?? node.objUrl ?? activePreviewUrl}
                   previewLabel={activePreviewLabel}
                   onClearPreview={onClearPreview}
                   selectedPart={selectedPart}
@@ -436,7 +480,25 @@ export function VersionCanvas({
                   onCommit={onCommitAnnotation}
                   modelBounds={modelBounds}
                 /> : null}
-                {gatePlanning ? (
+                <Hy3dProgressTicker
+                  active={node.status === "generating_3d"}
+                  message={hy3dProgress?.message ?? null}
+                  progress={hy3dProgress?.progress ?? 0}
+                />
+                {node.status !== "mesh_ready" ? (
+                <button
+                  type="button"
+                  className="version-retry"
+                  aria-label={node.status === "generating_3d" ? `重试 Version ${node.versionNumber} 的 3D 生成` : `生成 Version ${node.versionNumber} 的 3D`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void onRetryVersionNode(node.id);
+                  }}
+                >
+                  {node.status === "generating_3d" ? "生成中…" : node.status === "mesh_failed" ? "重试 3D" : "生成 3D"}
+                </button>
+              ) : null}
+              {gatePlanning ? (
                   <div className="gate-planning-orbit" role="status" aria-live="polite" aria-label="正在生成 Gate">
                     <span className="gate-planning-ring" aria-hidden="true" />
                     <span className="gate-planning-label">Generating Gate…</span>
@@ -469,45 +531,107 @@ export function VersionCanvas({
                     ))}
                   </div>
                 ) : null}
+                {gateOverlay ? cloneElement(gateOverlay, { modelAnchor: meshAnchor }) : null}
               </div>
-              {node.status === "mesh_failed" ? <button type="button" className="version-retry" aria-label={`重试 Version ${node.versionNumber} 的 3D 生成`} onClick={(event) => { event.stopPropagation(); void onRetryVersionNode(node.id); }}>重试 3D</button> : null}
             </div>
           ) : (
-            <button
-              type="button"
-              className={`version-node thumbnail status-${node.status}${node.isActivePath ? " is-active-path" : ""}${node.id === activeVersionId ? " is-active-version" : ""}`}
+            <div
+              role="button"
+              tabIndex={0}
+              className={`version-node thumbnail status-${node.status}${node.isActivePath ? " is-active-path" : ""}${node.id === activeVersionId ? " is-active-version" : ""}${liveMesh ? " has-live-mesh" : ""}`}
               key={node.id}
               style={{
                 left: node.x,
                 top: node.y,
                 width: node.width,
                 height: node.height,
-                // Keep thumbnails readable when the 2D canvas is zoomed out.
-                transform: canvasZoom < 0.92 ? `scale(${Math.min(1.65, 0.92 / canvasZoom)})` : undefined,
-                transformOrigin: "center center",
               }}
               onClick={() => {
+                if (versionViewMode === "overview") {
+                  onHighlightVersion(node.id, node.candidate);
+                  return;
+                }
                 onActivateVersion(node.id, node.candidate);
               }}
-              title={node.id === activeVersionId ? "重新进入当前版本" : "进入该版本"}
+              onDoubleClick={() => onActivateVersion(node.id, node.candidate)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  onActivateVersion(node.id, node.candidate);
+                  return;
+                }
+                if (event.key === " ") {
+                  event.preventDefault();
+                  onHighlightVersion(node.id, node.candidate);
+                }
+              }}
+              title={
+                versionViewMode === "overview"
+                  ? (node.id === activeVersionId ? "当前接入点 · 双击进入" : "单击高亮接入点 · 双击进入")
+                  : (node.id === activeVersionId ? "重新进入当前版本" : "进入该版本")
+              }
             >
-              {node.previewUrl ? (
-                <img src={node.previewUrl} alt={node.label} width={200} height={150} loading="lazy" />
+              {liveMesh ? (
+                <div className="version-thumb-viewport">
+                  <ThreeViewport
+                    asset={node.kind === "source" ? asset : null}
+                    previewMeshUrl={node.meshUrl ?? node.objUrl}
+                    previewLabel={null}
+                    onClearPreview={() => undefined}
+                    selectedPart=""
+                    hoverLabel={null}
+                    primitive={null}
+                    tool="select"
+                    displayMode="textured"
+                    parts={[]}
+                    onSelectPart={() => undefined}
+                    onHoverPart={() => undefined}
+                    onViewportInteraction={() => undefined}
+                    sculptTool={null}
+                    onSculptAction={() => undefined}
+                    sculptRadius={0.28}
+                    sculptStrength={0.35}
+                    canvasZoom={canvasZoom}
+                  />
+                </div>
+              ) : node.previewUrl ? (
+                <div className="version-thumb-media">
+                  <VersionPreviewImage src={node.previewUrl} alt={node.label} />
+                </div>
               ) : (
                 <div className="version-thumb-fallback">
                   <Box size={22} />
                 </div>
               )}
               <strong>Version {node.versionNumber}</strong>
-              <span>{node.label}</span>
-              <em>{statusLabel(node.status)}</em>
-              {node.status === "mesh_failed" ? <span className="version-retry-inline" role="button" tabIndex={0} aria-label={`重试 Version ${node.versionNumber} 的 3D 生成`} onClick={(event) => { event.stopPropagation(); void onRetryVersionNode(node.id); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); void onRetryVersionNode(node.id); } }}>重试</span> : null}
-            </button>
-          ),
-        )}
+              {node.status !== "mesh_ready" ? (
+                <span
+                  className="version-retry-inline"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`重试 Version ${node.versionNumber} 的 3D 生成`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void onRetryVersionNode(node.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      void onRetryVersionNode(node.id);
+                    }
+                  }}
+                >
+                  {node.status === "generating_3d" || node.status === "mesh_failed" ? "重试" : "生成 3D"}
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
+  return shellHost ? createPortal(shell, shellHost) : shell;
 }
 
 export function SculptControlsPanel({

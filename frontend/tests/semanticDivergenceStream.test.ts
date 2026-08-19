@@ -88,6 +88,20 @@ test("studioStore: onPhase calls describeDivergencePhase and setDivergencePhaseM
   assert.match(store, /if \(message\) setDivergencePhaseMessage\(message\)/);
 });
 
+test("studioStore: slider commit waits then diverges with latest temperature", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  assert.match(store, /divergenceTemperatureRef\.current = value/);
+  assert.match(store, /const temperature = options\?\.temperature \?\? divergenceTemperatureRef\.current/);
+  assert.match(store, /semanticDivergenceLiveRequestRef/);
+  assert.match(store, /scheduleDivergenceParametersCommit/);
+  assert.match(store, /temperature: divergenceTemperatureRef\.current/);
+  assert.match(store, /perGroupCount: divergencePerGroupCountRef\.current/);
+  assert.match(store, /, 2000\);/);
+  const panel = await read("../src/components/panels/AIBehaviorPanel.tsx");
+  assert.match(panel, /onDivergenceTemperatureChange\(Number\(event\.currentTarget\.value\)\)/);
+  assert.match(panel, /onDivergenceParametersCommit\(\)/);
+});
+
 test("studioStore: error branch clears divergencePhaseMessage", async () => {
   const store = await read("../src/state/studioStore.ts");
   // Extract the catch block inside commitDivergenceParameters.

@@ -64,6 +64,7 @@ def test_gemini_payload_uses_mapped_temperature() -> None:
 
     assert payload["temperature"] == _request().params.model_temperature
     assert "2–8个字" in payload["messages"][0]["content"]
+    assert "Mix lengths" in payload["messages"][0]["content"]
     assert "Aesthetic" in payload["messages"][0]["content"]
 
 

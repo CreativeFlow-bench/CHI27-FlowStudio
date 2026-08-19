@@ -123,6 +123,11 @@ def main() -> int:
     labels_path = choose_result_file(Path(train["results_dir"]), args.granularity)
     segmented_mesh_path = choose_result_file(Path(train["vis_dir"]), args.granularity, suffix=".ply")
     parts = summarize_parts(Path(layout["mesh_glb"]), labels_path, args.max_parts)
+    grouped_obj = write_grouped_obj(
+        Path(layout["mesh_glb"]), labels_path, parts, out_dir / "segmented_parts.obj"
+    )
+    if grouped_obj is not None:
+        segmented_mesh_path = grouped_obj
     projection_manifest = render_part_projection_masks(
         Path(layout["mesh_glb"]), labels_path, parts, out_dir / "part_projection_masks"
     )
@@ -476,7 +481,7 @@ def summarize_parts(mesh_path: Path, labels_path: Path | None, max_parts: int) -
     import trimesh
 
     labels = np.load(labels_path).reshape(-1).astype(int)
-    loaded = trimesh.load(mesh_path)
+    loaded = trimesh.load(mesh_path, force="mesh", process=False)
     mesh = loaded.dump(concatenate=True) if isinstance(loaded, trimesh.Scene) else loaded
     vertices = mesh.vertices
     faces = mesh.faces
@@ -504,6 +509,54 @@ def summarize_parts(mesh_path: Path, labels_path: Path | None, max_parts: int) -
             }
         )
     return parts
+
+
+def write_grouped_obj(
+    mesh_path: Path,
+    labels_path: Path | None,
+    parts: list[dict[str, Any]],
+    out_path: Path,
+) -> Path | None:
+    """Write one OBJ object per SAM3D cluster so the viewport can raycast parts."""
+    if labels_path is None or not labels_path.exists() or not parts:
+        return None
+    try:
+        import numpy as np
+        import trimesh
+    except Exception:
+        return None
+    try:
+        labels = np.load(labels_path).reshape(-1).astype(int)
+        loaded = trimesh.load(mesh_path, force="mesh", process=False)
+        mesh = loaded.dump(concatenate=True) if isinstance(loaded, trimesh.Scene) else loaded
+        faces = np.asarray(mesh.faces)
+        vertices = np.asarray(mesh.vertices)
+        lines = [f"v {x:.6f} {y:.6f} {z:.6f}" for x, y, z in vertices]
+        wrote = False
+        for part in parts:
+            name = str(part.get("part_id") or "part").replace(" ", "_")
+            cluster = part.get("cluster_id")
+            if cluster is None:
+                cluster = part.get("source_part_id")
+            try:
+                cluster_id = int(cluster)
+            except (TypeError, ValueError):
+                continue
+            valid = np.where(labels == cluster_id)[0]
+            valid = valid[valid < len(faces)]
+            if len(valid) == 0:
+                continue
+            lines.append(f"o {name}")
+            for face_index in valid:
+                a, b, c = (faces[face_index] + 1).tolist()
+                lines.append(f"f {int(a)} {int(b)} {int(c)}")
+            wrote = True
+        if not wrote:
+            return None
+        out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return out_path
+    except Exception:
+        return None
 
 
 def render_part_projection_masks(

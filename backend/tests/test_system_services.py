@@ -34,7 +34,8 @@ def test_rollback_inventory_requires_explicit_runtime_flags() -> None:
     system_services.configure_runtime(enable_legacy_models=True, enable_3d=True)
     try:
         ids = {item["id"] for item in system_services._definitions()}
-        assert {"planner_llm", "intent_vlm", "qwen_image"}.issubset(ids)
+        assert "qwen_image" in ids
+        assert {"planner_llm", "intent_vlm"}.isdisjoint(ids)
         assert {"remote_worker", "creativeflow_api"}.issubset(ids)
     finally:
         system_services.configure_runtime(enable_legacy_models=False, enable_3d=False)

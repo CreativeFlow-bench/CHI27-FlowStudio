@@ -5,9 +5,11 @@ import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as THREE from "three";
 import { captureCanvasJpeg } from "../utils/canvasCapture";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { RefreshCw } from "lucide-react";
 import { API_BASE } from "../api";
+import { partViewportMatchName } from "../utils/appHelpers";
 import type { AssetRecord, CanvasDisplayMode, CanvasPrimitive, CanvasTool, PartRecord, SculptTool, ThreeViewportHandle, ThreeViewportProps, ViewportInteractionSignal } from "../types";
 import {
   addStudioPreviewLighting,
@@ -369,9 +371,6 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     onViewportInteractionRef.current = onViewportInteraction;
     selectedRef.current = selectedPart;
   }, [onHoverPart, onSelectPart, onViewportInteraction, selectedPart]);
-  useEffect(() => {
-    hoverNameRef.current = hoverLabel ?? "";
-  }, [hoverLabel]);
 
   useEffect(() => {
     sculptToolRef.current = sculptTool;
@@ -400,8 +399,8 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     const scene = new THREE.Scene();
     scene.background = null;
     const camera = new THREE.PerspectiveCamera(45, VIEWPORT_FALLBACK_ASPECT, 0.1, 100);
-    camera.position.set(0, 1.2, 5.2);
-    camera.lookAt(0, 0.4, 0);
+    camera.position.set(0, 0, 5.2);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     rendererRef.current = renderer;
@@ -426,7 +425,7 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     controls.panSpeed = 0.65;
     controls.minDistance = 0.8;
     controls.maxDistance = 18;
-    controls.target.set(0, 0.2, 0);
+    controls.target.set(0, 0, 0);
     // Explicit mouse mapping: only left-drag rotates; bare hover never does.
     controls.mouseButtons = {
       LEFT: THREE.MOUSE.ROTATE,
@@ -482,10 +481,15 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
     );
 
     addStudioPreviewLighting(scene);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = environment;
+    scene.environmentIntensity = 0.9;
+    pmrem.dispose();
 
     const group = new THREE.Group();
     groupRef.current = group;
-    group.position.y = 0.2;
+    group.position.y = 0;
     scene.add(group);
 
     const raycaster = new THREE.Raycaster();
@@ -533,14 +537,17 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
         setModelLoadMessage(`No renderable source mesh: ${asset.label}`);
       }
     }
-    const updateMaterials = () =>
+    const updateMaterials = () => {
+      const selectedId = selectedRef.current;
+      const selectedPartRecord = partsRef.current.find((item) => item.part_id === selectedId);
       updateSceneMaterials(
         interactive,
         displayModeRef.current,
         partsRef.current.length,
-        selectedRef.current,
+        selectedPartRecord ? partViewportMatchName(selectedPartRecord) : selectedId,
         hoverNameRef.current,
       );
+    };
     updateMaterials();
 
     const selection = createMeshSelectionHandlers({
@@ -552,10 +559,13 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       isSculpting: () => Boolean(sculptToolRef.current),
       lastHover: lastHoverRef.current,
       onSelect: (name) => {
-        if (attachPrimitiveTransformControls(name)) return;
+        if (attachPrimitiveTransformControls(name.split(",")[0]?.trim() || name)) return;
         onSelectRef.current(name);
       },
-      onHover: (name) => onHoverRef.current(name),
+      onHover: (name) => {
+        hoverNameRef.current = name;
+        onHoverRef.current(name);
+      },
     });
     const sculptPointer = new SculptPointerController({
       renderer,
@@ -639,6 +649,8 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       scene.remove(brushCursor);
       brushCursor.geometry.dispose();
       (brushCursor.material as THREE.Material).dispose();
+      environment.dispose();
+      scene.environment = null;
       controls.dispose();
       mount.removeChild(renderer.domElement);
       renderer.dispose();

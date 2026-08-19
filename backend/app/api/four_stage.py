@@ -140,14 +140,40 @@ def create_four_stage_router(
         remote_job_id = str(hy3d_job.get("job_id") or "")
         if not remote_job_id:
             raise HTTPException(status_code=502, detail="Hy3D worker did not return a job id")
+        session_id = str(request.get("session_id") or run.session_id or "")
+        manager = getattr(orchestrator, "websocket_manager", None)
+        if manager and session_id:
+            await manager.broadcast(
+                session_id,
+                "hy3d_progress",
+                {
+                    "message": "已提交 Hunyuan3D",
+                    "progress": 0.08,
+                    "stage": "queued",
+                    "status": "running",
+                    "remote_job_id": remote_job_id,
+                },
+            )
         # 轮询等待
         result: dict[str, object] = {"status": "running", "remote_job_id": remote_job_id}
         mesh_url: str | None = None
         obj_url: str | None = None
         preview_url: str | None = None
-        for _ in range(180):
-            await asyncio.sleep(2)
+        for _ in range(120):  # ponytail: ~10 min; Hy3D on this card is 2–5 min
+            await asyncio.sleep(5)
             status = await remote_worker_adapter.get_job(remote_job_id)
+            if manager and session_id:
+                await manager.broadcast(
+                    session_id,
+                    "hy3d_progress",
+                    {
+                        "message": str(status.get("message") or "").strip() or "Hunyuan3D 运行中",
+                        "progress": float(status.get("progress") or 0),
+                        "stage": status.get("stage"),
+                        "status": status.get("status"),
+                        "remote_job_id": remote_job_id,
+                    },
+                )
             if status.get("status") == "completed":
                 summary = (
                     (status.get("result") or {}).get("result_json")
@@ -174,6 +200,8 @@ def create_four_stage_router(
                     "mesh_url": mesh_url,
                     "obj_url": obj_url,
                     "preview_url": preview_url,
+                    "mesh_path": mesh_path,
+                    "obj_path": obj_path,
                     "detail": status,
                 }
                 break

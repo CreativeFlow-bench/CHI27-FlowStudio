@@ -4,8 +4,8 @@ export const FLOWSTUDIO_CANDIDATE_MIME = "application/x-flowstudio-candidate";
 
 const ACTIVE_NODE_SIZE = 520;
 const HISTORY_NODE_SIZE = 220;
-const SIBLING_ROW_PITCH = 240;
-const SIBLING_ACTIVE_CLEARANCE = ACTIVE_NODE_SIZE + 40;
+const COLUMN_GAP = 120;
+const ACTIVE_ANCHOR_X = 640;
 
 /** Pan so the active editor's box center lands on the free-area center. */
 export function computeCenteredActiveCanvasPan(input: {
@@ -25,6 +25,30 @@ export function computeCenteredActiveCanvasPan(input: {
   return {
     x: Math.round(centerX - (input.nodeX + input.nodeWidth / 2)),
     y: Math.round(centerY - (input.nodeY + input.nodeHeight / 2)),
+  };
+}
+
+/** Fit+center an overview graph on a free band. Do not pad min/max with 0/520. */
+export function computeOverviewCanvasCamera(
+  nodes: Array<{ x: number; y: number; width: number; height: number }>,
+  band: { width: number; height: number; centerX: number; centerY: number },
+) {
+  if (!nodes.length) {
+    return { zoom: 1, pan: { x: Math.round(band.centerX), y: Math.round(band.centerY) } };
+  }
+  const minX = Math.min(...nodes.map((node) => node.x));
+  const minY = Math.min(...nodes.map((node) => node.y));
+  const maxX = Math.max(...nodes.map((node) => node.x + node.width));
+  const maxY = Math.max(...nodes.map((node) => node.y + node.height));
+  const spanX = maxX - minX + 240;
+  const spanY = maxY - minY + 240;
+  const zoom = Math.max(0.35, Math.min(1, Math.min(band.width / spanX, band.height / spanY)));
+  return {
+    zoom,
+    pan: {
+      x: Math.round(band.centerX - ((minX + maxX) / 2) * zoom),
+      y: Math.round(band.centerY - ((minY + maxY) / 2) * zoom),
+    },
   };
 }
 
@@ -83,6 +107,7 @@ export function layoutVersionGraph(
   nodes: VersionGraphNode[],
   activeNodeId: string | null,
   expandActive = true,
+  activeExtent?: { width: number; height: number },
 ): { nodes: VersionGraphLayoutNode[]; links: VersionGraphLayoutLink[] } {
   if (!nodes.length) return { nodes: [], links: [] };
   const sorted = [...nodes].sort(
@@ -125,28 +150,48 @@ export function layoutVersionGraph(
       .forEach((child, index) => siblingIndexById.set(child.node_id, index));
   }
 
-  const activeDepth = depthOf(resolvedActiveId ?? sorted[0].node_id);
+  // Overview must not re-anchor when the highlight changes, or the first
+  // click of a double-click moves the node out from under the pointer.
+  const activeDepth = expandActive ? depthOf(resolvedActiveId ?? sorted[0].node_id) : 0;
+  const nodeWidth = expandActive
+    ? Math.max(ACTIVE_NODE_SIZE, Math.round(activeExtent?.width ?? ACTIVE_NODE_SIZE))
+    : HISTORY_NODE_SIZE;
+  const nodeHeight = expandActive
+    ? Math.max(ACTIVE_NODE_SIZE, Math.round(activeExtent?.height ?? ACTIVE_NODE_SIZE))
+    : HISTORY_NODE_SIZE;
+  const columnPitch = nodeWidth + COLUMN_GAP;
+  const rowPitch = nodeHeight + COLUMN_GAP;
+
+  const xOf = (depth: number) => ACTIVE_ANCHOR_X + (depth - activeDepth) * columnPitch;
+
+  const yMemo = new Map<string, number>();
+  const yOf = (nodeId: string): number => {
+    const cached = yMemo.get(nodeId);
+    if (cached !== undefined) return cached;
+    const graphNode = byId.get(nodeId);
+    const parentId = graphNode?.parent_node_id;
+    const parentY = parentId && byId.has(parentId) ? yOf(parentId) : 0;
+    const siblingIndex = siblingIndexById.get(nodeId) ?? 0;
+    if (siblingIndex <= 0) {
+      yMemo.set(nodeId, parentY);
+      return parentY;
+    }
+    const distance = Math.ceil(siblingIndex / 2);
+    const y = parentY + distance * rowPitch * (siblingIndex % 2 === 1 ? -1 : 1);
+    yMemo.set(nodeId, y);
+    return y;
+  };
+
   const positioned: VersionGraphLayoutNode[] = sorted.map((node) => {
-    const depth = depthOf(node.node_id);
     const isActive = node.node_id === resolvedActiveId;
     const isActivePath = activePath.has(node.node_id);
-    let y = 0;
-    const siblingIndex = siblingIndexById.get(node.node_id);
-    if (siblingIndex !== undefined && siblingIndex > 0) {
-      const distance = Math.ceil(siblingIndex / 2);
-      const pitch = isActive || isActivePath
-        ? SIBLING_ACTIVE_CLEARANCE
-        : SIBLING_ROW_PITCH;
-      // odd index → up, even index → down
-      y = distance * pitch * (siblingIndex % 2 === 1 ? -1 : 1);
-    }
     return {
       id: node.node_id,
       graphNode: node,
-      x: 640 + (depth - activeDepth) * 280,
-      y,
-      width: isActive && expandActive ? ACTIVE_NODE_SIZE : HISTORY_NODE_SIZE,
-      height: isActive && expandActive ? ACTIVE_NODE_SIZE : HISTORY_NODE_SIZE,
+      x: xOf(depthOf(node.node_id)),
+      y: yOf(node.node_id),
+      width: nodeWidth,
+      height: nodeHeight,
       isActive,
       isActivePath,
     };

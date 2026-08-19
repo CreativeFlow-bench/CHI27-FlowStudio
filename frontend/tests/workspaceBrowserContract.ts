@@ -77,6 +77,9 @@ export function inspectWorkspaceLayout(root: Document = document): WorkspaceLayo
       errors.push(`${name} leaves the viewport`);
     }
   }
+  if (rects.canvas && (rects.canvas.width < viewport.width * 0.9 || rects.canvas.height < viewport.height * 0.9)) {
+    errors.push("Version canvas does not cover the workspace");
+  }
   if (viewport.width >= 900 && rects.perception && Math.abs(rects.perception.top - 68) > 1) {
     errors.push("Perception top changes with workspace layout state");
   }
@@ -87,7 +90,7 @@ export function inspectWorkspaceLayout(root: Document = document): WorkspaceLayo
   }
   if (rects.navigation) {
     for (const [name, rect] of Object.entries(rects)) {
-      if (name === "navigation" || !rect) continue;
+      if (name === "navigation" || name === "canvas" || !rect) continue;
       const horizontalOverlap = Math.min(rects.navigation.right, rect.right) - Math.max(rects.navigation.left, rect.left);
       const verticalOverlap = Math.min(rects.navigation.bottom, rect.bottom) - Math.max(rects.navigation.top, rect.top);
       if (horizontalOverlap > 0 && verticalOverlap > 0) errors.push(`Canvas navigation overlaps ${name}`);

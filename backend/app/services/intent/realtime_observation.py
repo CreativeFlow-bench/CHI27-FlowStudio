@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -83,9 +84,18 @@ _WHOLE_SCOPE_MARKERS = {
 }
 _SURFACE_SCOPE_MARKERS = {
     "surface", "material", "texture", "color", "colour", "gloss", "roughness",
-    "stone statue", "stone sculpture", "表面", "材质", "纹理", "颜色", "光泽", "粗糙度",
-    "石像", "石雕",
+    "stone statue", "stone sculpture", "wooden", "wood grain", "metal", "marble",
+    "表面", "材质", "纹理", "颜色", "光泽", "粗糙度",
+    "石像", "石雕", "木质", "木头", "木纹", "金属", "大理石",
 }
+_IDENTITY_TRANSFORM_MARKERS = {
+    "become", "make this", "turn this into", "turn into",
+    "变成", "做成", "改成",
+}
+_BLENDER_GENERIC_MESH = re.compile(
+    r"^(?:cube|mball|sphere|plane|cylinder|torus|cone|mesh|nurbs|suzanne|ico_sphere)(?:\.\d+)?$",
+    re.I,
+)
 _GENERIC_TARGET_MARKERS = {
     "", "object", "unknown", "item", "thing", "model", "asset", "current object",
     "当前对象", "当前部件",
@@ -111,10 +121,18 @@ _GATE_QUESTION_SYSTEM = """你是 FlowStudio 的 Gate 证据路由器。只输�
 3. 不要输出 question 字段；系统会按固定模板生成问句。
 4. semantic 若明确说整体轮廓/外形，即使有 location 也可用 whole。
 5. semantic 若点名部件，优先该部件；否则用 location；再否则用物体类型。
+6. semantic 若是整体身份转化（become / wooden / 变成木质），target 用物体类型，不要用 hover 网格名。
 """
 
 
-def _fixed_gate_question(scope: str, target: str) -> str:
+def _fixed_gate_question(scope: str, target: str, semantic: str = "") -> str:
+    text = (semantic or "").lower()
+    if (
+        scope != "part"
+        and _has_requested_scope_marker(text, _IDENTITY_TRANSFORM_MARKERS)
+        and _has_requested_scope_marker(text, _SURFACE_SCOPE_MARKERS)
+    ):
+        return f"你想改变这个 {target} 的材质和轮廓吗？"
     if scope == "material":
         return f"你想改变这个 {target} 的表面或材质吗？"
     if scope == "whole":
@@ -129,6 +147,8 @@ def _is_generic_mesh_id(value: str) -> bool:
         or lower in _GENERIC_TARGET_MARKERS
         or lower.startswith("obj_group")
         or lower.startswith("cube_")
+        or lower.startswith("mesh_")
+        or bool(_BLENDER_GENERIC_MESH.match(lower))
     )
 
 
@@ -512,6 +532,10 @@ class RealtimeObservationService:
         revision.gate_question = gate_question
         revision.gate_provisional = True
         revision.gate_id = revision.gate_id or f"fgate_{revision.revision_id[-8:]}"
+        if gate_scope == "whole":
+            revision.source_context.target_part_id = None
+        elif gate_scope == "part" and gate_target and not _is_generic_mesh_id(gate_target):
+            revision.source_context.target_part_id = gate_target
 
     async def plan_revision(self, revision_id: str, *, run_hy3d: bool = False) -> IntentRevision:
         revision = self._require_revision(revision_id)
@@ -711,6 +735,8 @@ class RealtimeObservationService:
                 return True
             lower = text.lower()
             if _has_requested_scope_marker(lower, _SURFACE_SCOPE_MARKERS):
+                return True
+            if _has_requested_scope_marker(lower, _IDENTITY_TRANSFORM_MARKERS):
                 return True
             if _has_requested_scope_marker(lower, _WHOLE_SCOPE_MARKERS):
                 return True
@@ -1411,6 +1437,7 @@ class RealtimeObservationService:
         if semantic and (
             infer_text_part(semantic)
             or _has_requested_scope_marker(semantic.lower(), _SURFACE_SCOPE_MARKERS)
+            or _has_requested_scope_marker(semantic.lower(), _IDENTITY_TRANSFORM_MARKERS)
             or _has_requested_scope_marker(semantic.lower(), _WHOLE_SCOPE_MARKERS)
         ):
             return fallback
@@ -1453,7 +1480,7 @@ class RealtimeObservationService:
             label = str(raw.get("target_label") or "").strip()
             if _is_generic_mesh_id(label):
                 raise ValueError(f"invalid target_label: {label}")
-            return label, scope, _fixed_gate_question(scope, label)
+            return label, scope, _fixed_gate_question(scope, label, semantic)
 
         try:
             models = gateway.profile.ordered_text_models(
@@ -1553,15 +1580,24 @@ class RealtimeObservationService:
             part_id = ""
             part_label = ""
 
+        identity = bool(semantic and _has_requested_scope_marker(text, _IDENTITY_TRANSFORM_MARKERS))
+        surface = bool(semantic and _has_requested_scope_marker(text, _SURFACE_SCOPE_MARKERS))
+        if semantic and not text_part and (identity or surface):
+            if identity or _is_generic_mesh_id(part_id) or _is_generic_mesh_id(part_label):
+                part_id = ""
+                part_label = ""
+
         object_type = str(revision.source_context.object_type).strip()
         normalized_planner_target = str(planner_target or "").strip()
         planner_target_is_generic = _is_generic_mesh_id(normalized_planner_target)
 
-        if semantic and _has_requested_scope_marker(text, _SURFACE_SCOPE_MARKERS):
+        if surface and identity and not text_part:
+            scope = "whole"
+        elif surface:
             scope = "material"
         elif text_part:
             scope = "part"
-        elif semantic and _has_requested_scope_marker(text, _WHOLE_SCOPE_MARKERS):
+        elif identity or (semantic and _has_requested_scope_marker(text, _WHOLE_SCOPE_MARKERS)):
             scope = "whole"
         elif location is not None and (location_part_id or location_label or part_id):
             scope = "part"
@@ -1584,12 +1620,14 @@ class RealtimeObservationService:
             target = _display_part_label(
                 part_label or ("" if planner_target_is_generic else normalized_planner_target)
             )
-            return target, scope, _fixed_gate_question(scope, target)
+            return target, scope, _fixed_gate_question(scope, target, semantic)
         if scope == "material":
             if len(text_parts) > 1:
                 target = object_type or "当前对象"
-                return target, scope, _fixed_gate_question(scope, target)
+                return target, scope, _fixed_gate_question(scope, target, semantic)
             explicit_part = text_part or location_part_id or mesh_part_id
+            if identity and not text_part:
+                explicit_part = ""
             target = (
                 (text_part or location_label or mesh_label or explicit_part).strip()
                 if explicit_part
@@ -1597,9 +1635,12 @@ class RealtimeObservationService:
                 else object_type
             )
             target = _display_part_label(target) if explicit_part else (target or object_type)
-            return target, scope, _fixed_gate_question(scope, target)
+            return target, scope, _fixed_gate_question(scope, target, semantic)
+        if identity and not text_part:
+            target = object_type or "当前对象"
+            return target, "whole", _fixed_gate_question("whole", target, semantic)
         target = object_type if planner_target_is_generic or part_id else normalized_planner_target or object_type
-        return target, "whole", _fixed_gate_question("whole", target)
+        return target, "whole", _fixed_gate_question("whole", target, semantic)
 
     @staticmethod
     def _sync_gate_contract(

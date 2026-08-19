@@ -113,6 +113,13 @@ test("StudioMenu imports useRef", async () => {
   assert.match(source, /import \{ useRef/);
 });
 
+test("StudioMenu can probe the 3D worker", async () => {
+  const source = await read("../src/components/menu/StudioMenu.tsx");
+  assert.match(source, /测3D/);
+  assert.match(source, /\/api\/v1\/remote-worker\/health/);
+  assert.match(source, /hy3d_script_exists/);
+});
+
 test("main.tsx wires menuDragRef to StudioMenu", async () => {
   const main = await read("../src/main.tsx");
   assert.match(main, /menuDragRef=\{menuDragRef\}/);

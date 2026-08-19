@@ -113,8 +113,6 @@ export function SolutionSpaceRail({
     return () => window.clearInterval(timer);
   }, [streamLines]);
 
-  if (!candidates.length && !directions.length && !job && !loading && !errorMessage && !roundChips.length) return null;
-
   const pendingSlots = loading ? Math.max(0, expectedTotal - candidates.length) : 0;
   const streamText = streamLines[Math.min(streamIndex, streamLines.length - 1)] ?? "";
   // Keep the rail fully expanded while generating — never collapse to a strip.

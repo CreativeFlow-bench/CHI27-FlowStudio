@@ -23,8 +23,8 @@ FLOWSTUDIO_KEEP_RUNNING=1 scripts/dev_stack.sh
 
 ## GPU 单机
 
-当前主 GPU：`connect.westb.seetacloud.com:36536`。  
-旧 westd 已替换；weste 上的 Qwen planner **不再接入**。
+当前主 GPU：`connect.weste.seetacloud.com:10980`。  
+westb 已下线；本地 Qwen planner **不再接入**。
 
 服务器：
 

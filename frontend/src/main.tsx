@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -43,7 +43,7 @@ import { AIBehaviorPanel } from "./components/panels/AIBehaviorPanel";
 import { selectActiveDecision } from "./utils/uiBrief";
 import { buildAiBehaviorPresentation } from "./utils/workspacePresentation";
 import { IntentComposer } from "./components/panels/IntentComposer";
-import { SculptControlsPanel, VersionCanvas, type ModelAnchor } from "./components/StudioCanvas";
+import { SculptControlsPanel, VersionCanvas } from "./components/StudioCanvas";
 import { ThreeViewport } from "./components/ThreeViewport";
 import { StudioMenu } from "./components/menu/StudioMenu";
 import { PerceptionPanel } from "./components/panels/PerceptionPanel";
@@ -227,6 +227,7 @@ function App() {
     discoveringParts,
     setDiscoveringParts,
     hy3dCandidateIds,
+    hy3dProgress,
     setHy3dCandidateIds,
     fittingCandidateIds,
     setFittingCandidateIds,
@@ -493,7 +494,7 @@ function App() {
     semanticDivergenceError,
     divergencePhaseMessage,
     selectionPersistenceError,
-    commitDivergenceParameters,
+    scheduleDivergenceParametersCommit,
     triggerPostGateDivergence,
     allCandidates,
     selectedCandidateId,
@@ -502,35 +503,17 @@ function App() {
     versionViewMode,
     dropCandidateIntoVersionGraph,
     setActiveVersionId,
+    highlightVersionNode,
     activateVersionNode,
     deleteVersionNode,
     retryVersionNode,
     activeVersionMeshReady,
   } = useStudioStore();
 
-  const [modelAnchor, setModelAnchor] = useState<ModelAnchor | null>(null);
   const [perceptionWidth, setPerceptionWidth] = useState(320);
-  const [aiBehaviorWidth, setAiBehaviorWidth] = useState(340);
+  const [aiBehaviorWidth, setAiBehaviorWidth] = useState(378);
   const [aiBehaviorCollapsed, setAiBehaviorCollapsed] = useState(false);
-  const onModelAnchorChange = useMemo(
-    () => (anchor: ModelAnchor | null) => {
-      setModelAnchor((current) => {
-        if (!anchor && !current) return current;
-        if (
-          anchor
-          && current
-          && Math.abs(anchor.left - current.left) < 0.5
-          && Math.abs(anchor.top - current.top) < 0.5
-          && Math.abs(anchor.width - current.width) < 0.5
-          && Math.abs(anchor.height - current.height) < 0.5
-        ) {
-          return current;
-        }
-        return anchor;
-      });
-    },
-    [],
-  );
+  const [perceptionCollapsed, setPerceptionCollapsed] = useState(false);
 
   const canvasDecisionRevision = selectActiveDecision(intentRevisions);
   const activeIntentRevision = intentRevisions.find((item) => item.revision_id === activeRevisionId) ?? null;
@@ -591,13 +574,91 @@ function App() {
 
   return (
     <main
-      className={`studio-shell${studioDrawerOpen ? " menu-open" : ""}${liveSolutionSpaceVisible ? " has-solution-space" : ""}${aiBehaviorCollapsed ? " ai-behavior-collapsed" : ""}`}
+      className={`studio-shell${studioDrawerOpen ? " menu-open" : ""}${liveSolutionSpaceVisible ? " has-solution-space" : ""}${aiBehaviorCollapsed ? " ai-behavior-collapsed" : ""}${perceptionCollapsed ? " perception-collapsed" : ""}`}
       style={{
         ["--solution-space-height" as string]: `${solutionSpaceHeight}px`,
         ["--perception-width" as string]: `${perceptionWidth}px`,
         ["--ai-behavior-width" as string]: `${aiBehaviorWidth}px`,
       }}
     >
+      <VersionCanvas
+            shellRef={versionCanvasShellRef}
+            dragRef={versionCanvasDragRef}
+            canvasPan={canvasPan}
+            onPanChange={setCanvasPan}
+            canvasZoom={canvasZoom}
+            zoomCanvasBy={zoomCanvasBy}
+            spacePanArmed={spacePanArmed}
+            versionNodes={versionNodes}
+            versionLinks={versionLinks}
+            activeVersionId={activeVersionId}
+            versionViewMode={versionViewMode}
+            onHighlightVersion={(nodeId, candidate) => void highlightVersionNode(nodeId, candidate)}
+            onActivateVersion={(nodeId, candidate) => void activateVersionNode(nodeId, candidate)}
+            onShowOverview={() => focusVersionCanvas("all")}
+            onDeleteVersion={(nodeId) => void deleteVersionNode(nodeId)}
+            versionCandidates={allCandidates}
+            onDropCandidate={(candidate) => dropCandidateIntoVersionGraph(candidate)}
+            onRetryVersionNode={(nodeId) => retryVersionNode(nodeId)}
+            hy3dProgress={hy3dProgress}
+            threeViewportRef={threeViewportRef}
+            asset={asset}
+            activePreviewUrl={activePreviewUrl}
+            activePreviewLabel={activePreviewLabel}
+            onClearPreview={() => {
+              pushEditorHistory("clear preview");
+              setPreviewCandidate(null);
+              setCanvasPreview(null);
+            }}
+            selectedPart={selectedPart}
+            hoverLabel={hoverLabel}
+            hoverMaskDataUrl={hoverMaskDataUrl}
+            canvasPrimitive={canvasPrimitive}
+            canvasTool={canvasTool}
+            canvasDisplayMode={canvasDisplayMode}
+            parts={parts}
+            onSelectPart={selectPartFromViewportHit}
+            onHoverPart={selectPartFromViewportHit}
+            onViewportInteraction={handleViewportInteraction}
+            sculptTool={sculptTool}
+            onSculptAction={handleSculptAction}
+            sculptRadius={sculptRadius}
+            sculptStrength={sculptStrength}
+            editorScene={editorScene}
+            annotationMode={annotationMode}
+            onCancelAnnotation={() => setAnnotationMode(false)}
+            onCommitAnnotation={(strokes, brushStrokes) => {
+              // Keep the overlay open: it shows a completion card (2D snapshot +
+              // saved state) until the user exits or continues drawing.
+              void recordAnnotation(strokes, brushStrokes);
+            }}
+            onPreviewBranch={(candidate) => void previewCandidateForComparison(candidate)}
+            gatePlanning={gatePlanning}
+            acceptedIntentMarkers={acceptedIntentMarkers}
+            gateOverlay={
+              <PlannerClarificationOverlay
+                visible={Boolean(canvasDecisionRevision)}
+                scope={intentBubble.scope}
+                interpretation={plannerBubbleInterpretation}
+                selectedPartLabel={activeSelectedPart?.label ?? selectedPart}
+                gateModes={(canvasDecisionRevision ? [canvasDecisionRevision] : []).map((revision) => ({
+                  id: revision.revision_id,
+                  intentSeq: revision.intent_seq,
+                  status: revision.status === "planning" ? "planning" : revision.status === "awaiting_gate" ? "pending" : "accepted",
+                  provisional: Boolean(revision.gate_provisional),
+                  active: revision.revision_id === activeRevisionId,
+                  onSelect: revision.status !== "awaiting_gate" ? () => void selectIntentRevision(revision.revision_id) : undefined,
+                  question: revision.gate_question,
+                  onAccept: revision.status === "awaiting_gate" && !String(revision.revision_id).startsWith("local_")
+                    ? () => void resolveIntentRevisionGate(revision.revision_id, true)
+                    : undefined,
+                  onReject: revision.status === "awaiting_gate" && !String(revision.revision_id).startsWith("local_")
+                    ? () => void resolveIntentRevisionGate(revision.revision_id, false)
+                    : undefined,
+                }))}
+              />
+            }
+          />
       <div className="brand-mark" style={studioDrawerOpen ? { left: Math.max(22, menuWidth + 18) } : undefined}>
         <img className="brand-mark-logo" src="/logo.png?v=20260809b" alt="" width={72} height={34} aria-hidden="true" />
         <h1>Flow Studio</h1>
@@ -678,83 +739,7 @@ function App() {
               <span>正在加载白模…</span>
             </div>
           ) : null}
-          <VersionCanvas
-            shellRef={versionCanvasShellRef}
-            dragRef={versionCanvasDragRef}
-            canvasPan={canvasPan}
-            onPanChange={setCanvasPan}
-            canvasZoom={canvasZoom}
-            zoomCanvasBy={zoomCanvasBy}
-            spacePanArmed={spacePanArmed}
-            versionNodes={versionNodes}
-            versionLinks={versionLinks}
-            activeVersionId={activeVersionId}
-            versionViewMode={versionViewMode}
-            onActivateVersion={(nodeId, candidate) => void activateVersionNode(nodeId, candidate)}
-            onShowOverview={() => focusVersionCanvas("all")}
-            onDeleteVersion={(nodeId) => void deleteVersionNode(nodeId)}
-            versionCandidates={allCandidates}
-            onDropCandidate={(candidate) => dropCandidateIntoVersionGraph(candidate)}
-            onRetryVersionNode={(nodeId) => retryVersionNode(nodeId)}
-            threeViewportRef={threeViewportRef}
-            asset={asset}
-            activePreviewUrl={activePreviewUrl}
-            activePreviewLabel={activePreviewLabel}
-            onClearPreview={() => {
-              pushEditorHistory("clear preview");
-              setPreviewCandidate(null);
-              setCanvasPreview(null);
-            }}
-            selectedPart={selectedPart}
-            hoverLabel={hoverLabel}
-            hoverMaskDataUrl={hoverMaskDataUrl}
-            canvasPrimitive={canvasPrimitive}
-            canvasTool={canvasTool}
-            canvasDisplayMode={canvasDisplayMode}
-            parts={parts}
-            onSelectPart={selectPartFromViewportHit}
-            onHoverPart={selectPartFromViewportHit}
-            onViewportInteraction={handleViewportInteraction}
-            sculptTool={sculptTool}
-            onSculptAction={handleSculptAction}
-            sculptRadius={sculptRadius}
-            sculptStrength={sculptStrength}
-            editorScene={editorScene}
-            annotationMode={annotationMode}
-            onCancelAnnotation={() => setAnnotationMode(false)}
-            onCommitAnnotation={(strokes, brushStrokes) => {
-              // Keep the overlay open: it shows a completion card (2D snapshot +
-              // saved state) until the user exits or continues drawing.
-              void recordAnnotation(strokes, brushStrokes);
-            }}
-            onPreviewBranch={(candidate) => void previewCandidateForComparison(candidate)}
-            gatePlanning={gatePlanning}
-            acceptedIntentMarkers={acceptedIntentMarkers}
-            onModelAnchorChange={onModelAnchorChange}
-          />
 
-          <PlannerClarificationOverlay
-            visible={Boolean(canvasDecisionRevision)}
-            scope={intentBubble.scope}
-            interpretation={plannerBubbleInterpretation}
-            selectedPartLabel={activeSelectedPart?.label ?? selectedPart}
-            modelAnchor={modelAnchor}
-            gateModes={(canvasDecisionRevision ? [canvasDecisionRevision] : []).map((revision) => ({
-              id: revision.revision_id,
-              intentSeq: revision.intent_seq,
-              status: revision.status === "planning" ? "planning" : revision.status === "awaiting_gate" ? "pending" : "accepted",
-              provisional: Boolean(revision.gate_provisional),
-              active: revision.revision_id === activeRevisionId,
-              onSelect: revision.status !== "awaiting_gate" ? () => void selectIntentRevision(revision.revision_id) : undefined,
-              question: revision.gate_question,
-              onAccept: revision.status === "awaiting_gate" && !String(revision.revision_id).startsWith("local_")
-                ? () => void resolveIntentRevisionGate(revision.revision_id, true)
-                : undefined,
-              onReject: revision.status === "awaiting_gate" && !String(revision.revision_id).startsWith("local_")
-                ? () => void resolveIntentRevisionGate(revision.revision_id, false)
-                : undefined,
-            }))}
-          />
           {liveSolutionSpaceVisible ? (
             <SolutionSpaceRail
               candidates={solutionSpaceCandidates}
@@ -824,14 +809,16 @@ function App() {
               liveObservation={liveObservation}
               behaviorSessions={behaviorSessions}
               hasModel={Boolean(asset?.mesh_url || asset?.obj_url || canvasPrimitive)}
+              collapsed={perceptionCollapsed}
+              onCollapsedChange={setPerceptionCollapsed}
             />
           </ResizableShell>
           <ResizableShell
             className="ai-behavior-float-shell"
             ariaLabel="AI Behavior panel"
-            defaultWidth={340}
-            minWidth={280}
-            maxWidth={520}
+            defaultWidth={378}
+            minWidth={320}
+            maxWidth={560}
             handleCorner="sw"
             handlePosition="static"
             resizable
@@ -843,7 +830,7 @@ function App() {
               onDivergenceTemperatureChange={setDivergenceTemperature}
               divergencePerGroupCount={divergencePerGroupCount}
               onDivergencePerGroupCountChange={setDivergencePerGroupCount}
-              onDivergenceParametersCommit={commitDivergenceParameters}
+              onDivergenceParametersCommit={scheduleDivergenceParametersCommit}
               semanticDivergence={semanticDivergence}
               semanticDivergenceLoading={semanticDivergenceLoading}
               semanticDivergenceError={semanticDivergenceError}
@@ -870,9 +857,9 @@ function App() {
           <ResizableShell
             className="canvas-composer-shell-resizable"
             ariaLabel="Intent composer"
-            defaultWidth={512}
-            minWidth={336}
-            maxWidth={736}
+            defaultWidth={400}
+            minWidth={320}
+            maxWidth={480}
             handleCorner="ne"
             handlePosition="static"
             resizable

@@ -933,16 +933,29 @@ class GenerationOrchestrator:
                 self.store.save_candidate(failed)
 
     async def _wait_for_remote_hy3d(self, job: JobRecord, remote_job_id: str) -> dict[str, Any]:
-        for _ in range(720):
+        for _ in range(120):  # ponytail: ~10 min; this card finishes Hy3D in 2–5 min
             self._abort_if_cancelled(job)
             remote = await self.remote_adapter.get_job(remote_job_id)
             status = remote.get("status")
-            progress = float(remote.get("progress") or 0.82)
+            raw_progress = remote.get("progress")
+            progress = float(raw_progress) if raw_progress is not None else 0.08
+            remote_message = str(remote.get("message") or "").strip()
             job.metadata["remote_hy3d"] = remote
             job.stage = JobStage.mesh_generation
-            job.progress = min(0.98, max(0.82, progress))
-            job.message = f"Remote Hy3D running: {remote_job_id}"
+            job.progress = min(0.98, max(0.08, progress))
+            job.message = remote_message or f"Hy3D {status or 'running'}"
             self.store.save_job(job)
+            await self.websocket_manager.broadcast(
+                job.session_id,
+                "hy3d_progress",
+                {
+                    "message": job.message,
+                    "progress": job.progress,
+                    "stage": remote.get("stage") or job.stage,
+                    "status": status,
+                    "remote_job_id": remote_job_id,
+                },
+            )
             await self.websocket_manager.broadcast(
                 job.session_id,
                 "job_update",

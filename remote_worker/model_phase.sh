@@ -3,15 +3,16 @@ set -euo pipefail
 
 PHASE="${1:-status}"
 IMAGE_DIR="${CF_IMAGE_SERVICE_DIR:-/root/creativeflow_image_service}"
-IMAGE_PYTHON="${CF_IMAGE_PYTHON:-/root/autodl-tmp/venvs/torch5090/bin/python}"
+IMAGE_PYTHON="${CF_IMAGE_PYTHON:-}"
 LOG_ROOT="${CF_SERVICE_LOG_ROOT:-/root/autodl-tmp/flowstudio_logs}"
-PLANNER_HEALTH="${CF_PLANNER_HEALTH_URL:-http://127.0.0.1:18085/health}"
-IMAGE_HEALTH="${CF_IMAGE_HEALTH_URL:-http://127.0.0.1:18082/health}"
-IMAGE_UNLOAD="${CF_QWEN_IMAGE_UNLOAD_URL:-http://127.0.0.1:18082/unload}"
+PLANNER_HEALTH="${CF_PLANNER_HEALTH_URL:-}"
+IMAGE_HEALTH="${CF_IMAGE_HEALTH_URL:-}"
+IMAGE_UNLOAD="${CF_QWEN_IMAGE_UNLOAD_URL:-}"
 
 mkdir -p "$LOG_ROOT"
 
 http_ok() {
+  [[ -n "$1" ]] || return 1
   curl -fsS --max-time 3 "$1" >/dev/null 2>&1
 }
 
@@ -28,6 +29,10 @@ image_ready() {
 }
 
 start_image_api() {
+  if [[ -z "$IMAGE_PYTHON" || ! -x "$IMAGE_PYTHON" ]]; then
+    echo "local Qwen-Image retired; skipped"
+    return 0
+  fi
   if image_ready; then
     return
   fi
@@ -67,12 +72,13 @@ stop_planner() {
 }
 
 start_planner() {
-  for _ in $(seq 1 30); do
-    http_ok "$PLANNER_HEALTH" && return
-    sleep 1
-  done
-  echo "Remote planner did not become healthy: $PLANNER_HEALTH" >&2
-  return 1
+  if [[ -z "$PLANNER_HEALTH" ]]; then
+    echo "local planner retired; skipped"
+    return 0
+  fi
+  http_ok "$PLANNER_HEALTH" && return 0
+  echo "local planner retired; skipped"
+  return 0
 }
 
 show_status() {
