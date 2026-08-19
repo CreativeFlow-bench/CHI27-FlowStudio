@@ -2732,22 +2732,16 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
 
 .behavior-history-inspector {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid rgba(205, 216, 234, 0.96);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 14px 34px rgba(40, 55, 80, 0.14);
 }
 
-.behavior-inspector-head,
-.behavior-inspector-meta,
-.behavior-view-pairs,
-.behavior-view-pair > div {
+.behavior-inspector-head {
   display: flex;
   align-items: center;
-}
-
-.behavior-inspector-head {
   justify-content: space-between;
   gap: 12px;
 }
@@ -2773,30 +2767,6 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.behavior-annotation-shot {
-  margin-top: 8px;
-}
-
-.behavior-annotation-shot img {
-  width: 100%;
-  max-height: 120px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  background: #f8fafc;
-  display: block;
-}
-
-.behavior-annotation-shot span {
-  display: block;
-  padding: 18px 12px;
-  border-radius: 12px;
-  background: rgba(148, 163, 184, 0.12);
-  color: var(--ink-soft);
-  font-size: 12px;
-  text-align: center;
 }
 
 .behavior-dot-wrap {
@@ -2847,52 +2817,6 @@ button.accepted-intent-dot:focus-visible .accepted-intent-tooltip {
 .behavior-dot-delete:hover {
   background: #b91c1c;
   border-color: #fff;
-}
-
-.behavior-inspector-meta {
-  gap: 12px;
-  margin-top: 5px;
-  color: var(--ink-soft);
-  font-size: 10px;
-}
-
-.behavior-view-pairs {
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.behavior-view-pair {
-  flex: 1;
-  min-width: 0;
-}
-
-.behavior-view-pair small {
-  display: block;
-  margin-bottom: 3px;
-  color: var(--ink-mute);
-  text-transform: uppercase;
-}
-
-.behavior-view-pair > div {
-  gap: 4px;
-}
-
-.behavior-view-pair img,
-.behavior-view-pair span {
-  width: 50%;
-  height: 46px;
-  border-radius: 7px;
-  object-fit: cover;
-  background: #eef2f7;
-}
-
-.behavior-view-pair span {
-  display: grid;
-  place-items: center;
-  padding: 3px;
-  color: var(--ink-mute);
-  font-size: 8px;
-  text-align: center;
 }
 
 /* 3D tools */
@@ -5296,9 +5220,10 @@ textarea:focus-visible,
   color: #87909b;
   font-family: var(--font-ui);
   font-size: 13px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .ai-behavior-float .ai-behavior-panel-body {
@@ -6056,7 +5981,7 @@ textarea:focus-visible,
 .behavior-history-rail {
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .behavior-history-label {

@@ -122,7 +122,20 @@ test("AI Behavior drops user-action observe lines", () => {
     semanticDivergenceError: null,
     hasDivergenceContent: false,
   });
-  assert.equal(view.narrative, "Waiting for the 3D model.");
+  assert.equal(view.narrative, workspacePresentation.EMPTY_CANVAS_CHATS[0]);
+});
+
+test("AI Behavior chats when the canvas is empty", () => {
+  const view = buildAiBehaviorPresentation({
+    uiBrief: null,
+    plannerTypedText: "",
+    plannerNarration: "",
+    liveObserveNarrative: workspacePresentation.EMPTY_CANVAS_CHATS[1],
+    semanticDivergenceLoading: false,
+    semanticDivergenceError: null,
+    hasDivergenceContent: false,
+  });
+  assert.equal(view.narrative, workspacePresentation.EMPTY_CANVAS_CHATS[1]);
 });
 
 test("creative state uses error, loading, ready, locked precedence", () => {
@@ -178,5 +191,7 @@ test("observe narrative looks at a viewport screenshot instead of part names", a
   assert.match(block, /preview_image: preview/);
   assert.match(block, /parts: \[\]/);
   assert.match(block, /viewport_orbit_count/);
+  assert.match(block, /EMPTY_CANVAS_CHATS/);
+  assert.match(block, /hasObject/);
   assert.doesNotMatch(block, /humanParts/);
 });

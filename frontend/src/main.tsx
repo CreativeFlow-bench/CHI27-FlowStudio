@@ -476,6 +476,7 @@ function App() {
     resolveIntentRevisionGate,
     startActiveRevisionGeneration,
     finalizeSculptBehavior,
+    snapshotSculptBehavior,
     cancelSculptBehavior,
     resumeSculptBehavior,
     finalizePrimitiveBehavior,
@@ -630,7 +631,7 @@ function App() {
             sculptStrength={sculptStrength}
             editorScene={editorScene}
             annotationMode={annotationMode}
-            onCancelAnnotation={() => setAnnotationMode(false)}
+            onCancelAnnotation={toggleAnnotationMode}
             onCommitAnnotation={(strokes, brushStrokes) => {
               // Keep the overlay open: it shows a completion card (2D snapshot +
               // saved state) until the user exits or continues drawing.
@@ -873,7 +874,7 @@ function App() {
                   sculptStrength={sculptStrength}
                   onStrengthChange={setSculptStrength}
                   onCommitVersion={() => void commitSculptedMesh()}
-                  onDoneBehavior={() => finalizeSculptBehavior(false)}
+                  onDoneBehavior={() => snapshotSculptBehavior()}
                   editorScene={editorScene}
                   asset={asset}
                 />

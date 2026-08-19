@@ -88,6 +88,8 @@ import { createExperimentEventRecorder } from "../utils/experimentProject";
 import {
   buildSemanticDivergenceParameters,
   deriveSemanticDivergenceUiState,
+  EMPTY_CANVAS_CHATS,
+  isEmptyCanvasChat,
   isMeshJargonLabel,
   isObjectStateNarrative,
 } from "../utils/workspacePresentation";
@@ -300,7 +302,7 @@ export function useStudioStore() {
   const [activeRevisionId, setActiveRevisionId] = useState<string | null>(null);
   const threeViewportRef = useRef<ThreeViewportHandle | null>(null);
   const sculptBehaviorRef = useRef<{
-    tool: SculptTool;
+    tool: SculptTool | "annotation";
     startedAt: string;
     startViews: BehaviorViewSet;
     strokeCount: number;
@@ -994,7 +996,7 @@ export function useStudioStore() {
     };
   };
 
-  const beginSculptBehavior = (tool: SculptTool, startViews: BehaviorViewSet) => {
+  const beginSculptBehavior = (tool: SculptTool | "annotation", startViews: BehaviorViewSet) => {
     const startedAt = new Date().toISOString();
     const optimisticId = `local_beh_${crypto.randomUUID().slice(0, 8)}`;
     const nextSeq =
@@ -1126,13 +1128,19 @@ export function useStudioStore() {
     const behavior = sculptBehaviorRef.current;
     if (!behavior || !session) return empty;
     const endViews = threeViewportRef.current?.captureThreeViews?.(960, 0.82) ?? {};
-    sculptBehaviorRef.current = continueTool
-      ? beginSculptBehavior(behavior.tool, endViews)
-      : null;
-    if (behavior.strokeCount === 0 && editorScene.editOps().length > 0) {
-      behavior.strokeCount = editorScene.editOps().length;
+    if (sculptBehaviorRef.current === behavior) {
+      sculptBehaviorRef.current = continueTool
+        ? beginSculptBehavior(behavior.tool, endViews)
+        : null;
     }
-    // Ensure 0-stroke behaviors are still committed so that every tool click leaves a history record.
+    if (behavior.strokeCount === 0) {
+      if (behavior.localBehaviorId) {
+        setBehaviorSessions((current) =>
+          current.filter((item) => item.behavior_id !== behavior.localBehaviorId),
+        );
+      }
+      return empty;
+    }
     const reserved = await behavior.reservation;
     if (behavior.localBehaviorId) {
       setBehaviorSessions((current) =>
@@ -1184,9 +1192,45 @@ export function useStudioStore() {
     return { behavior: committed, endViews };
   };
 
-  /** After Done → continue: open a fresh reserved behavior without leaving the tool. */
+  const snapshotSculptBehavior = async (): Promise<{
+    behavior: BehaviorSession | null;
+    endViews: BehaviorViewSet;
+  }> => {
+    const empty = { behavior: null as BehaviorSession | null, endViews: {} as BehaviorViewSet };
+    const pending = sculptBehaviorRef.current;
+    if (!pending) return empty;
+    const captured = threeViewportRef.current?.captureThreeViews?.(960, 0.82) ?? {};
+    const fallback = threeViewportRef.current?.captureJpeg?.(960, 0.82) ?? null;
+    const endViews = {
+      front: captured.front ?? fallback,
+      side: captured.side ?? fallback,
+      top: captured.top ?? fallback,
+    };
+    pending.evidence = { ...pending.evidence, preview_end_views: endViews };
+    const reserved = await pending.reservation.catch(() => null);
+    return {
+      behavior: {
+        behavior_id: reserved?.behavior_id ?? pending.localBehaviorId,
+        session_id: session?.session_id ?? "",
+        behavior_seq: reserved?.behavior_seq ?? 0,
+        tool: pending.tool,
+        target: reserved?.target ?? {},
+        status: "active",
+        started_at: pending.startedAt,
+        ended_at: null,
+        stroke_count: pending.strokeCount,
+        operation_summary: pending.evidence,
+        start_views: pending.startViews,
+        end_views: endViews,
+        evidence_refs: [],
+      },
+      endViews,
+    };
+  };
+
+  /** After Done → continue: keep the same tool session. */
   const resumeSculptBehavior = () => {
-    if (!sculptTool || sculptBehaviorRef.current) return;
+    if (sculptBehaviorRef.current || !sculptTool) return;
     sculptBehaviorRef.current = beginSculptBehavior(
       sculptTool,
       threeViewportRef.current?.captureThreeViews?.() ?? {},
@@ -2053,10 +2097,25 @@ export function useStudioStore() {
   // UI-only LLM 3D-context narrator: look at the viewport screenshot, then describe it.
   useEffect(() => {
     if (!session?.session_id) return undefined;
+    const hasObject = Boolean(asset?.mesh_url || asset?.obj_url || canvasPrimitive || sculptedMeshObjUrl);
+    if (!hasObject) {
+      liveObserveAbortRef.current?.abort();
+      if (liveObserveTimerRef.current) window.clearTimeout(liveObserveTimerRef.current);
+      liveObserveSignatureRef.current = "empty";
+      setLiveObserveNarrative(EMPTY_CANVAS_CHATS[0]);
+      let index = 0;
+      liveObserveTimerRef.current = window.setInterval(() => {
+        index = (index + 1) % EMPTY_CANVAS_CHATS.length;
+        setLiveObserveNarrative(EMPTY_CANVAS_CHATS[index]);
+      }, 9000);
+      return () => {
+        if (liveObserveTimerRef.current) window.clearInterval(liveObserveTimerRef.current);
+      };
+    }
     const objectName = [asset?.label, asset?.object_type]
       .map((item) => String(item || "").trim())
       .find((item) => item && !isMeshJargonLabel(item)) || "3D model";
-    const fallback = `This is a ${objectName}.`;
+    const fallback = objectName === "3D model" ? EMPTY_CANVAS_CHATS[0] : `This is a ${objectName}.`;
     const signature = [
       objectName,
       asset?.asset_id ?? "",
@@ -2066,7 +2125,9 @@ export function useStudioStore() {
       String(liveSignals.viewport_orbit_count),
       String(liveSignals.viewport_zoom_count),
     ].join("::");
-    if (!isObjectStateNarrative(liveObserveNarrative)) setLiveObserveNarrative(fallback);
+    if (!isObjectStateNarrative(liveObserveNarrative) && !isEmptyCanvasChat(liveObserveNarrative)) {
+      setLiveObserveNarrative(fallback);
+    }
     if (signature === liveObserveSignatureRef.current) return undefined;
     if (liveObserveTimerRef.current) window.clearTimeout(liveObserveTimerRef.current);
     liveObserveTimerRef.current = window.setTimeout(() => {
@@ -2122,9 +2183,9 @@ export function useStudioStore() {
     asset?.mesh_url,
     asset?.obj_url,
     sculptedMeshObjUrl,
+    canvasPrimitive,
     liveSignals.viewport_orbit_count,
     liveSignals.viewport_zoom_count,
-    liveObserveNarrative,
   ]);
 
   const solutionSpaceSignature = [job?.job_id ?? "", ...solutionBatches.map((batch) => batch.batch_id)].join("|");
@@ -4881,25 +4942,23 @@ export function useStudioStore() {
       setAnnotationMode(false);
       deactivateHoverMode();
     }
-    setAddMenuOpen((v) => {
-      const next = !v;
-      recordActionAtom("add", { asset_id: asset?.asset_id ?? null }, { action: next ? "menu_open" : "menu_close" });
-      return next;
-    });
+    setAddMenuOpen((v) => !v);
   };
 
   const toggleAnnotationMode = () => {
-    if (!annotationMode) {
-      if (sculptBehaviorRef.current) void cancelSculptBehavior();
-      setSculptTool(null);
-      setAddMenuOpen(false);
-      deactivateHoverMode();
+    if (annotationMode) {
+      if (sculptBehaviorRef.current?.tool === "annotation") {
+        void cancelSculptBehavior();
+      }
+      setAnnotationMode(false);
+      return;
     }
-    setAnnotationMode((v) => {
-      const next = !v;
-      recordActionAtom("annotation", { asset_id: asset?.asset_id ?? null }, { action: next ? "mode_on" : "mode_off" });
-      return next;
-    });
+    if (sculptBehaviorRef.current) void cancelSculptBehavior();
+    setSculptTool(null);
+    setAddMenuOpen(false);
+    deactivateHoverMode();
+    sculptBehaviorRef.current = beginSculptBehavior("annotation", {});
+    setAnnotationMode(true);
   };
 
   const deactivateHoverMode = () => {
@@ -4929,7 +4988,6 @@ export function useStudioStore() {
       setHoverMode(true);
       setHoverMaskDataUrl(null);
       incrementLiveSignal("tool_switch_count");
-      recordActionAtom("hover", { asset_id: asset.asset_id }, { action: "mode_on" });
       addLog("hover", "mode on — raycast tentative labels; click again or dwell to commit");
       return;
     }
@@ -4968,27 +5026,38 @@ export function useStudioStore() {
       updatedAt: new Date().toISOString(),
     });
     setCreativeStagePreset("silhouette");
-    // Put Behavior on the rail immediately — screenshot uploads attach afterward.
-    const behaviorId = recordActionAtom(
-      "annotation",
-      {
-        asset_id: asset.asset_id,
-        part_id: selectedPart || null,
-          label: activeSelectedPart?.label ?? (selectedPart || "annotation"),
-      },
-      {
-        annotation_mode: brushStrokes?.length ? "2d_brush" : "2d_pencil",
-        text: intentText,
-        annotation_shape: "freehand_contour",
-        brush_count: brushStrokes?.length ?? 0,
-        brush_kinds: [...new Set(brushStrokes?.map((stroke) => stroke.brush) ?? [])],
-        brush_summary: annotationPayload.metadata.brush_summary ?? null,
-        stroke_count: annotationPayload.strokes.length,
-        stroke_points: annotationPayload.strokes.flatMap((stroke) => stroke.points ?? []),
-        stroke_point_count: annotationPayload.strokes.reduce((sum, stroke) => sum + (stroke.points?.length ?? 0), 0),
-        projection: annotationPayload.projection,
-        live_signals: nextLiveSignals,
-      },
+    if (!sculptBehaviorRef.current || sculptBehaviorRef.current.tool !== "annotation") {
+      sculptBehaviorRef.current = beginSculptBehavior("annotation", {});
+    }
+    const annotationSession = sculptBehaviorRef.current;
+    annotationSession.strokeCount += annotationPayload.strokes.length;
+    annotationSession.evidence = {
+      ...annotationSession.evidence,
+      annotation_mode: brushStrokes?.length ? "2d_brush" : "2d_pencil",
+      text: intentText,
+      annotation_shape: "freehand_contour",
+      brush_count: (Number(annotationSession.evidence.brush_count) || 0) + (brushStrokes?.length ?? 0),
+      brush_kinds: [...new Set([
+        ...((annotationSession.evidence.brush_kinds as string[] | undefined) ?? []),
+        ...(brushStrokes?.map((stroke) => stroke.brush) ?? []),
+      ])],
+      brush_summary: annotationPayload.metadata.brush_summary ?? annotationSession.evidence.brush_summary ?? null,
+      stroke_count: annotationSession.strokeCount,
+      projection: annotationPayload.projection,
+      live_signals: nextLiveSignals,
+    };
+    const reserved = await annotationSession.reservation.catch(() => null);
+    const behaviorId = reserved?.behavior_id ?? annotationSession.localBehaviorId;
+    setBehaviorSessions((current) =>
+      current.map((item) =>
+        item.behavior_id === annotationSession.localBehaviorId || item.behavior_id === behaviorId
+          ? {
+              ...item,
+              stroke_count: annotationSession.strokeCount,
+              operation_summary: annotationSession.evidence,
+            }
+          : item,
+      ),
     );
     sendEvent("annotation_commit", {
       asset_id: asset.asset_id,
@@ -6957,6 +7026,7 @@ export function useStudioStore() {
     triggerPostGateDivergence,
     startActiveRevisionGeneration,
     finalizeSculptBehavior,
+    snapshotSculptBehavior,
     cancelSculptBehavior,
     resumeSculptBehavior,
     finalizePrimitiveBehavior,

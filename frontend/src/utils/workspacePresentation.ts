@@ -92,6 +92,23 @@ export function humanizeObserveNarrative(text: string): string {
   return /\bthis part\b/i.test(cleaned) ? "" : cleaned;
 }
 
+export const EMPTY_CANVAS_CHATS = [
+  "Nothing on the canvas yet. I'm here when you drop in a model.",
+  "Empty studio. Load a model or start with a primitive whenever you're ready.",
+  "No object in view — we can just hang out until you bring something in.",
+];
+
+export function isEmptyCanvasChat(text: string | null | undefined): boolean {
+  return EMPTY_CANVAS_CHATS.includes(String(text || "").trim());
+}
+
+function observeNarrativeForPresentation(liveObserveNarrative?: string | null): string {
+  const text = String(liveObserveNarrative || "").trim();
+  if (isObjectStateNarrative(text)) return humanizeObserveNarrative(text) || EMPTY_CANVAS_CHATS[0];
+  if (isEmptyCanvasChat(text)) return text;
+  return EMPTY_CANVAS_CHATS[0];
+}
+
 export function buildAiBehaviorPresentation({
   plannerNarration,
   liveObserveNarrative,
@@ -117,10 +134,8 @@ export function buildAiBehaviorPresentation({
         : "locked";
 
   return {
-    // 3D object state only — never user orbit/inspect actions.
-    narrative: humanizeObserveNarrative(
-      isObjectStateNarrative(liveObserveNarrative) ? liveObserveNarrative ?? "" : "Waiting for the 3D model.",
-    ),
+    // Object screenshot when a model is present; idle chat when the canvas is empty.
+    narrative: observeNarrativeForPresentation(liveObserveNarrative),
     details: plannerNarration.trim() || null,
     creativeState,
   };

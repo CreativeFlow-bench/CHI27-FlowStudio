@@ -288,7 +288,7 @@
 
 .canvas-tool-dock {
   position: fixed;
-  left: calc(var(--workspace-safe-left) + 10px);
+  left: 16px;
   top: 50%;
   z-index: 18;
   transform: translateY(-50%);
@@ -335,6 +335,11 @@
     calc(100vw - var(--workspace-safe-left) - var(--workspace-safe-right) - 32px)
   );
   max-height: calc(100dvh - 48px);
+}
+
+/* Keep the composer where it is; Action History sits above it. */
+.canvas-composer-shell:has(.behavior-history-rail) {
+  bottom: 72px;
 }
 
 .ai-behavior-float.float-panel {
@@ -485,7 +490,7 @@
 .behavior-history-rail {
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .behavior-history-label {

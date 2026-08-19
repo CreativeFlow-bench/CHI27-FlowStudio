@@ -187,6 +187,7 @@ export function AIBehaviorPanel({
           <header className="more-creative-header">
             <span>
               <strong className="more-creative-title">More Creative?</strong>
+              <p className="more-creative-scope">Waiting for your design. I'll give you more inspiration.</p>
             </span>
           </header>
           <section className={`mc-pane mc-keywords-pane${scopeReady ? "" : " is-locked"}`} aria-label="Divergence keywords" aria-disabled={!scopeReady}>

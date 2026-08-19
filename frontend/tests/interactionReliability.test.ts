@@ -309,6 +309,19 @@ test("Solution Space height grip does not cover the horizontal scrollbar", async
   assert.match(rail, /draggedSideways/);
 });
 
+test("action history records one session from tool enter to exit", async () => {
+  const store = await read("../src/state/studioStore.ts");
+  const main = await read("../src/main.tsx");
+  assert.match(store, /if \(behavior.strokeCount === 0\)/);
+  assert.match(store, /After Done → continue: keep the same tool session/);
+  assert.match(store, /beginSculptBehavior\("annotation"/);
+  assert.doesNotMatch(store, /action: "mode_on"/);
+  assert.doesNotMatch(store, /action: "menu_open"/);
+  assert.doesNotMatch(store, /action: "menu_close"/);
+  assert.match(main, /onDoneBehavior=\{\(\) => snapshotSculptBehavior\(\)\}/);
+  assert.match(main, /onCancelAnnotation=\{toggleAnnotationMode\}/);
+});
+
 test("annotation eraser punches out ink instead of painting white", async () => {
   const overlay = await read("../src/components/overlays/AnnotationCanvasOverlay.tsx");
   assert.match(overlay, /brush === "eraser"/);

@@ -4,7 +4,6 @@
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MousePointer2, Paintbrush, Pencil, Plus, Send, Trash2, X } from "lucide-react";
-import { absoluteUrl } from "../../api";
 import type {
   ActionAtom,
   AssetRecord,
@@ -13,16 +12,6 @@ import type {
   SculptTool,
   SessionRecord,
 } from "../../types";
-
-function behaviorScreenshotUrl(behavior: BehaviorSession): string | null {
-  const summary = behavior.operation_summary ?? {};
-  const raw =
-    summary.viewport_screenshot_url
-    ?? summary.stroke_url
-    ?? summary.scribble_mask_data_url
-    ?? null;
-  return raw ? String(raw) : null;
-}
 
 export function IntentComposer({
   intentText,
@@ -93,9 +82,6 @@ export function IntentComposer({
   );
   const selectedBehavior = behaviors.find((item) => item.behavior_id === selectedBehaviorId) ?? null;
   const sendDisabled = !session || generationBusy || (!canSendIntent && !intentText.trim());
-  const annotationShot = selectedBehavior?.tool === "annotation"
-    ? behaviorScreenshotUrl(selectedBehavior)
-    : null;
 
   const handleDeleteBehavior = (behaviorId: string) => {
     onDeleteBehavior?.(behaviorId);
@@ -111,6 +97,61 @@ export function IntentComposer({
 
   return (
     <div className="canvas-composer-shell">
+      {behaviors.length ? (
+        <div className="behavior-history-rail" aria-label="Behavior history">
+          <div className="behavior-history-label">Action History</div>
+          <div className="behavior-dot-list">
+            {behaviors.map((behavior) => (
+              <div className="behavior-dot-wrap" key={behavior.behavior_id}>
+                <button
+                  type="button"
+                  className={`behavior-dot ${behavior.tool}${behavior.status === "active" ? " is-active" : ""}${selectedBehaviorId === behavior.behavior_id ? " is-selected" : ""}`}
+                  data-tooltip={`${behavior.behavior_seq}. ${behavior.tool} · ${behavior.stroke_count} 笔 · ${String(behavior.target.label ?? behavior.target.part_id ?? "整体")}`}
+                  aria-label={`查看 Behavior ${behavior.behavior_seq}`}
+                  onClick={() => setSelectedBehaviorId((current) => current === behavior.behavior_id ? null : behavior.behavior_id)}
+                >
+                  {behavior.behavior_seq}
+                </button>
+                {onDeleteBehavior ? (
+                  <button
+                    type="button"
+                    className="behavior-dot-delete"
+                    data-tooltip={`删除 Behavior ${behavior.behavior_seq}`}
+                    aria-label={`删除 Behavior ${behavior.behavior_seq}`}
+                    onClick={() => handleDeleteBehavior(behavior.behavior_id)}
+                  >
+                    <X size={7} strokeWidth={2.75} />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {selectedBehavior ? (
+        <section className="behavior-history-inspector" aria-label={`Behavior ${selectedBehavior.behavior_seq} details`}>
+          <div className="behavior-inspector-head">
+            <strong>Behavior {selectedBehavior.behavior_seq} · {selectedBehavior.tool}</strong>
+            <div className="behavior-inspector-actions">
+              {onDeleteBehavior ? (
+                <button
+                  type="button"
+                  aria-label={`删除 Behavior ${selectedBehavior.behavior_seq}`}
+                  data-tooltip="删除该 behavior"
+                  onClick={() => handleDeleteBehavior(selectedBehavior.behavior_id)}
+                >
+                  <Trash2 size={13} />
+                </button>
+              ) : null}
+              <button type="button" aria-label="Close behavior details" onClick={() => setSelectedBehaviorId(null)}>
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <div
         className={`canvas-composer float-panel${addMenuOpen ? " has-menu" : " is-compact"}`}
         aria-label="Intent composer"
@@ -230,95 +271,6 @@ export function IntentComposer({
         </div>
       ) : null}
       </div>
-
-      {selectedBehavior ? (
-        <section className="behavior-history-inspector" aria-label={`Behavior ${selectedBehavior.behavior_seq} details`}>
-          <div className="behavior-inspector-head">
-            <strong>Behavior {selectedBehavior.behavior_seq} · {selectedBehavior.tool}</strong>
-            <div className="behavior-inspector-actions">
-              {onDeleteBehavior ? (
-                <button
-                  type="button"
-                  aria-label={`删除 Behavior ${selectedBehavior.behavior_seq}`}
-                  data-tooltip="删除该 behavior"
-                  onClick={() => handleDeleteBehavior(selectedBehavior.behavior_id)}
-                >
-                  <Trash2 size={13} />
-                </button>
-              ) : null}
-              <button type="button" aria-label="Close behavior details" onClick={() => setSelectedBehaviorId(null)}>
-                <X size={13} />
-              </button>
-            </div>
-          </div>
-          <div className="behavior-inspector-meta">
-            <span>目标：{String(selectedBehavior.target.label ?? selectedBehavior.target.part_id ?? "整体")}</span>
-            <span>{selectedBehavior.stroke_count} 笔</span>
-            <span>状态：{String(selectedBehavior.operation_summary.undo_state ?? "有效")}</span>
-          </div>
-          {selectedBehavior.tool === "annotation" ? (
-            <div className="behavior-annotation-shot">
-              {annotationShot ? (
-                <img
-                  src={annotationShot.startsWith("data:") ? annotationShot : absoluteUrl(annotationShot)}
-                  alt={`Annotation behavior ${selectedBehavior.behavior_seq}`}
-                  loading="lazy"
-                />
-              ) : (
-                <span>暂无截图</span>
-              )}
-            </div>
-          ) : (
-            <div className="behavior-view-pairs">
-              {(["front", "side", "top"] as const).map((view) => {
-                const start = selectedBehavior.start_views[view];
-                const end = selectedBehavior.end_views[view];
-                return (
-                  <div className="behavior-view-pair" key={view}>
-                    <small>{view}</small>
-                    <div>
-                      {start ? <img src={absoluteUrl(start)} alt={`${view} start`} width={92} height={46} loading="lazy" /> : <span>无开始视图</span>}
-                      {end ? <img src={absoluteUrl(end)} alt={`${view} end`} width={92} height={46} loading="lazy" /> : <span>无结束视图</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {behaviors.length ? (
-        <div className="behavior-history-rail" aria-label="Behavior history">
-          <div className="behavior-history-label">Action History</div>
-          <div className="behavior-dot-list">
-            {behaviors.map((behavior) => (
-              <div className="behavior-dot-wrap" key={behavior.behavior_id}>
-                <button
-                  type="button"
-                  className={`behavior-dot ${behavior.tool}${behavior.status === "active" ? " is-active" : ""}${selectedBehaviorId === behavior.behavior_id ? " is-selected" : ""}`}
-                  data-tooltip={`${behavior.behavior_seq}. ${behavior.tool} · ${behavior.stroke_count} 笔 · ${String(behavior.target.label ?? behavior.target.part_id ?? "整体")}`}
-                  aria-label={`查看 Behavior ${behavior.behavior_seq}`}
-                  onClick={() => setSelectedBehaviorId((current) => current === behavior.behavior_id ? null : behavior.behavior_id)}
-                >
-                  {behavior.behavior_seq}
-                </button>
-                {onDeleteBehavior ? (
-                  <button
-                    type="button"
-                    className="behavior-dot-delete"
-                    data-tooltip={`删除 Behavior ${behavior.behavior_seq}`}
-                    aria-label={`删除 Behavior ${behavior.behavior_seq}`}
-                    onClick={() => handleDeleteBehavior(behavior.behavior_id)}
-                  >
-                    <X size={7} strokeWidth={2.75} />
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

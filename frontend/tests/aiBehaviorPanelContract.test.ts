@@ -60,6 +60,7 @@ test("AI Behavior keeps the approved insight hierarchy around More Creative", as
     }));
 
     assert.match(html, /More Creative\?/);
+    assert.match(html, /Waiting for your design\. I'll give you more inspiration\./);
     assert.doesNotMatch(html, />CURRENT PHENOMENON</);
     assert.doesNotMatch(html, />MODEL DETAILS</);
     assert.doesNotMatch(html, /Confirm scope to start divergence/);
