@@ -5459,6 +5459,14 @@ textarea:focus-visible,
 
 .ai-behavior-float .prompt-token.is-inherited {
   opacity: 0.78;
+  padding-right: 8px;
+}
+
+.ai-behavior-float .prompt-token.is-inherited em {
+  margin-left: 4px;
+  font-style: normal;
+  font-weight: 800;
+  color: #8a94a6;
 }
 
 .ai-behavior-float span.prompt-token {

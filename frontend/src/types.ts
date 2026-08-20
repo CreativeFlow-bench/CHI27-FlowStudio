@@ -688,7 +688,7 @@ export type FourStageUiState = {
   gateQuestion: string | null;
   scopeAccepted: boolean;
   divergenceSelection: FourStageRun["divergence_selection"];
-  generationArtifacts: Array<{ url: string; kind: "png" | "glb" | "obj" }>;
+  generationArtifacts: Array<{ url: string; kind: "png" | "glb" | "obj"; candidate_id?: string }>;
   generationCompleted: number;
   generationTotal: number;
   error: { code: string; message: string; retryable: boolean } | null;

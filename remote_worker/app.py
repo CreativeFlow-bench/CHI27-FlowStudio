@@ -78,9 +78,11 @@ def _hy3d_subprocess_env(device: str | None = None) -> dict[str, str]:
     env.setdefault("HY21_ROOT", "/root/Hunyuan3D-2.1")
     env.setdefault("HY21_MODEL_ROOT", "/root/models")
     env.setdefault("CUDA_HOME", "/usr/local/cuda-12.4")
-    env.setdefault("CF_HY3D_STEPS", "20")
+    env.setdefault("CF_HY3D_STEPS", "30")
+    env.setdefault("CF_HY3D_OCTREE_RESOLUTION", "384")
     env.setdefault("CF_PBR_MAX_VIEWS", "6")
     env.setdefault("CF_PBR_TEXTURE_RESOLUTION", "1024")
+    env.setdefault("CF_PBR_DISABLE_UV_INPAINT", "0")
     env["PYTHONUNBUFFERED"] = "1"
     if device is not None:
         env["CUDA_VISIBLE_DEVICES"] = device

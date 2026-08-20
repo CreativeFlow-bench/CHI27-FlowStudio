@@ -1136,7 +1136,17 @@ class RealtimeObservationService:
                             revision.error = (run.error or {}).get("message")
                             self.store.save_revision(revision)
                     elif batch.status == "generating":
-                        active = True
+                        # A batch marked generating while the run is still at
+                        # gate / missing will park the whole serial queue.
+                        stuck = run is None or run.stage.value not in {
+                            "generation",
+                            "completed",
+                        }
+                        if stuck:
+                            batch.status = "queued"
+                            self.store.save_solution_batch(batch)
+                        else:
+                            active = True
                 if active:
                     return
                 queued = next((item for item in batches if item.status == "queued"), None)

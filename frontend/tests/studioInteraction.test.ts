@@ -5,7 +5,9 @@ import {
   candidateSeriesLabel,
   fourStageCandidateFromArtifact,
   fourStageCandidateId,
+  fourStageRunIdFromCandidate,
   inheritedKeywordsFromRevisions,
+  normalizeGenerationArtifacts,
   summarizeKeywords,
   visibleInheritedKeywords,
 } from "../src/state/studioInteraction.ts";
@@ -55,4 +57,28 @@ test("streamed and persisted four-stage cards share one candidate id", () => {
   });
   assert.equal(streamed.candidate_id, persisted.candidate_id);
   assert.equal(streamed.label, "Gen3 · 1 · 新词");
+});
+
+test("generation artifacts keep durable candidate ids", () => {
+  assert.deepEqual(
+    normalizeGenerationArtifacts([
+      { candidate_id: "cand_gen_01", kind: "png", url: "/files/a.png" },
+      { file_url: "/files/b.png", type: "png" },
+    ]),
+    [
+      { url: "/files/a.png", kind: "png", candidate_id: "cand_gen_01" },
+      { url: "/files/b.png", kind: "png" },
+    ],
+  );
+});
+
+test("Hy3D uses the four-stage run on the candidate, not a second HTTP path", () => {
+  assert.equal(
+    fourStageRunIdFromCandidate({ candidate_id: "cand_gen_01", metadata: { run_id: "run_live" } }, "run_fallback"),
+    "run_live",
+  );
+  assert.equal(
+    fourStageRunIdFromCandidate({ candidate_id: "fourstage_run_x_2", metadata: {} }),
+    "run_x",
+  );
 });

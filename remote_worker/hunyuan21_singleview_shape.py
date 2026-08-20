@@ -18,8 +18,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True)
     parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--shape-steps", type=int, default=20)
-    parser.add_argument("--octree-resolution", type=int, default=256)
+    parser.add_argument("--shape-steps", type=int, default=int(os.getenv("CF_HY3D_STEPS", "30")))
+    parser.add_argument("--octree-resolution", type=int, default=int(os.getenv("CF_HY3D_OCTREE_RESOLUTION", "384")))
     args = parser.parse_args()
 
     sys.path[:0] = [

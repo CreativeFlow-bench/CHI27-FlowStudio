@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { readStateSource } from "./readStateSource.ts";
 
 const read = (path: string) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -67,7 +68,7 @@ test("canvas navigation stays viewport-anchored instead of covering top workspac
 
 test("resizing AI Behavior does not reflow the 3D editor layer", async () => {
   const main = await read("../src/main.tsx");
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.doesNotMatch(main, /setAiBehaviorWidth\(size\.w\)/);
   assert.doesNotMatch(store, /\.canvas-composer-shell".*observer\.observe/s);
   assert.match(store, /only recenter on window \/ canvas shell size/);
@@ -143,7 +144,7 @@ test("Solution Space can be collapsed, reopened, and stays collapsed while image
   const main = await read("../src/main.tsx");
   const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
   const css = await read("../src/styles.css");
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const visibility = await read("../src/utils/solutionSpaceVisibility.ts");
   assert.match(main, /aria-label="Open Solution Space"/);
   assert.match(main, /is-ready/);
@@ -168,7 +169,7 @@ test("version canvas is an accessible candidate drop target", async () => {
 });
 
 test("version graph is persisted and upgrades the same node in place", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.match(store, /dropCandidateIntoVersionGraph/);
   assert.match(store, /\/version-nodes/);
   assert.match(store, /active-version/);
@@ -178,7 +179,7 @@ test("version graph is persisted and upgrades the same node in place", async () 
 });
 
 test("clearing history drops stale observation snapshots and in-flight behavior commits", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.match(store, /const clearCurrentHistory/);
   assert.match(store, /if \(sourceSwitchSeqRef\.current !== epoch\) return null;/);
   assert.match(store, /if \(socketRef\.current !== ws\) return;/);
@@ -187,14 +188,14 @@ test("clearing history drops stale observation snapshots and in-flight behavior 
 });
 
 test("source-node bootstrap waits for the persisted version graph snapshot", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.match(store, /versionGraphHydrated/);
   assert.match(store, /if \(!versionGraphHydrated\) return;/);
   assert.match(store, /setVersionGraphHydrated\(true\)/);
 });
 
 test("candidate drop renders an optimistic image node before waiting for persistence", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const actionStart = store.indexOf("const dropCandidateIntoVersionGraph");
   const optimisticNode = store.indexOf("const optimisticNode", actionStart);
   const createRequest = store.indexOf("await api<VersionGraphNode>", actionStart);
@@ -227,17 +228,19 @@ test("version nodes expose status and retry affordances", async () => {
 });
 
 test("Hy3D keeps polling the GPU job instead of freezing after two minutes", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.match(store, /HY3D_POLL_ATTEMPTS = 360/);
   assert.match(store, /watchFourStageHy3dJob/);
+  assert.match(store, /bindStudioHy3d/);
   assert.match(store, /version_node_id: versionNodeId/);
   assert.doesNotMatch(store, /for \(let i = 0; i < 120; i \+= 1\)/);
   assert.doesNotMatch(store, /仍在生成，未标记失败/);
+  assert.doesNotMatch(store, /const generateCandidateHy3d/);
   assert.doesNotMatch(store, /void runFourStageHy3d\(candidate, node\.node_id, true\);\n      \} else \{\n        void generateCandidateHy3d/);
 });
 
 test("Hy3D success adopts the mesh and forces SAM3D part discovery", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const helpers = await read("../src/utils/appHelpers.ts");
   assert.match(store, /adoptHy3dMeshAsActiveAsset/);
@@ -252,7 +255,7 @@ test("Hy3D success adopts the mesh and forces SAM3D part discovery", async () =>
 });
 
 test("add primitive has Done, scale handle, screenshots, and a left tool dock", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const main = await read("../src/main.tsx");
   const viewport = await read("../src/components/ThreeViewport.tsx");
@@ -277,7 +280,7 @@ test("add primitive has Done, scale handle, screenshots, and a left tool dock", 
 });
 
 test("version cards keep their own mesh and retry does not replace earlier versions", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const composer = await read("../src/components/panels/IntentComposer.tsx");
   assert.doesNotMatch(store, /isSource \? asset\?\.mesh_url/);
@@ -292,7 +295,7 @@ test("version cards keep their own mesh and retry does not replace earlier versi
 test("version overview keeps the focused node highlighted and re-enters on double-click", async () => {
   const canvas = await read("../src/components/StudioCanvas.tsx");
   const main = await read("../src/main.tsx");
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const css = await read("../src/styles.css");
   assert.match(canvas, /aria-label="查看全部版本"/);
   assert.match(canvas, /onHighlightVersion/);
@@ -334,14 +337,17 @@ test("Solution Space selects by card click and drops by native drag", async () =
 });
 
 test("stale semantic divergence errors do not flicker during generation", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const panel = await read("../src/components/panels/AIBehaviorPanel.tsx");
   const main = await read("../src/main.tsx");
   const rail = await read("../src/components/panels/SolutionSpaceRail.tsx");
   assert.match(store, /semanticDivergence\?\.status === "failed"/);
   assert.match(store, /semantic_divergence_status: "failed"/);
-  assert.match(store, /if \(solutionSpaceGenerating\) return;/);
+  assert.match(store, /if \(solutionSpaceGenerating && needsAttach\) return;/);
+  assert.match(store, /liveParams\?\.revisionId === capturedRevisionId/);
   assert.match(panel, /!generationBusy && !solutionSpaceGenerating/);
+  assert.match(panel, /onDismissInheritedKeyword/);
+  assert.match(panel, /<em aria-hidden="true">×<\/em>/);
   assert.match(main, /fourStage.stage === "failed" \? fourStage.error\?\.message/);
   assert.match(rail, /errorMessage && !candidates.length && !loading/);
 });
@@ -357,7 +363,7 @@ test("Solution Space height grip does not cover the horizontal scrollbar", async
 });
 
 test("Send snapshot includes live signals and drops generic mesh parts from Gate", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   assert.match(store, /live_signals: liveSignalsAtClick/);
   assert.match(store, /namedPartAtClick/);
   assert.match(store, /function isGenericMeshId/);
@@ -366,7 +372,7 @@ test("Send snapshot includes live signals and drops generic mesh parts from Gate
 });
 
 test("mana potion diverges whole silhouette without writing Action History", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const main = await read("../src/main.tsx");
   const fnStart = store.indexOf("const triggerPostGateDivergence");
   const fn = store.slice(fnStart, store.indexOf("const startActiveRevisionGeneration", fnStart));
@@ -378,7 +384,7 @@ test("mana potion diverges whole silhouette without writing Action History", asy
 });
 
 test("action history records one session from tool enter to exit", async () => {
-  const store = await read("../src/state/studioStore.ts");
+  const store = await readStateSource();
   const main = await read("../src/main.tsx");
   assert.match(store, /if \(behavior.strokeCount === 0\)/);
   assert.match(store, /After Done → continue: keep the same tool session/);

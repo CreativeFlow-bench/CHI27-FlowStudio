@@ -302,6 +302,7 @@ export function AIBehaviorPanel({
                         onClick={() => onDismissInheritedKeyword?.(keyword)}
                       >
                         <span>{keyword}</span>
+                        <em aria-hidden="true">×</em>
                       </button>
                     ))}
                   </div>

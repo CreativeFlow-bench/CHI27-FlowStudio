@@ -1,5 +1,43 @@
 import type { Candidate } from "../types";
 
+export type GenerationArtifactChip = {
+  url: string;
+  kind: "png" | "glb" | "obj";
+  candidate_id?: string;
+};
+
+export function normalizeGenerationArtifacts(
+  items: Array<Record<string, unknown>> | null | undefined,
+): GenerationArtifactChip[] {
+  const chips: GenerationArtifactChip[] = [];
+  for (const artifact of items ?? []) {
+    const url = artifact.url ?? artifact.file_url;
+    if (typeof url !== "string" || !url.trim()) continue;
+    const kindRaw = String(artifact.kind ?? artifact.type ?? "png");
+    const kind = kindRaw === "glb" ? "glb" : kindRaw === "obj" ? "obj" : "png";
+    const candidateId = artifact.candidate_id;
+    chips.push({
+      url: url.trim(),
+      kind,
+      ...(typeof candidateId === "string" && candidateId.trim()
+        ? { candidate_id: candidateId.trim() }
+        : {}),
+    });
+  }
+  return chips;
+}
+
+export function fourStageRunIdFromCandidate(
+  candidate: { candidate_id?: string | null; metadata?: Record<string, unknown> | null },
+  fallbackRunId?: string | null,
+): string {
+  const fromMeta = String(candidate.metadata?.run_id ?? "").trim();
+  if (fromMeta) return fromMeta;
+  const match = candidate.candidate_id ? /^fourstage_(.+)_(\d+)$/.exec(candidate.candidate_id) : null;
+  if (match?.[1]) return match[1];
+  return String(fallbackRunId ?? "").trim();
+}
+
 export function fourStageCandidateId(
   runId: string | null | undefined,
   index: number,
