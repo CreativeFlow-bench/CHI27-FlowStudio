@@ -75,7 +75,7 @@ import {
 } from "../utils/appHelpers";
 
 import { inferredChangeScope, inferChangeScopeFromText, explicitScopeFromText } from "../utils/scope";
-import { API_BASE, WS_BASE, SESSION_STORAGE_KEY, api, sseFetch, timeoutAfter, absoluteUrl, inferMeshExtension, inferMtlUrl, assetExportUrl } from "../api";
+import { API_BASE, WS_BASE, SESSION_STORAGE_KEY, api, sseFetch, timeoutAfter, absoluteUrl, inferMeshExtension, inferMtlUrl, assetExportUrl, downloadAssetExport, downloadNamedUrl, parseApiError } from "../api";
 import { captureAndUploadViewport, uploadViewportScreenshot } from "../utils/viewportCapture";
 import {
   buildSolutionSpaceRoundChips,
@@ -91,8 +91,10 @@ import {
 } from "./studioInteraction";
 import { bindStudioHy3d } from "./studioHy3d";
 import {
+  activeEditorExtentFromBand,
   centeredActiveCanvasPan,
   EMPTY_LIVE_SIGNALS,
+  freeCanvasBand,
   GATE_TIMEOUT_MS,
   isGenericMeshId,
   REVISION_GATED_INTERACTION,
@@ -252,6 +254,13 @@ export function useStudioStore() {
   // 四阶段发散关键词：由 retrieval 先验 / decision divergence_seeds 派生，
   // 是关键词面板的唯一数据源（替代旧 directions/suggest 输出）。
   const [divergenceKeywords, setDivergenceKeywords] = useState<PromptToken[]>([]);
+  const [divergenceRounds, setDivergenceRounds] = useState<Array<{
+    id: string;
+    intentSeq: number;
+    keywords: PromptToken[];
+    loading: boolean;
+  }>>([]);
+  const [divergenceRoundIndex, setDivergenceRoundIndex] = useState(0);
   const [selectedPromptTokens, setSelectedPromptTokens] = useState<PromptToken[]>([]);
   const [excludedInheritedKeywords, setExcludedInheritedKeywords] = useState<string[]>([]);
   const excludedInheritedKeywordsRef = useRef<string[]>([]);
@@ -399,7 +408,12 @@ export function useStudioStore() {
     }
     return currentPartDwellMs();
   };
-  const [liveSignals, setLiveSignals] = useState<LiveSignals>(EMPTY_LIVE_SIGNALS);
+    const [liveSignals, setLiveSignals] = useState<LiveSignals>(EMPTY_LIVE_SIGNALS);
+    const [silentIr, setSilentIr] = useState<{
+      predicted_state?: string | null;
+      predicted_hierarchy?: string | null;
+      recommended_axes?: string[];
+    } | null>(null);
   const [livePerception, setLivePerception] = useState<LivePerception>({
     summary: "Waiting for your first move.",
     evidence: [],
@@ -538,6 +552,8 @@ export function useStudioStore() {
     setActionAtoms([]);
     setIntentText("");
     setDivergenceKeywords([]);
+    setDivergenceRounds([]);
+    setDivergenceRoundIndex(0);
     setSemanticDivergence(null);
     setSemanticDivergenceLoading(false);
     setSemanticDivergenceError(null);
@@ -710,10 +726,11 @@ export function useStudioStore() {
   const putLiveSignals = async (signals: LiveSignals) => {
     if (!session) return;
     try {
-      await api(`/api/v1/sessions/${session.session_id}/live-signals`, {
+      const body = await api<{ silent_ir?: typeof silentIr }>(`/api/v1/sessions/${session.session_id}/live-signals`, {
         method: "PUT",
         body: JSON.stringify({ live_signals: signals }),
       });
+      if (body.silent_ir) setSilentIr(body.silent_ir);
     } catch (error) {
       addLog("live-signals", String(error).slice(0, 120));
     }
@@ -1486,7 +1503,7 @@ export function useStudioStore() {
   };
 
   const activeCaseAssetId = useMemo(
-    () => stage?.active_asset_id ?? asset?.asset_id ?? null,
+    () => asset?.asset_id ?? stage?.active_asset_id ?? null,
     [asset?.asset_id, stage?.active_asset_id],
   );
 
@@ -2527,6 +2544,8 @@ export function useStudioStore() {
       if (message.type === "stage_update") setStage(message.payload);
       if (message.type === "live_signals_updated") {
         applyServerLiveSignals(message.payload?.live_signals as Partial<LiveSignals> | undefined);
+        const nextSilent = message.payload?.silent_ir as typeof silentIr | undefined;
+        if (nextSilent) setSilentIr(nextSilent);
       }
       if (message.type === "perception_updated" || message.type === "perception_snapshot") {
         const payload = message.payload ?? {};
@@ -2705,6 +2724,7 @@ export function useStudioStore() {
   const sendIntentRevision = (options?: { trigger?: "manual" | "idle" }) => {
     const trigger = options?.trigger ?? "manual";
     if (!session || !asset) return null;
+    divergenceCommitInvocationRef.current += 1;
     if (trigger === "idle") {
       // Idle hint: only fire when there is something new since the last sent
       // revision AND no other revision is currently waiting for gate/planning.
@@ -2822,7 +2842,7 @@ export function useStudioStore() {
       parent_revision_id: null,
       window_start_seq: baselineSeqAtClick + 1,
       cutoff_seq: baselineSeqAtClick,
-      behavior_ids: [],
+      behavior_ids: behaviorSessions.map((item) => item.behavior_id),
       user_text: intentTextAtClick,
       source_context: {
         asset_id: assetAtClick.asset_id,
@@ -2967,6 +2987,9 @@ export function useStudioStore() {
             body: JSON.stringify({
               user_text: resolvedUserText,
               cutoff_seq: cutoffSeq,
+              behavior_ids: behaviorSessions
+                .filter((item) => item.behavior_seq > baselineSeqAtClick && item.behavior_seq <= cutoffSeq)
+                .map((item) => item.behavior_id),
               run_hy3d: hy3dCandidateIds.length > 0,
               source_context: {
                 asset_id: assetAtClick.asset_id,
@@ -3265,7 +3288,6 @@ export function useStudioStore() {
     semanticDivergenceLatestRequestedKeyRef.current = capturedRequestBaseKey;
     const isCurrentDivergenceInvocation = () =>
       divergenceCommitInvocationRef.current === invocationToken &&
-      activeRevisionIdRef.current === capturedRevisionId &&
       Boolean(capturedRunId);
 
     try {
@@ -3317,9 +3339,19 @@ export function useStudioStore() {
       ]);
       semanticDivergenceLatestRequestedKeyRef.current = commitKey;
       const applyCurrentResponse = (response: NonNullable<FourStageRun["semantic_divergence"]>) => {
+        const tokens = semanticCandidateTokens({ ...run, semantic_divergence: response });
+        setDivergenceRounds((current) => {
+          const id = `run_${capturedRunId}`;
+          const round = { id, intentSeq: revision?.intent_seq ?? latestIntentSeqRef.current, keywords: tokens, loading: response.status !== "completed" };
+          const index = current.findIndex((item) => item.id === id);
+          if (index < 0) return [...current, round];
+          const next = [...current];
+          next[index] = round;
+          return next;
+        });
         if (!isCurrentDivergenceInvocation()) return response;
         setSemanticDivergence(response);
-        setDivergenceKeywords(semanticCandidateTokens({ ...run, semantic_divergence: response }));
+        setDivergenceKeywords(tokens);
         // Keep user selection while divergence settles — do not wipe tokens here.
         setSemanticDivergenceLoading(false);
         setDivergencePhaseMessage(null);
@@ -3346,8 +3378,14 @@ export function useStudioStore() {
       }
       if (!isCurrentDivergenceInvocation()) return null;
       setSemanticDivergenceLoading(true);
-      setDivergenceKeywords([]);
       setSemanticDivergenceError(null);
+      setDivergenceRounds((current) => {
+        const id = `run_${capturedRunId}`;
+        if (current.some((item) => item.id === id)) return current;
+        const next = [...current, { id, intentSeq: revision?.intent_seq ?? latestIntentSeqRef.current, keywords: [], loading: true }];
+        queueMicrotask(() => setDivergenceRoundIndex(next.length - 1));
+        return next;
+      });
       setDivergencePhaseMessage(
         streamParams.preflight ? "Preflight divergence…" : "Connecting to model…",
       );
@@ -3450,8 +3488,14 @@ export function useStudioStore() {
   // Composer Mana: one-click whole-silhouette keyword diverge. Do not write
   // Action History / Gate — those force a second click before keywords appear.
   const triggerPostGateDivergence = async () => {
-    if (!session || semanticDivergenceLoading) return null;
+    if (!session) return null;
     const invocationToken = ++divergenceCommitInvocationRef.current;
+    const roundId = `round_${invocationToken}`;
+    setDivergenceRounds((current) => {
+      const next = [...current, { id: roundId, intentSeq: latestIntentSeqRef.current, keywords: [], loading: true }];
+      queueMicrotask(() => setDivergenceRoundIndex(next.length - 1));
+      return next;
+    });
     const genericObjectNames = new Set([
       "",
       "object",
@@ -3552,16 +3596,19 @@ export function useStudioStore() {
         method: "POST",
         body: JSON.stringify(body),
       })) {
-        if (!isCurrent()) return null;
         if (event.event === "phase") {
           const phase = (event.data ?? {}) as Record<string, unknown>;
           const message = describeDivergencePhase(phase);
-          if (message) setDivergencePhaseMessage(message);
+          if (isCurrent() && message) setDivergencePhaseMessage(message);
           const candidates = Array.isArray(phase.candidates)
             ? (phase.candidates as Array<Record<string, unknown>>)
             : [];
           if (candidates.length) {
-            setDivergenceKeywords(tokensFromCandidates(candidates));
+            const tokens = tokensFromCandidates(candidates);
+            setDivergenceRounds((current) => current.map((round) =>
+              round.id === roundId ? { ...round, keywords: tokens } : round
+            ));
+            if (isCurrent()) setDivergenceKeywords(tokens);
           }
           continue;
         }
@@ -3571,7 +3618,12 @@ export function useStudioStore() {
           const candidates = Array.isArray(payload.candidates)
             ? (payload.candidates as Array<Record<string, unknown>>)
             : [];
-          setDivergenceKeywords(tokensFromCandidates(candidates));
+          const tokens = tokensFromCandidates(candidates);
+          setDivergenceRounds((current) => current.map((round) =>
+            round.id === roundId ? { ...round, keywords: tokens, loading: false } : round
+          ));
+          if (!isCurrent()) return null;
+          setDivergenceKeywords(tokens);
           setSemanticDivergence({
             schema_version: "flowstudio.semantic-divergence.v1",
             divergence_id: `sandbox_${Date.now().toString(36)}`,
@@ -3607,6 +3659,9 @@ export function useStudioStore() {
       if (!sawDone) throw new Error("sandbox diverge stream ended without done");
       return true;
     } catch (error) {
+      setDivergenceRounds((current) => current.map((round) =>
+        round.id === roundId ? { ...round, loading: false } : round
+      ));
       if (isCurrent()) {
         setSemanticDivergenceError(String(error).slice(0, 160));
         setDivergencePhaseMessage(null);
@@ -5380,6 +5435,7 @@ export function useStudioStore() {
     );
     updateLiveSignals({ semantic_distance: Math.min(1, next.length / 6) });
     persistDivergenceSelection(next, excludedInheritedKeywordsRef.current);
+    setIntentText(next.map((item) => item.label).join("，"));
   };
 
   const dismissInheritedKeyword = (keyword: string) => {
@@ -6111,13 +6167,14 @@ export function useStudioStore() {
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
         const currentShell = versionCanvasShellRef.current;
-        setCanvasPan(centeredActiveCanvasPan(currentShell));
-        const activeNode = currentShell?.querySelector<HTMLElement>(".version-node.active");
-        const width = Math.round(activeNode?.offsetWidth || window.innerWidth);
-        const height = Math.round(activeNode?.offsetHeight || window.innerHeight);
+        const extent = activeEditorExtentFromBand(currentShell);
+        const studio = currentShell?.closest(".studio-shell") as HTMLElement | null;
+        studio?.style.setProperty("--active-editor-width", `${extent.width}px`);
+        studio?.style.setProperty("--active-editor-height", `${extent.height}px`);
         setActiveEditorExtent((prev) => (
-          prev.width === width && prev.height === height ? prev : { width, height }
+          prev.width === extent.width && prev.height === extent.height ? prev : extent
         ));
+        setCanvasPan(centeredActiveCanvasPan(currentShell));
       });
     };
     recenter();
@@ -6132,6 +6189,7 @@ export function useStudioStore() {
   }, [versionViewMode, studioDrawerOpen, menuWidth, activeVersionId, versionGraph.nodes.length]);
 
   const zoomCanvasBy = (factor: number) => {
+    if (versionViewModeRef.current === "active") return;
     const current = canvasZoomRef.current;
     const next = Math.max(0.4, Math.min(1.8, Number((current * factor).toFixed(3))));
     if (next === current) return;
@@ -6167,15 +6225,21 @@ export function useStudioStore() {
   }, []);
 
   const saveCase = async () => {
-    if (!session || !activeCaseAssetId) return;
+    if (!session) return;
+    const assetId = asset?.asset_id ?? activeCaseAssetId;
+    if (!assetId) {
+      window.alert("当前没有可保存的模型");
+      return;
+    }
+    const title = caseTitle.trim() || `${asset?.label ?? "FlowStudio"} case`;
     setSavingCase(true);
     try {
       const response = await api<CaseRecord>("/api/v1/cases", {
         method: "POST",
         body: JSON.stringify({
           session_id: session.session_id,
-          title: caseTitle.trim() || `${asset?.label ?? "FlowStudio"} case`,
-          asset_id: activeCaseAssetId,
+          title,
+          asset_id: assetId,
           accepted_candidate_ids: acceptedCandidateIds,
           notes: caseNotes,
           metadata: {
@@ -6184,6 +6248,7 @@ export function useStudioStore() {
             intent_text: intentText,
             last_job_id: job?.job_id ?? null,
             active_phase: stage?.phase ?? null,
+            active_version_id: activeVersionId,
             candidate_decisions: candidates.map((candidate) => ({
               candidate_id: candidate.candidate_id,
               decision: candidate.decision,
@@ -6205,8 +6270,24 @@ export function useStudioStore() {
       );
       addLog("case saved", response.case_id);
       void loadCaseLibrary();
+      const safeName = title.replace(/[^\w\u4e00-\u9fff.-]+/g, "_").slice(0, 60) || "case";
+      const meshAsset = asset?.asset_id === assetId ? asset : null;
+      const exportFormat: "obj" | "glb" | null = meshAsset?.obj_url || inferMeshExtension(meshAsset?.mesh_url ?? "") === "obj"
+        ? "obj"
+        : meshAsset?.mesh_url
+          ? "glb"
+          : null;
+      if (exportFormat) {
+        await downloadAssetExport(assetId, exportFormat, `${safeName}.${exportFormat}`);
+      }
+      const caseUrl = typeof response.metadata?.case_url === "string" ? response.metadata.case_url : null;
+      if (caseUrl) {
+        await downloadNamedUrl(caseUrl, `${safeName}.json`);
+      }
     } catch (error) {
-      addLog("case error", String(error));
+      const message = parseApiError(error);
+      addLog("case error", message);
+      window.alert(message);
     } finally {
       setSavingCase(false);
     }
@@ -6483,6 +6564,9 @@ export function useStudioStore() {
     divergencePerGroupCount,
     setDivergencePerGroupCount,
     divergenceKeywords,
+    divergenceRounds,
+    divergenceRoundIndex,
+    setDivergenceRoundIndex,
     setDivergenceKeywords,
     semanticDivergence,
     semanticDivergenceLoading,
@@ -6561,6 +6645,7 @@ export function useStudioStore() {
     hoverCommittedRef,
     hoverDwellTimerRef,
     liveSignals,
+    silentIr,
     setLiveSignals,
     livePerception,
     setLivePerception,

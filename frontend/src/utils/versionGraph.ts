@@ -154,10 +154,10 @@ export function layoutVersionGraph(
   // click of a double-click moves the node out from under the pointer.
   const activeDepth = expandActive ? depthOf(resolvedActiveId ?? sorted[0].node_id) : 0;
   const nodeWidth = expandActive
-    ? Math.max(ACTIVE_NODE_SIZE, Math.round(activeExtent?.width ?? ACTIVE_NODE_SIZE))
+    ? Math.round(activeExtent?.width ?? ACTIVE_NODE_SIZE)
     : HISTORY_NODE_SIZE;
   const nodeHeight = expandActive
-    ? Math.max(ACTIVE_NODE_SIZE, Math.round(activeExtent?.height ?? ACTIVE_NODE_SIZE))
+    ? Math.round(activeExtent?.height ?? ACTIVE_NODE_SIZE)
     : HISTORY_NODE_SIZE;
   const columnPitch = nodeWidth + COLUMN_GAP;
   const rowPitch = nodeHeight + COLUMN_GAP;

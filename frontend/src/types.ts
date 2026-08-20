@@ -78,6 +78,7 @@ export type Interpretation = {
       change_scope_hint?: string;
       scope_hint?: string;
       matches?: DesignStateIRMatch[];
+      content_matches?: DesignStateIRMatch[];
       source?: string;
       recommended_axes?: string[];
       axis_scores?: Array<{ axis: string; score: number }>;
@@ -85,6 +86,8 @@ export type Interpretation = {
       query_terms?: string[];
       retrieval_mode?: string;
       policy?: string;
+      predicted_hierarchy?: string | null;
+      predicted_state?: string | null;
     };
   };
 };
@@ -143,6 +146,7 @@ export type DesignStateIRMatch = {
   recommended_axes?: string[];
   evidence_strength?: string;
   text?: string;
+  hierarchy?: string;
 };
 
 export type AssistanceSuggestion = {

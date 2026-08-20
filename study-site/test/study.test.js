@@ -79,16 +79,30 @@ test("schedule refresh preserves participant passwords and non-participant accou
   assert.deepEqual(refreshed.find((account) => account.username === "P000"), reviewer);
 });
 
-test("requires NASA after every task and CSI plus SUS after each system block", () => {
+test("requires NASA after every task and system questionnaires after each block", () => {
   const [schedule] = buildParticipantSchedules();
   const kinds = schedule.steps.map((step) => step.kind);
 
   assert.deepEqual(kinds, [
     "welcome", "prestudy",
-    "task", "nasa", "csi", "sus", "break",
+    "task", "nasa", "csi", "sus", "ir", "break",
     "task", "nasa", "csi", "sus",
     "comparison", "interview", "complete",
   ]);
+});
+
+test("adds one IR questionnaire only after the FlowStudio SUS step", () => {
+  for (const schedule of buildParticipantSchedules()) {
+    const irIndexes = schedule.steps
+      .map((step, index) => step.kind === "ir" ? index : -1)
+      .filter((index) => index >= 0);
+
+    assert.equal(irIndexes.length, 1, `${schedule.username} should have one IR step`);
+    const irIndex = irIndexes[0];
+    assert.equal(schedule.steps[irIndex].system, "Flow");
+    assert.equal(schedule.steps[irIndex - 1].kind, "sus");
+    assert.equal(schedule.steps[irIndex - 1].system, "Flow");
+  }
 });
 
 test("each task presents an open exploration brief and the correct system constraints", () => {
@@ -132,6 +146,16 @@ test("questionnaire copy describes two open explorations instead of four tasks",
   assert.match(appSource, /新中式手包设计（主题待确认）/);
   assert.doesNotMatch(appSource, /四项设计任务/);
   assert.doesNotMatch(appSource, /四项任务/);
+});
+
+test("IR questionnaire uses five seven-point items and marks interruption as reverse scored for reviewers", async () => {
+  const appSource = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+
+  for (const copy of ["及时出现", "创作阶段", "打断了我的创作思路", "准确表达", "接下来的创作有帮助"]) {
+    assert.match(appSource, new RegExp(copy));
+  }
+  assert.match(appSource, /ratingQuestions\(IR, 7\)/);
+  assert.match(appSource, /第 3 题反向计分/);
 });
 
 test("SQLite storage preserves concurrent participant submissions", async () => {

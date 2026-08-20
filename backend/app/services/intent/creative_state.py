@@ -39,6 +39,15 @@ def attach_creative_state(features: dict[str, object], event: UserEvent) -> None
 
         # Promote possible fixation when IR also hints stagnation-like routes.
         ir = features.get("design_state_ir") if isinstance(features.get("design_state_ir"), dict) else {}
+        predicted = str(ir.get("predicted_state") or "")
+        mapped = {
+            "Exploration": "exploring",
+            "Formation": "focused_editing",
+            "Refinement": "refining",
+            "Evaluation": "comparing",
+        }.get(predicted)
+        if mapped and state not in {"possible_fixation", "ready_for_help", "comparing"}:
+            state, confidence = mapped, max(confidence, 0.64)
         top = (ir.get("matches") or [None])[0] if isinstance(ir.get("matches"), list) else None
         route = str((top or {}).get("route") or "").lower() if isinstance(top, dict) else ""
         if state == "possible_fixation" and ("fix" in route or "help" in route or "stuck" in route):
@@ -46,7 +55,12 @@ def attach_creative_state(features: dict[str, object], event: UserEvent) -> None
         elif state == "possible_fixation" and dwell_ms >= 4000:
             state, confidence = "ready_for_help", max(confidence, 0.72)
 
-        scope_hint = features.get("ir_scope_hint") or (
+        scope_from_ir = {
+            "Silhouette": "whole_object",
+            "Part": "part_or_region",
+            "Material": "material_surface",
+        }.get(str(ir.get("predicted_hierarchy") or ""))
+        scope_hint = scope_from_ir or features.get("ir_scope_hint") or (
             "part" if has_part else "contour"
         )
         features["creative_state"] = state

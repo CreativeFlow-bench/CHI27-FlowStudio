@@ -18,6 +18,7 @@ import {
   computeViewMode,
   createOrbitInteractionProbe,
   loadStudioModel,
+  frameCameraToModel,
   stageLoadedModel,
   trackMesh,
   updateSceneMaterials,
@@ -539,6 +540,10 @@ const ThreeViewportInner = React.forwardRef<ThreeViewportHandle, ThreeViewportPr
       resetModel();
       const geometry = stageLoadedModel(root, group, interactive, controls, camera);
       onGeometryReadyRef.current?.(geometry);
+      requestAnimationFrame(() => {
+        syncRendererSize();
+        frameCameraToModel(group, controls, camera);
+      });
       // Seed the initial framing state so perception can distinguish
       // silhouette surveying from part-level scrutiny before the user moves.
       window.setTimeout(() => emitViewportSignal("orbit", 0, true), 150);

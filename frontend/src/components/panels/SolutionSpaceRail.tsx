@@ -106,7 +106,9 @@ export function SolutionSpaceRail({
     return () => window.clearInterval(timer);
   }, [streamLines]);
 
-  const pendingSlots = loading ? Math.max(0, expectedTotal - candidates.length) : 0;
+  const pendingSlots = loading
+    ? (candidates.length === 0 ? 0 : Math.max(0, expectedTotal - candidates.length))
+    : 0;
   const streamText = streamLines[Math.min(streamIndex, streamLines.length - 1)] ?? "";
   // Keep the rail fully expanded while generating — never collapse to a strip.
   const railHeight = loading
@@ -172,6 +174,12 @@ export function SolutionSpaceRail({
         </div>
       ) : (
         <div className="solution-space-scroll">
+          {!candidates.length && loading ? (
+            <article className="solution-card is-waiting" aria-label="Waiting for first image">
+              <div className="solution-wait-pulse" aria-hidden="true" />
+              <span>waiting for first image…</span>
+            </article>
+          ) : null}
           {candidates.map((candidate) => {
             const previewUrl = candidatePreviewUrl(candidate);
             const accepted = acceptedCandidateIds.includes(candidate.candidate_id);

@@ -199,7 +199,7 @@ export function VersionCanvas({
   versionViewMode,
   onHighlightVersion,
   onActivateVersion,
-  onShowOverview,
+    onShowOverview: _onShowOverview,
   onDeleteVersion,
   versionCandidates,
   onDropCandidate,
@@ -349,8 +349,9 @@ export function VersionCanvas({
       }}
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
-          // Trackpad pinch over the 3D viewport must zoom the camera only;
-          // the 2D canvas zoom is reserved for the empty canvas area.
+          // Trackpad pinch over the 3D viewport must zoom the camera only.
+          // Active editing keeps the live view at 1:1; 2D canvas zoom is overview-only.
+          if (versionViewMode === "active") return;
           const target = event.target as HTMLElement | null;
           if (target && !target.closest(".version-node-frame, .version-thumb-viewport")) {
             event.preventDefault();
@@ -395,7 +396,7 @@ export function VersionCanvas({
       {dropTargetActive ? <div className="version-drop-hint">释放以创建下一版本</div> : null}
       <div
         className="version-canvas-world"
-        style={{ transform: `translate(${canvasPan.x}px, ${canvasPan.y}px) scale(${canvasZoom})` }}
+        style={{ transform: `translate(${canvasPan.x}px, ${canvasPan.y}px) scale(${versionViewMode === "active" ? 1 : canvasZoom})` }}
       >
         <svg className="version-canvas-links" aria-hidden="true">
           {versionLinks.map((link) => (
@@ -418,9 +419,6 @@ export function VersionCanvas({
               <div className="version-node-meta">
                 <strong>V{node.versionNumber}</strong>
                 <span>{compactVersionLabel(node.label)}</span>
-                <button type="button" aria-label="查看全部版本" title="查看全部版本" onClick={onShowOverview}>
-                  <Maximize2 size={15} aria-hidden="true" />
-                </button>
                 {onDeleteVersion && versionNodes.length > 1 ? (
                   <button
                     type="button"
@@ -621,13 +619,11 @@ export function VersionCanvas({
 export function SculptControlsPanel({
   sculptTool,
   onExit,
-  onContinueSculpt,
   sculptRadius,
   onRadiusChange,
   sculptStrength,
   onStrengthChange,
   onCommitVersion,
-  onDoneBehavior,
   editorScene,
   asset,
 }: {
@@ -646,149 +642,87 @@ export function SculptControlsPanel({
   editorScene: EditorSceneLike;
   asset: AssetRecord | null;
 }) {
-  const [donePreview, setDonePreview] = useState<{
-    strokes: number;
-    views: BehaviorViewSet;
-  } | null>(null);
-  const [busy, setBusy] = useState(false);
   const strokeCount = editorScene.editOps().length;
-  const canDone = strokeCount > 0 && !busy && !donePreview;
   const toolLabel =
     sculptTool === "drag" ? "Drag" : sculptTool === "brush" ? "Brush" : "Smooth";
-  const toolHint =
-    sculptTool === "drag"
-      ? "按住拖动变形"
-      : sculptTool === "brush"
-        ? "按住雕刻 · Shift 凹陷"
-        : "按住平滑";
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ pointerId: number; x: number; y: number; ox: number; oy: number } | null>(null);
 
-  const handleDone = async () => {
-    if (!canDone) return;
-    setBusy(true);
-    try {
-      const result = await onDoneBehavior();
-      if (!result.behavior) return;
-      setDonePreview({
-        strokes: result.behavior.stroke_count || strokeCount,
-        views: result.endViews,
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [activityTick, setActivityTick] = useState(0);
+  const onExitRef = useRef(onExit);
+  onExitRef.current = onExit;
+  useEffect(() => {
+    const bump = () => setActivityTick((value) => value + 1);
+    window.addEventListener("flowstudio:user-activity", bump);
+    return () => window.removeEventListener("flowstudio:user-activity", bump);
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => onExitRef.current(), 2000);
+    return () => window.clearTimeout(timer);
+  }, [strokeCount, sculptRadius, sculptStrength, sculptTool, activityTick]);
 
   return (
-    <>
-      <div className="sculpt-float-panel" aria-label="Sculpt controls">
-        <div className="sculpt-panel-head">
-          <span className="sculpt-panel-title">Sculpt · {toolLabel}</span>
-          <span className="sculpt-panel-meta">
-            {strokeCount} 笔
-            {editorScene.canUndo ? " · 可撤销" : ""}
-            {asset?.metadata?.current_version_id ? " · 已存版本" : ""}
-          </span>
-          <button
-            className="sculpt-exit"
-            type="button"
-            title="退出雕刻"
-            aria-label="退出雕刻"
-            onClick={() => {
-              setDonePreview(null);
-              onExit();
-            }}
-          >
-            <X size={13} />
-          </button>
-        </div>
-        {!donePreview ? (
-          <>
-            <div className="sculpt-sliders">
-              <label>
-                <span>大小</span>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.8"
-                  step="0.05"
-                  value={sculptRadius}
-                  onChange={(event) => onRadiusChange(Number(event.target.value))}
-                />
-                <em>{sculptRadius.toFixed(2)}</em>
-              </label>
-              <label>
-                <span>力度</span>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.6"
-                  step="0.05"
-                  value={sculptStrength}
-                  onChange={(event) => onStrengthChange(Number(event.target.value))}
-                />
-                <em>{sculptStrength.toFixed(2)}</em>
-              </label>
-            </div>
-            <div className="sculpt-actions">
-              <p className="sculpt-hint">{toolHint}</p>
-              <button className="sculpt-save" type="button" disabled={busy} onClick={onCommitVersion}>
-                保存版本
-              </button>
-              <button
-                className="sculpt-done"
-                type="button"
-                disabled={!canDone}
-                onClick={() => void handleDone()}
-              >
-                {busy ? "…" : "Done"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="sculpt-done-summary">
-            <strong>已保存 {donePreview.strokes} 笔 · Behavior</strong>
-            <div className="sculpt-done-views">
-              {(["front", "side", "top"] as const).map((view) => {
-                const src = behaviorViewSrc(donePreview.views[view]);
-                return src ? (
-                  <img key={view} src={src} alt={`${view} view`} width={72} height={48} />
-                ) : (
-                  <span key={view}>{view}</span>
-                );
-              })}
-            </div>
-          </div>
-        )}
+    <div
+      className="sculpt-float-panel is-draggable"
+      aria-label="Sculpt controls"
+      style={pos ? { left: pos.x, top: pos.y, right: "auto", transform: "none" } : undefined}
+    >
+      <div
+        className="sculpt-panel-head"
+        onPointerDown={(event) => {
+          if ((event.target as HTMLElement).closest("button, input, label")) return;
+          const rect = (event.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+          dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, ox: rect.left, oy: rect.top };
+          (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const drag = dragRef.current;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          setPos({ x: drag.ox + event.clientX - drag.x, y: drag.oy + event.clientY - drag.y });
+        }}
+        onPointerUp={() => {
+          dragRef.current = null;
+        }}
+      >
+        <span className="sculpt-panel-title">Sculpt · {toolLabel}</span>
+        <span className="sculpt-panel-meta">
+          {strokeCount} 笔
+          {editorScene.canUndo ? " · 可撤销" : ""}
+          {asset?.metadata?.current_version_id ? " · 已存版本" : ""}
+        </span>
       </div>
-      {donePreview ? (
-        <div className="sculpt-done-bar" role="group" aria-label="雕刻完成">
-          <span className="annotation-done-ask">继续雕？</span>
-          <button
-            type="button"
-            className="annotation-done-icon"
-            title="继续雕刻"
-            aria-label="继续雕刻"
-            onClick={() => {
-              onContinueSculpt();
-              setDonePreview(null);
-            }}
-          >
-            <RotateCcw size={15} />
-          </button>
-          <button
-            type="button"
-            className="annotation-done-icon is-primary"
-            title="完成退出"
-            aria-label="完成退出"
-            onClick={() => {
-              setDonePreview(null);
-              onExit();
-            }}
-          >
-            <X size={15} />
-          </button>
-        </div>
-      ) : null}
-    </>
+      <div className="sculpt-sliders">
+        <label>
+          <span>大小</span>
+          <input
+            type="range"
+            min="0.05"
+            max="0.8"
+            step="0.05"
+            value={sculptRadius}
+            onChange={(event) => onRadiusChange(Number(event.target.value))}
+          />
+          <em>{sculptRadius.toFixed(2)}</em>
+        </label>
+        <label>
+          <span>力度</span>
+          <input
+            type="range"
+            min="0.05"
+            max="0.6"
+            step="0.05"
+            value={sculptStrength}
+            onChange={(event) => onStrengthChange(Number(event.target.value))}
+          />
+          <em>{sculptStrength.toFixed(2)}</em>
+        </label>
+      </div>
+      <div className="sculpt-actions">
+        <button className="sculpt-save" type="button" onClick={onCommitVersion}>
+          保存版本
+        </button>
+      </div>
+    </div>
   );
 }
 

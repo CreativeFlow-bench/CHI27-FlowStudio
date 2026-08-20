@@ -338,6 +338,7 @@ function App() {
     hoverCommittedRef,
     hoverDwellTimerRef,
     liveSignals,
+    silentIr,
     setLiveSignals,
     livePerception,
     setLivePerception,
@@ -493,6 +494,9 @@ function App() {
     divergencePerGroupCount,
     setDivergencePerGroupCount,
     divergenceKeywords,
+    divergenceRounds,
+    divergenceRoundIndex,
+    setDivergenceRoundIndex,
     semanticDivergence,
     semanticDivergenceLoading,
     semanticDivergenceError,
@@ -819,6 +823,13 @@ function App() {
           >
             <AIBehaviorPanel
               presentation={aiBehaviorPresentation}
+              irHint={
+                silentIr?.recommended_axes?.length
+                  ? [silentIr.predicted_state, silentIr.predicted_hierarchy, silentIr.recommended_axes.slice(0, 3).join(" / ")]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : null
+              }
               divergenceTemperature={divergenceTemperature}
               onDivergenceTemperatureChange={setDivergenceTemperature}
               divergencePerGroupCount={divergencePerGroupCount}
@@ -835,6 +846,9 @@ function App() {
               onDismissNotice={() => setProjectNotice(null)}
               intentBubble={intentBubble}
               divergenceKeywords={divergenceKeywords}
+              divergenceRounds={divergenceRounds}
+              divergenceRoundIndex={divergenceRoundIndex}
+              onDivergenceRoundIndexChange={setDivergenceRoundIndex}
               selectedPromptTokens={selectedPromptTokens}
               interpretation={interpretation}
               session={session}
@@ -848,35 +862,33 @@ function App() {
             />
           </ResizableShell>
 
-          {(sculptTool && activeVersionMeshReady) || canvasPrimitive ? (
+          {sculptTool && activeVersionMeshReady ? (
+            <SculptControlsPanel
+              sculptTool={sculptTool}
+              onExit={() => {
+                void cancelSculptBehavior();
+                setSculptTool(null);
+              }}
+              onContinueSculpt={resumeSculptBehavior}
+              sculptRadius={sculptRadius}
+              onRadiusChange={setSculptRadius}
+              sculptStrength={sculptStrength}
+              onStrengthChange={setSculptStrength}
+              onCommitVersion={() => void commitSculptedMesh()}
+              onDoneBehavior={() => snapshotSculptBehavior()}
+              editorScene={editorScene}
+              asset={asset}
+            />
+          ) : null}
+          {canvasPrimitive ? (
             <div className="canvas-tool-dock" aria-label="Canvas tools">
-              {sculptTool && activeVersionMeshReady ? (
-                <SculptControlsPanel
-                  sculptTool={sculptTool}
-                  onExit={() => {
-                    void cancelSculptBehavior();
-                    setSculptTool(null);
-                  }}
-                  onContinueSculpt={resumeSculptBehavior}
-                  sculptRadius={sculptRadius}
-                  onRadiusChange={setSculptRadius}
-                  sculptStrength={sculptStrength}
-                  onStrengthChange={setSculptStrength}
-                  onCommitVersion={() => void commitSculptedMesh()}
-                  onDoneBehavior={() => snapshotSculptBehavior()}
-                  editorScene={editorScene}
-                  asset={asset}
-                />
-              ) : null}
-              {canvasPrimitive ? (
-                <PrimitiveControlsPanel
-                  primitive={canvasPrimitive}
-                  locked={primitiveLocked}
-                  onDone={() => finalizePrimitiveBehavior()}
-                  onCancel={cancelPrimitiveBehavior}
-                  onTransformMode={(mode) => threeViewportRef.current?.setPrimitiveTransformMode?.(mode)}
-                />
-              ) : null}
+              <PrimitiveControlsPanel
+                primitive={canvasPrimitive}
+                locked={primitiveLocked}
+                onDone={() => finalizePrimitiveBehavior()}
+                onCancel={cancelPrimitiveBehavior}
+                onTransformMode={(mode) => threeViewportRef.current?.setPrimitiveTransformMode?.(mode)}
+              />
             </div>
           ) : null}
 

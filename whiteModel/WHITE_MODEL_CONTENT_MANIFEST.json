@@ -248,9 +248,9 @@
       "status": "active_model"
     },
     {
-      "path": "whiteModel/extracted/toy_animals_toy_animal_collection_07/07/风传设计素材馆-加入会员终身免费.url",
+      "path": "whiteModel/extracted/toy_animals_toy_animal_collection_07/07/\u98ce\u4f20\u8bbe\u8ba1\u7d20\u6750\u9986-\u52a0\u5165\u4f1a\u5458\u7ec8\u8eab\u514d\u8d39.url",
       "category": "07",
-      "name": "风传设计素材馆-加入会员终身免费",
+      "name": "\u98ce\u4f20\u8bbe\u8ba1\u7d20\u6750\u9986-\u52a0\u5165\u4f1a\u5458\u7ec8\u8eab\u514d\u8d39",
       "file_size_bytes": 156,
       "status": "active_model"
     },
@@ -285,6 +285,127 @@
       "status": "quarantined_highpoly",
       "vertices": 1013528,
       "faces": 1013740
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/bulldog.obj",
+      "category": "toy_animals",
+      "name": "Bulldog",
+      "file_size_bytes": 3606060,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "Bulldog002",
+      "faces": 96360,
+      "vertices": 49159
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/elephant.obj",
+      "category": "toy_animals",
+      "name": "Elephant",
+      "file_size_bytes": 1471785,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "slon001",
+      "faces": 41112,
+      "vertices": 21132
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/bear.obj",
+      "category": "toy_animals",
+      "name": "Bear",
+      "file_size_bytes": 640154,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "bear1",
+      "faces": 17866,
+      "vertices": 9826
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/teddy.obj",
+      "category": "toy_animals",
+      "name": "Teddy",
+      "file_size_bytes": 649933,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "teddy",
+      "faces": 18306,
+      "vertices": 9638
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/mini-teddy.obj",
+      "category": "toy_animals",
+      "name": "Mini Teddy",
+      "file_size_bytes": 619848,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "miniteddy",
+      "faces": 17670,
+      "vertices": 9244
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/teddy-4.obj",
+      "category": "toy_animals",
+      "name": "Teddy 4",
+      "file_size_bytes": 681881,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "teddy004",
+      "faces": 19298,
+      "vertices": 10073
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/teddy-grey-1.obj",
+      "category": "toy_animals",
+      "name": "Grey Teddy",
+      "file_size_bytes": 1014481,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "teddy_grey001",
+      "faces": 26780,
+      "vertices": 15241
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/hippo.obj",
+      "category": "toy_animals",
+      "name": "Hippo",
+      "file_size_bytes": 4316871,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "begemot_2",
+      "faces": 110334,
+      "vertices": 60767
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/teddy-grey-2.obj",
+      "category": "toy_animals",
+      "name": "Grey Teddy 2",
+      "file_size_bytes": 1014231,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "teddy_grey002",
+      "faces": 26780,
+      "vertices": 15241
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/tiger.obj",
+      "category": "toy_animals",
+      "name": "Tiger",
+      "file_size_bytes": 601990,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "oldtiger002",
+      "faces": 17408,
+      "vertices": 8706
+    },
+    {
+      "path": "whiteModel/extracted/toy_animals/tiger-cub.obj",
+      "category": "toy_animals",
+      "name": "Tiger Cub",
+      "file_size_bytes": 454630,
+      "status": "active_model",
+      "source_zip": "08",
+      "src_object": "oldtiger001",
+      "faces": 13248,
+      "vertices": 6626
     }
   ]
 }

@@ -30,6 +30,14 @@ const SUS = [
   "我觉得这个系统使用起来很笨拙。", "我对使用这个系统很有信心。", "在开始使用这个系统前，我需要学习很多东西。",
 ];
 
+const IR = [
+  ["ir_timely", "IR 在我需要系统理解或确认设计意图时及时出现。"],
+  ["ir_stage_fit", "IR 出现的时机符合我当时所处的创作阶段。"],
+  ["ir_interruption", "IR 的出现打断了我的创作思路。"],
+  ["ir_expression", "IR 的文案准确表达了我当时想要进行的修改或探索。"],
+  ["ir_usefulness", "IR 提供的信息对我接下来的创作有帮助。"],
+];
+
 const INTERVIEW_DIMENSIONS = [
   {
     title: "整体体验与系统比较",
@@ -129,13 +137,14 @@ function reviewInterviewGuide() {
 }
 
 function renderReviewer() {
-  app.innerHTML = `<div class="review-shell"><header class="admin-header"><div><div class="brand">FlowStudio Research</div><div class="participant-meta">P000 · 研究材料审阅</div></div><button class="secondary" id="review-logout">退出登录</button></header><nav class="review-nav"><a href="#flow">流程</a><a href="#prestudy">前测</a><a href="#tasks">任务</a><a href="#nasa">NASA-TLX</a><a href="#csi">CSI</a><a href="#sus">SUS</a><a href="#comparison">系统比较</a><a href="#interview">访谈</a></nav><main class="review-content"><section class="review-intro"><div class="eyebrow">Review mode</div><h1>实验问卷总览</h1><p class="lead">这个账号只用于阅读和讨论，不提交答案，也不会写入参与者数据。</p></section>
-    <section class="review-section" id="flow"><h2>完整实验流程</h2><p class="review-note">前测 → 开放式创意探索 1（12–15 分钟）→ NASA → CSI → SUS → 休息 → 开放式创意探索 2（12–15 分钟）→ NASA → CSI → SUS → 系统比较 → 半结构化访谈。</p><h3>四种平衡顺序</h3><ol><li>G1：FlowStudio × 圣诞道具 → Baseline × 新中式手包</li><li>G2：Baseline × 圣诞道具 → FlowStudio × 新中式手包</li><li>G3：FlowStudio × 新中式手包 → Baseline × 圣诞道具</li><li>G4：Baseline × 新中式手包 → FlowStudio × 圣诞道具</li></ol><p>正式参与者 P001–P020，每组 5 人；P021–P025 用于预测试。</p></section>
+  app.innerHTML = `<div class="review-shell"><header class="admin-header"><div><div class="brand">FlowStudio Research</div><div class="participant-meta">P000 · 研究材料审阅</div></div><button class="secondary" id="review-logout">退出登录</button></header><nav class="review-nav"><a href="#flow">流程</a><a href="#prestudy">前测</a><a href="#tasks">任务</a><a href="#nasa">NASA-TLX</a><a href="#csi">CSI</a><a href="#sus">SUS</a><a href="#ir">IR</a><a href="#comparison">系统比较</a><a href="#interview">访谈</a></nav><main class="review-content"><section class="review-intro"><div class="eyebrow">Review mode</div><h1>实验问卷总览</h1><p class="lead">这个账号只用于阅读和讨论，不提交答案，也不会写入参与者数据。</p></section>
+    <section class="review-section" id="flow"><h2>完整实验流程</h2><p class="review-note">前测 → 开放式创意探索 1（12–15 分钟）→ NASA → CSI → SUS → 休息 → 开放式创意探索 2（12–15 分钟）→ NASA → CSI → SUS → 系统比较 → 半结构化访谈。FlowStudio 系统的 SUS 后额外填写一次 IR 体验量表。</p><h3>四种平衡顺序</h3><ol><li>G1：FlowStudio × 圣诞道具 → Baseline × 新中式手包</li><li>G2：Baseline × 圣诞道具 → FlowStudio × 新中式手包</li><li>G3：FlowStudio × 新中式手包 → Baseline × 圣诞道具</li><li>G4：Baseline × 新中式手包 → FlowStudio × 圣诞道具</li></ol><p>正式参与者 P001–P020，每组 5 人；P021–P025 用于预测试。</p></section>
     <section class="review-section" id="prestudy"><h2>实验前问卷</h2>${reviewList(["主要设计背景或创意领域", "3D 建模经验：无 / 入门 / 中等 / 熟练 / 专业", "生成式 AI 使用频率：很少 / 每月数次 / 每周数次 / 几乎每天"])}</section>
     <section class="review-section" id="tasks"><h2>两次开放式创意探索</h2><p class="review-note">每人体验两个系统、完成两个不同主题；系统与主题的组合按 G1–G4 平衡。两个系统均不能上传参考图。</p><h3>主题 1：圣诞解谜游戏的场景关键道具设计</h3><p>以雪人为核心，开放探索能够支持谜题或场景叙事的关键 3D 道具。</p><h3>主题 2：新中式手包设计（主题待确认）</h3><p>开放探索传统文化表达与当代使用方式相结合的手包设计。</p><h3>系统条件</h3><ol><li><strong>FlowStudio：</strong>从预设 3D 模型开始，通过空间交互进行修改和发散，不能上传参考图。</li><li><strong>Baseline：</strong>使用纯文本 Hunyuan3D，可多轮修改、查看历史并选择最终方案，不能上传参考图。</li></ol></section>
     <section class="review-section" id="nasa"><h2>NASA-TLX</h2><p>每项任务后填写一次，共两次。</p>${reviewList(NASA, "1–11 分，对应原始 0–100")}</section>
     <section class="review-section" id="csi"><h2>适配版 CSI</h2><p>每完成一个系统后填写一次，共两次。单人任务不包含 Collaboration。</p>${reviewList(CSI, "1–10 分")}</section>
     <section class="review-section" id="sus"><h2>System Usability Scale</h2><p>每完成一个系统后填写一次，共两次，保留完整 10 题。</p>${reviewList(SUS, "1–5 分")}</section>
+    <section class="review-section" id="ir"><h2>IR 体验量表</h2><p>仅在 FlowStudio 结束后填写一次，评价意图识别反馈的出现时机、干扰、表达准确性和有用性。第 3 题反向计分。</p>${reviewList(IR, "1–7 分")}</section>
     <section class="review-section" id="comparison"><h2>最终系统比较</h2>${reviewList(["总体上更偏好哪个系统？", "哪个系统更有助于探索不同创意方向？", "哪个系统更有助于表达设计意图？", "哪个系统更有控制感？", "哪个系统更容易使用？", "哪个系统更适合实际设计工作？"], "FlowStudio / Text-Hunyuan3D / 相近")}</section>
     <section class="review-section review-interview" id="interview"><h2>半结构化访谈指南</h2><p>供研究员口头提问、录音和记录。主问题共 12 题，按 6 个维度组织。</p>${reviewInterviewGuide()}</section>
   </main></div>`;
@@ -162,7 +171,7 @@ async function exportAdminData() {
 }
 
 function stageName(step) {
-  return ({ welcome: "研究说明", prestudy: "实验前问卷", task: "设计任务", nasa: "任务负荷", csi: "创造力支持", sus: "系统可用性", break: "休息", comparison: "系统比较", interview: "访谈问卷", complete: "完成" })[step.kind];
+  return ({ welcome: "研究说明", prestudy: "实验前问卷", task: "设计任务", nasa: "任务负荷", csi: "创造力支持", sus: "系统可用性", ir: "IR 体验", break: "休息", comparison: "系统比较", interview: "访谈问卷", complete: "完成" })[step.kind];
 }
 
 function renderStudy() {
@@ -176,7 +185,7 @@ function renderStudy() {
 }
 
 function renderStep(step) {
-  const views = { welcome: welcomeView, prestudy: prestudyView, task: taskView, nasa: nasaView, csi: csiView, sus: susView, break: breakView, comparison: comparisonView, interview: interviewView, complete: completeView };
+  const views = { welcome: welcomeView, prestudy: prestudyView, task: taskView, nasa: nasaView, csi: csiView, sus: susView, ir: irView, break: breakView, comparison: comparisonView, interview: interviewView, complete: completeView };
   return `<div class="step">${views[step.kind](step)}</div>`;
 }
 
@@ -193,7 +202,7 @@ function ratingQuestions(items, count, low = "非常不同意", high = "非常�
 }
 
 function welcomeView(step) {
-  return formShell(step, "开始前", "欢迎参加用户研究", "本网站用于安排实验步骤并收集问卷。研究评价的是系统，而不是你的设计能力。", `<div class="task-brief"><h2>预计流程</h2><p>两次开放式创意探索，每次 12–15 分钟；每次任务后填写 NASA-TLX、CSI 和 SUS；最后完成系统比较与口头访谈。</p></div><div class="choice-list"><label><input type="checkbox" name="consent" required>我已阅读研究说明，并同意开始实验。</label></div>`, "开始实验");
+  return formShell(step, "开始前", "欢迎参加用户研究", "本网站用于安排实验步骤并收集问卷。研究评价的是系统，而不是你的设计能力。", `<div class="task-brief"><h2>预计流程</h2><p>两次开放式创意探索，每次 12–15 分钟；每次任务后填写 NASA-TLX、CSI 和 SUS，FlowStudio 任务后还会填写 IR 体验量表；最后完成系统比较与口头访谈。</p></div><div class="choice-list"><label><input type="checkbox" name="consent" required>我已阅读研究说明，并同意开始实验。</label></div>`, "开始实验");
 }
 
 function prestudyView(step) {
@@ -210,6 +219,7 @@ function nasaView(step) {
 
 function csiView(step) { return formShell(step, step.systemLabel, "创造力支持体验", "请评价刚才使用该系统完成开放式创意探索的体验。", ratingQuestions(CSI, 10)); }
 function susView(step) { return formShell(step, step.systemLabel, "系统可用性", "请综合评价刚才使用的系统。", ratingQuestions(SUS.map((label, i) => [`sus${i + 1}`, label]), 5)); }
+function irView(step) { return formShell(step, `${step.systemLabel} · 系统后`, "IR 体验", "请只评价刚才 FlowStudio 中出现的意图识别（IR）反馈。", ratingQuestions(IR, 7)); }
 
 function breakView(step) {
   return formShell(step, "中场休息", "请休息 5 分钟", "接下来将切换到另一套设计系统。请不要沿用上一套系统的中间结果。", `<div class="break-panel">准备好后点击继续。研究员也可以在此检查下一套系统是否已就绪。</div><div class="choice-list"><label><input type="checkbox" name="ready" required>我已休息并准备继续。</label></div>`, "进入下一套系统");

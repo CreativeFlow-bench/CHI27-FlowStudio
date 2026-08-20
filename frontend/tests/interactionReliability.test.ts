@@ -178,6 +178,18 @@ test("version graph is persisted and upgrades the same node in place", async () 
   assert.doesNotMatch(store, /const branchCandidates = acceptedCandidateIds/);
 });
 
+test("Save case exports the visible model even when canvas candidates are local", async () => {
+  const store = await readStateSource();
+  const menu = await read("../src/components/menu/StudioMenu.tsx");
+  const api = await read("../src/api.ts");
+  assert.match(store, /asset\?\.asset_id \?\? stage\?\.active_asset_id/);
+  assert.match(store, /downloadAssetExport\(assetId, exportFormat/);
+  assert.match(store, /downloadNamedUrl\(caseUrl/);
+  assert.match(store, /parseApiError\(error\)/);
+  assert.match(menu, /hasRealModel\) \|\| acceptedCandidateIds\.length/);
+  assert.match(api, /export async function downloadNamedUrl/);
+});
+
 test("clearing history drops stale observation snapshots and in-flight behavior commits", async () => {
   const store = await readStateSource();
   assert.match(store, /const clearCurrentHistory/);
@@ -297,7 +309,8 @@ test("version overview keeps the focused node highlighted and re-enters on doubl
   const main = await read("../src/main.tsx");
   const store = await readStateSource();
   const css = await read("../src/styles.css");
-  assert.match(canvas, /aria-label="查看全部版本"/);
+  assert.match(main, /aria-label="Fit all versions"/);
+  assert.doesNotMatch(canvas, /aria-label="查看全部版本"/);
   assert.match(canvas, /onHighlightVersion/);
   assert.match(canvas, /event.detail >= 2 \|\| versionViewMode !== "overview"/);
   assert.match(canvas, /onDoubleClick=\{\(\) => onActivateVersion/);

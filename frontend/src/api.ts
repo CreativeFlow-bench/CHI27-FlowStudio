@@ -169,6 +169,36 @@ export function assetExportUrl(assetId: string, format: "glb" | "obj") {
   return `${API_BASE}/api/v1/assets/${assetId}/export?format=${format}`;
 }
 
+export function parseApiError(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error);
+  try {
+    const parsed = JSON.parse(raw) as { detail?: unknown };
+    if (typeof parsed.detail === "string" && parsed.detail.trim()) return parsed.detail;
+  } catch {
+    // Keep the raw body when the server did not return JSON.
+  }
+  return raw.slice(0, 220);
+}
+
+export async function downloadBlobFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+export async function downloadNamedUrl(path: string, filename: string) {
+  const response = await fetch(path.startsWith("http") ? path : `${API_BASE}${path}`);
+  if (!response.ok) {
+    throw new Error((await response.text()) || `download ${filename} failed`);
+  }
+  await downloadBlobFile(await response.blob(), filename);
+}
+
 export async function downloadAssetExport(
   assetId: string,
   format: "glb" | "obj",
@@ -178,13 +208,5 @@ export async function downloadAssetExport(
   if (!response.ok) {
     throw new Error((await response.text()) || `export ${format} failed`);
   }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename || `export.${format}`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  await downloadBlobFile(await response.blob(), filename || `export.${format}`);
 }

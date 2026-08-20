@@ -6,6 +6,7 @@ from typing import Any
 from uuid import uuid4
 
 from app.models import InteractionInterpretation, SessionUpdateRequest, UserEvent, now_utc
+from app.services.intent.design_state_ir import silent_ir_prior
 from app.services.storage.studio_store import InMemoryStudioStore
 
 _STORE: Any = None
@@ -36,9 +37,11 @@ def _perception_payload(interpretation: InteractionInterpretation) -> dict[str, 
 
 def _live_signals_payload(session: SessionRecord) -> dict[str, object]:
     signals = session.metadata.get("live_signals")
+    silent_ir = session.metadata.get("silent_ir")
     return {
         "session_id": session.session_id,
         "live_signals": signals if isinstance(signals, dict) else {},
+        "silent_ir": silent_ir if isinstance(silent_ir, dict) else None,
         "updated_at": session.metadata.get("live_signals_updated_at"),
         "source": session.metadata.get("live_signals_source"),
     }
@@ -162,11 +165,14 @@ def _update_session_live_signals(
     if not isinstance(current, dict):
         current = {}
     updated = {**current, **clean}
+    part_id = str(getattr(getattr(session, "stage", None), "active_part_id", None) or "")
+    silent_ir = silent_ir_prior(updated, part_id=part_id or None)
     _STORE.update_session(
         session_id,
         SessionUpdateRequest(
             metadata={
                 "live_signals": updated,
+                "silent_ir": silent_ir,
                 "live_signals_updated_at": now_utc().isoformat(),
                 "live_signals_source": source,
             }

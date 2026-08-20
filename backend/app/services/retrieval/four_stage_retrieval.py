@@ -63,7 +63,10 @@ class FourStageRetrievalService:
                 run, intent_ir, "design-state IR data missing or empty"
             )
         features = self._ir_to_features(intent_ir)
-        pool = self.retriever.retrieve(features, top_k=self.candidate_pool)
+        pool = self.retriever.annotate_content(
+            self.retriever.retrieve(features, top_k=self.candidate_pool),
+            features,
+        )
         if not pool:
             return self._abstained(run, intent_ir, "no prior matched the query")
 
@@ -88,7 +91,7 @@ class FourStageRetrievalService:
             metadata_score = self._metadata_score(item, intent_ir)
             outcome_score = self._outcome_score(item.case_id, run.session_id)
             final_score = self._final_score(
-                sparse=item.score,
+                sparse=item.content_score,
                 metadata=metadata_score,
                 outcome=outcome_score,
             )
@@ -113,6 +116,7 @@ class FourStageRetrievalService:
                             "term_overlap": item.term_overlap[:12],
                             "scope_match": item.scope_match,
                             "vector_score": round(item.vector_score, 4),
+                            "content_score": round(item.content_score, 4),
                         }
                     ],
                     outcome={"accepted": self._case_accepted(item.case_id)},
@@ -172,9 +176,8 @@ class FourStageRetrievalService:
             "event_type": event_type,
             "selection_type": selection_type or "none",
             "part_id": intent_ir.target.part_id,
-            "intent_text": intent_ir.intent.goal
-            or intent_ir.observations.text
-            or "",
+            "gt_hierarchy": intent_ir.intent.scope,
+            "intent_text": intent_ir.intent.goal or intent_ir.observations.text or "",
             "ir_scope_hint": intent_ir.intent.scope,
             "creative_stage": "form"
             if intent_ir.intent.operation != "observe"

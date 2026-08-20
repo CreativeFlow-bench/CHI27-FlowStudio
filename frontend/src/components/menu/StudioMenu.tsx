@@ -434,25 +434,37 @@ export function StudioMenu({
               </Panel>
             ) : null}
 
-            {acceptedCandidateIds.length ? (
+            {(asset && hasRealModel) || acceptedCandidateIds.length ? (
               <Panel title="Case" icon={<Save size={16} />}>
                 <label>
                   Title
                   <input value={caseTitle} onChange={(event) => setCaseTitle(event.target.value)} />
                 </label>
-                <button className="ghost" disabled={!activeCaseAssetId || savingCase} onClick={saveCase}>
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={!(asset?.asset_id ?? activeCaseAssetId) || savingCase}
+                  onClick={saveCase}
+                >
                   <Save size={16} /> {savingCase ? "Saving" : "Save case"}
                 </button>
-                {savedCase?.report_url ? (
+                {savedCase?.report_url || typeof savedCase?.metadata?.case_url === "string" ? (
                   <div className="case-link-row">
-                    <a href={`${API_BASE}${savedCase.report_url}`} target="_blank" rel="noreferrer">
-                      Report
-                    </a>
+                    {typeof savedCase?.metadata?.case_url === "string" ? (
+                      <a href={`${API_BASE}${savedCase.metadata.case_url}`} target="_blank" rel="noreferrer">
+                        Case JSON
+                      </a>
+                    ) : null}
+                    {savedCase?.report_url ? (
+                      <a href={`${API_BASE}${savedCase.report_url}`} target="_blank" rel="noreferrer">
+                        Report
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
               </Panel>
             ) : null}
-            {!asset && !acceptedCandidateIds.length ? (
+            {!hasRealModel && !acceptedCandidateIds.length ? (
               <p className="studio-output-empty">生成或接受方案后，可在这里导出模型并保存案例。</p>
             ) : null}
           </section>

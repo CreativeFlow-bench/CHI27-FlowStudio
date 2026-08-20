@@ -165,6 +165,50 @@ def test_ir_recommend_target_uses_level_and_negative_supervision(tmp_path) -> No
     assert prior["negative_supervision"]["do_not_assume_part"] is False
 
 
+def test_ir_labels_vote_4_state_and_3_hierarchy(tmp_path) -> None:
+    import json
+
+    payload = {
+        "episodes": [
+            {
+                "episode_id": "sil",
+                "text": "整体轮廓探索",
+                "gt_state": "Exploration",
+                "gt_hierarchy": "Silhouette",
+                "signal_vector": [1, 0, 0, 1, 0, 0],
+                "signal_codes": ["pause_hover", "global_orbit"],
+            },
+            {
+                "episode_id": "part",
+                "text": "局部零件打磨",
+                "gt_state": "Refinement",
+                "gt_hierarchy": "Part",
+                "signal_vector": [0, 1, 1, 0, 0, 0],
+                "signal_codes": ["undo_redo_loop", "select_part"],
+            },
+        ]
+    }
+    path = tmp_path / "episodes.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    retriever = DesignStateIRRetriever(path=path, limit=10)
+    matches = retriever.retrieve(
+        {
+            "intent_text": "局部零件打磨",
+            "signal_codes": ["pause_hover", "global_orbit"],
+            "signal_vector": [1, 0, 0, 1, 0, 0],
+            "gt_hierarchy": "Silhouette",
+            "gt_state": "Exploration",
+        },
+        top_k=3,
+    )
+    vote = retriever.vote(matches)
+    assert matches[0].case_id == "sil"
+    assert vote["predicted_hierarchy"] == "Silhouette"
+    assert vote["predicted_state"] == "Exploration"
+    assert vote["alpha"] == 0.5
+    assert vote["signal_weights"] == [1.4, 1.4, 1.5, 1.5, 0.0, 1.0]
+
+
 def test_shared_labels_are_the_single_source() -> None:
     assert zh_label("snowman") == "雪人"
     assert zh_label("nose") == "鼻子"

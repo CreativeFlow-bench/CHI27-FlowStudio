@@ -51,6 +51,15 @@ function taskStep(code, index) {
   };
 }
 
+function appendSystemQuestionnaires(steps, system) {
+  const systemLabel = SYSTEM_LABELS[system];
+  steps.push({ id: `csi-${system.toLowerCase()}`, kind: "csi", system, systemLabel });
+  steps.push({ id: `sus-${system.toLowerCase()}`, kind: "sus", system, systemLabel });
+  if (system === "Flow") {
+    steps.push({ id: "ir-flow", kind: "ir", system, systemLabel });
+  }
+}
+
 function buildSteps(order) {
   const tasks = order.map(taskStep);
   const steps = [{ id: "welcome", kind: "welcome" }, { id: "prestudy", kind: "prestudy" }];
@@ -58,8 +67,7 @@ function buildSteps(order) {
 
   tasks.forEach((task, index) => {
     if (previousSystem && task.system !== previousSystem) {
-      steps.push({ id: `csi-${previousSystem.toLowerCase()}`, kind: "csi", system: previousSystem, systemLabel: SYSTEM_LABELS[previousSystem] });
-      steps.push({ id: `sus-${previousSystem.toLowerCase()}`, kind: "sus", system: previousSystem, systemLabel: SYSTEM_LABELS[previousSystem] });
+      appendSystemQuestionnaires(steps, previousSystem);
       steps.push({ id: "break", kind: "break" });
     }
     steps.push(task);
@@ -67,8 +75,7 @@ function buildSteps(order) {
     previousSystem = task.system;
   });
 
-  steps.push({ id: `csi-${previousSystem.toLowerCase()}`, kind: "csi", system: previousSystem, systemLabel: SYSTEM_LABELS[previousSystem] });
-  steps.push({ id: `sus-${previousSystem.toLowerCase()}`, kind: "sus", system: previousSystem, systemLabel: SYSTEM_LABELS[previousSystem] });
+  appendSystemQuestionnaires(steps, previousSystem);
   steps.push({ id: "comparison", kind: "comparison" });
   steps.push({ id: "interview", kind: "interview" });
   steps.push({ id: "complete", kind: "complete" });

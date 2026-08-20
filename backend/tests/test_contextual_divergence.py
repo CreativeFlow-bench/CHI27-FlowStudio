@@ -96,30 +96,77 @@ def test_groups_are_dynamic_per_scope() -> None:
     assert "global_form" in whole_groups
 
 
-def test_ir_retrieval_text_strips_hard_case_identity(tmp_path) -> None:
-    row = {
-        "ir_id": "r1",
-        "case_id": "c1",
-        "design_state": "early_exploration",
-        "route": "generate_local_variants",
-        "signals": ["select_part"],
-        "scope_hint": "part_or_region",
-        "recommended_axes": ["Structural"],
-        "evidence_strength": "low",
-        "state_agreement": 1.0,
-        "route_agreement": 1.0,
-        "signal_agreement": 1.0,
-        "text": (
-            "Design state: Early exploration\n"
-            "Signals: select / focus part\n"
-            "CreativeFlow route: Generate local part variants\n"
-            "Task group: Task 1 · Character / Organic Modeling\n"
-        ),
+def test_ir_retrieval_matches_labels_not_intent_text(tmp_path) -> None:
+    payload = {
+        "episodes": [
+            {
+                "episode_id": "text_hit",
+                "text": "让鼻子更弯曲",
+                "gt_state": "Refinement",
+                "gt_hierarchy": "Part",
+                "signal_vector": [0, 1, 1, 0, 0, 0],
+                "signal_codes": ["undo_redo_loop", "select_part"],
+            },
+            {
+                "episode_id": "ir_hit",
+                "text": "无关文本",
+                "gt_state": "Exploration",
+                "gt_hierarchy": "Silhouette",
+                "signal_vector": [1, 0, 0, 1, 0, 1],
+                "signal_codes": ["long_compare", "zoom_out", "match_reference"],
+            },
+        ]
     }
-    path = tmp_path / "rows.jsonl"
-    path.write_text(json.dumps(row, ensure_ascii=False) + "\n", encoding="utf-8")
-    retriever = DesignStateIRRetriever(path=path, limit=1)
-    tokens = retriever.rows[0]["_tokens"]
-    assert "task" not in tokens
-    assert "organic" not in tokens
-    assert "modeling" not in tokens
+    path = tmp_path / "episodes.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    retriever = DesignStateIRRetriever(path=path, limit=10)
+    matches = retriever.retrieve(
+        {
+            "intent_text": "让鼻子更弯曲",
+            "signal_codes": ["long_compare", "zoom_out", "match_reference"],
+            "signal_vector": [1, 0, 0, 1, 0, 1],
+            "gt_state": "Exploration",
+            "gt_hierarchy": "Silhouette",
+        },
+        top_k=2,
+    )
+    assert matches[0].case_id == "ir_hit"
+
+
+def test_split_retrieve_uses_text_only_for_content_not_state(tmp_path) -> None:
+    payload = {
+        "episodes": [
+            {
+                "episode_id": "text_hit",
+                "text": "让鼻子更弯曲",
+                "gt_state": "Refinement",
+                "gt_hierarchy": "Part",
+                "signal_vector": [1, 0, 0, 1, 0, 0],
+                "signal_codes": ["long_compare", "zoom_out"],
+            },
+            {
+                "episode_id": "ir_hit",
+                "text": "无关文本",
+                "gt_state": "Exploration",
+                "gt_hierarchy": "Silhouette",
+                "signal_vector": [1, 0, 0, 1, 0, 1],
+                "signal_codes": ["long_compare", "zoom_out", "match_reference"],
+            },
+        ]
+    }
+    path = tmp_path / "episodes.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    retriever = DesignStateIRRetriever(path=path, limit=10)
+    ir_top, content_top, vote = retriever.split_retrieve(
+        {
+            "intent_text": "让鼻子更弯曲",
+            "signal_codes": ["long_compare", "zoom_out", "match_reference"],
+            "signal_vector": [1, 0, 0, 1, 0, 1],
+        },
+        pool_k=2,
+        vote_k=1,
+    )
+    assert ir_top[0].case_id == "ir_hit"
+    assert content_top[0].case_id == "text_hit"
+    assert vote["predicted_state"] == "Exploration"
+    assert vote["predicted_hierarchy"] == "Part"

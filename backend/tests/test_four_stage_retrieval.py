@@ -98,6 +98,9 @@ class StubRetriever:
     def retrieve(self, features: dict, top_k: int = 5) -> list[DesignStateIRMatch]:
         return sorted(self.matches, key=lambda item: item.score, reverse=True)[:top_k]
 
+    def annotate_content(self, matches: list[DesignStateIRMatch], features: dict) -> list[DesignStateIRMatch]:
+        return matches
+
 
 def test_real_sparse_retrieval_is_deterministic_and_auditable() -> None:
     service = FourStageRetrievalService()
@@ -180,8 +183,9 @@ def test_metadata_and_outcome_scoring() -> None:
     assert c1.metadata_score >= c2.metadata_score
     # final score is the weighted blend
     weights = service.weights
+    content_norm = service._norm(c1.evidence[0]["content_score"])
     expected = (
-        weights["sparse"] * c1.sparse_score
+        weights["sparse"] * content_norm
         + weights["metadata"] * c1.metadata_score
         + weights["outcome"] * c1.outcome_score
     ) / (weights["sparse"] + weights["metadata"] + weights["outcome"])

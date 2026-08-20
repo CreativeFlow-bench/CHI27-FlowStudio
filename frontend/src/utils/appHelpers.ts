@@ -436,8 +436,16 @@ export function evidenceSummaryItems(interpretation: Interpretation | null): Evi
     });
   }
 
+  const ir = interpretation.features?.design_state_ir;
+  const predicted = [ir?.predicted_state, ir?.predicted_hierarchy].filter(Boolean).join(" · ");
   const match = designStateMatches(interpretation)[0];
-  if (match) {
+  if (predicted) {
+    rows.push({
+      label: "IR state",
+      value: predicted,
+      source: "Design-state IR",
+    });
+  } else if (match) {
     const route = irRouteLabel(match.route);
     const state = irStateLabel(match.design_state);
     rows.push({

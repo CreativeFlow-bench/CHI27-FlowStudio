@@ -2,8 +2,8 @@
  * Intent composer float panel: prompt input, sculpt/annotation tool bar,
  * primitive menu and pending behavior atom tray (refactor plan P1a).
  */
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { MousePointer2, Paintbrush, Pencil, Plus, Send, Trash2, X } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { MousePointer2, Paintbrush, Pencil, Plus, Send } from "lucide-react";
 import type {
   ActionAtom,
   AssetRecord,
@@ -75,18 +75,11 @@ export function IntentComposer({
   onTriggerDivergence?: () => void;
 }) {
   const intentRef = useRef<HTMLTextAreaElement>(null);
-  const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | null>(null);
   const behaviors = useMemo(
     () => [...behaviorSessions].sort((a, b) => a.behavior_seq - b.behavior_seq),
     [behaviorSessions],
   );
-  const selectedBehavior = behaviors.find((item) => item.behavior_id === selectedBehaviorId) ?? null;
   const sendDisabled = !session || generationBusy || (!canSendIntent && !intentText.trim());
-
-  const handleDeleteBehavior = (behaviorId: string) => {
-    onDeleteBehavior?.(behaviorId);
-    setSelectedBehaviorId((current) => (current === behaviorId ? null : current));
-  };
 
   useLayoutEffect(() => {
     const field = intentRef.current;
@@ -97,65 +90,25 @@ export function IntentComposer({
 
   return (
     <div className="canvas-composer-shell">
-      {behaviors.length ? (
-        <div className="behavior-history-rail" aria-label="Behavior history">
-          <div className="behavior-history-label">Action History</div>
-          <div className="behavior-dot-list">
-            {behaviors.map((behavior) => (
-              <div className="behavior-dot-wrap" key={behavior.behavior_id}>
-                <button
-                  type="button"
-                  className={`behavior-dot ${behavior.tool}${behavior.status === "active" ? " is-active" : ""}${selectedBehaviorId === behavior.behavior_id ? " is-selected" : ""}`}
-                  data-tooltip={`${behavior.behavior_seq}. ${behavior.tool} · ${behavior.stroke_count} 笔 · ${String(behavior.target.label ?? behavior.target.part_id ?? "整体")}`}
-                  aria-label={`查看 Behavior ${behavior.behavior_seq}`}
-                  onClick={() => setSelectedBehaviorId((current) => current === behavior.behavior_id ? null : behavior.behavior_id)}
-                >
-                  {behavior.behavior_seq}
-                </button>
-                {onDeleteBehavior ? (
-                  <button
-                    type="button"
-                    className="behavior-dot-delete"
-                    data-tooltip={`删除 Behavior ${behavior.behavior_seq}`}
-                    aria-label={`删除 Behavior ${behavior.behavior_seq}`}
-                    onClick={() => handleDeleteBehavior(behavior.behavior_id)}
-                  >
-                    <X size={7} strokeWidth={2.75} />
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {selectedBehavior ? (
-        <section className="behavior-history-inspector" aria-label={`Behavior ${selectedBehavior.behavior_seq} details`}>
-          <div className="behavior-inspector-head">
-            <strong>Behavior {selectedBehavior.behavior_seq} · {selectedBehavior.tool}</strong>
-            <div className="behavior-inspector-actions">
-              {onDeleteBehavior ? (
-                <button
-                  type="button"
-                  aria-label={`删除 Behavior ${selectedBehavior.behavior_seq}`}
-                  data-tooltip="删除该 behavior"
-                  onClick={() => handleDeleteBehavior(selectedBehavior.behavior_id)}
-                >
-                  <Trash2 size={13} />
-                </button>
-              ) : null}
-              <button type="button" aria-label="Close behavior details" onClick={() => setSelectedBehaviorId(null)}>
-                <X size={13} />
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <div
         className={`canvas-composer float-panel${addMenuOpen ? " has-menu" : " is-compact"}`}
         aria-label="Intent composer"
       >
+      <div className="composer-intent-line">
+        {behaviors.length ? (
+          <div className="composer-action-dots" aria-label="Actions to send">
+            {behaviors.map((behavior) => (
+              <button
+                type="button"
+                className={`behavior-dot ${behavior.tool}${behavior.status === "active" ? " is-active" : ""}`}
+                key={behavior.behavior_id}
+                data-tooltip={`${behavior.tool} · ${behavior.stroke_count} 笔`}
+                aria-label={`Action ${behavior.behavior_seq}`}
+                onClick={() => onDeleteBehavior?.(behavior.behavior_id)}
+              />
+            ))}
+          </div>
+        ) : null}
       <textarea
         ref={intentRef}
         name="design-intent"
@@ -174,6 +127,7 @@ export function IntentComposer({
         }}
         placeholder="Make this snowman cuter…"
       />
+      </div>
       <div className="canvas-composer-row">
         <div className="composer-tools" aria-label="Intent composer tools">
           <div className="composer-tool-group">

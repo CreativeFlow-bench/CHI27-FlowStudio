@@ -199,14 +199,39 @@ export function fitLoadedModel(
   controls: { target: THREE.Vector3; update(): void },
   camera: THREE.PerspectiveCamera,
 ) {
+  // Scale first, then re-measure the world box. Off-origin toys (and any
+  // other library) otherwise drift after scale because local origin ≠ bbox center.
+  root.updateMatrixWorld(true);
+  const raw = new THREE.Box3().setFromObject(root);
+  if (raw.isEmpty()) return;
+  const rawSize = raw.getSize(new THREE.Vector3());
+  const maxDimension = Math.max(rawSize.x, rawSize.y, rawSize.z, 0.001);
+  root.scale.multiplyScalar(2.5 / maxDimension);
+  root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
+  root.position.sub(box.getCenter(new THREE.Vector3()));
+  root.updateMatrixWorld(true);
+  frameCameraToModel(root, controls, camera);
+}
+
+export function frameCameraToModel(
+  root: THREE.Object3D,
+  controls: { target: THREE.Vector3; update(): void },
+  camera: THREE.PerspectiveCamera,
+) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  if (box.isEmpty()) return;
   const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  const maxDimension = Math.max(size.x, size.y, size.z, 0.001);
-  root.position.sub(center);
-  root.scale.setScalar(2.5 / maxDimension);
+  const fov = (camera.fov * Math.PI) / 180;
+  const distH = (size.y * 0.5) / Math.tan(fov * 0.5);
+  const distW = (size.x * 0.5) / Math.tan(fov * 0.5) / Math.max(camera.aspect, 0.05);
+  const dist = Math.max(distH, distW, 0.8) * 1.35;
   controls.target.set(0, 0, 0);
-  camera.position.set(0, 0, 5.2);
+  camera.position.set(0, 0, dist);
+  camera.near = Math.max(0.01, dist / 100);
+  camera.far = Math.max(80, dist * 20);
+  camera.updateProjectionMatrix();
   camera.lookAt(controls.target);
   controls.update();
 }

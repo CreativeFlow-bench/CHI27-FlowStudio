@@ -494,7 +494,7 @@ def _cross_domain_ir_matches(
         if interpretation is not None:
             ir_block = interpretation.features.get("design_state_ir")
             if isinstance(ir_block, dict):
-                matches = ir_block.get("matches")
+                matches = ir_block.get("content_matches") or ir_block.get("matches")
                 if isinstance(matches, list) and matches:
                     reused: list[dict[str, object]] = []
                     for item in matches:
@@ -575,7 +575,8 @@ def _cross_domain_ir_matches(
             },
         },
     }
-    return [match.to_feature() for match in retriever.retrieve(features, top_k=4)]
+    _ir_top, content_top, _vote = retriever.split_retrieve(features, pool_k=20, vote_k=4)
+    return [match.to_feature() for match in content_top]
 
 
 def _analogy_prompt_tokens(

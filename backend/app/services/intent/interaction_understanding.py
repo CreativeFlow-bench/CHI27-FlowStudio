@@ -19,7 +19,7 @@ from app.models.semantic import SemanticTarget
 from app.services.intent.multimodal_intent_predictor import (
     RuleBasedMultimodalIntentPredictor,
 )
-from app.services.intent.design_state_ir import DesignStateIRRetriever
+from app.services.intent.design_state_ir import DesignStateIRRetriever, default_retriever
 from app.services.shared.labels import zh_label
 from app.services.signals.cognition_supervisor import supervise_cognition
 from app.services.signals.gui_interaction_supervisor import supervise_gui_interaction
@@ -42,7 +42,7 @@ class InteractionUnderstandingService:
     ) -> None:
         self.store = store
         self.predictor = predictor or RuleBasedMultimodalIntentPredictor()
-        self.ir_retriever = ir_retriever or DesignStateIRRetriever()
+        self.ir_retriever = ir_retriever or default_retriever()
 
     def interpret_event(
         self,
@@ -291,15 +291,18 @@ class InteractionUnderstandingService:
             }
             return
         features["ir_scope_hint"] = self._scope_hint_from_features(features)
-        matches = self.ir_retriever.retrieve(features, top_k=5)
-        axis_recommendation = self.ir_retriever.recommend_axes(matches, features)
+        ir_top, content_top, vote = self.ir_retriever.split_retrieve(features)
+        axis_source = content_top if any(item.content_score > 0 for item in content_top) else ir_top
+        axis_recommendation = self.ir_retriever.recommend_axes(axis_source, features)
         features["design_state_ir"] = {
             "ready": True,
-            "matches": [match.to_feature() for match in matches],
+            "matches": [match.to_feature() for match in ir_top],
+            "content_matches": [match.to_feature() for match in content_top],
             "source": str(self.ir_retriever.path),
             "retrieve_count": 1,
             **self.ir_retriever.query_profile(features),
             **axis_recommendation,
+            **vote,
         }
 
     def _attach_creative_state(self, features: dict[str, object], event: UserEvent) -> None:
@@ -308,7 +311,9 @@ class InteractionUnderstandingService:
         """Redesign: three supervisors (cognition/gui/semantic-language) produce
         votes; fusion + IR target prior produce SemanticTarget[] for the planner."""
         ir = features.get("design_state_ir") if isinstance(features.get("design_state_ir"), dict) else {}
-        matches = ir.get("matches") if isinstance(ir.get("matches"), list) else []
+        matches = ir.get("content_matches") if isinstance(ir.get("content_matches"), list) else []
+        if not matches:
+            matches = ir.get("matches") if isinstance(ir.get("matches"), list) else []
         ir_prior = (
             self.ir_retriever.recommend_target(matches, features)
             if matches
@@ -358,9 +363,6 @@ class InteractionUnderstandingService:
         ]
 
     def _scope_hint_from_features(self, features: dict[str, object]) -> str:
-        text_scope = self._scope_hint_from_text(str(features.get("intent_text") or ""))
-        if text_scope:
-            return text_scope
         selection_type = str(features.get("selection_type") or "")
         live = features.get("live_signals")
         if isinstance(live, dict) and int(live.get("local_zoom_count") or 0) >= 1:
@@ -376,16 +378,6 @@ class InteractionUnderstandingService:
         if creative_stage in {"silhouette", "global", "rough_form"}:
             return "whole_object"
         return "mixed_whole_and_part"
-
-    def _scope_hint_from_text(self, text: str) -> str | None:
-        normalized = text.lower()
-        if not normalized.strip():
-            return None
-        if any(term in normalized for term in ["material", "texture", "surface", "color", "fabric", "finish", "材质", "纹理", "颜色", "表面"]):
-            return "material_surface"
-        if any(term in normalized for term in ["part", "component", "local", "brush", "部件", "组件", "局部", "某个部分", "当前部分"]):
-            return "part_or_region"
-        return "whole_object"
 
     def _extract_features(self, event: UserEvent) -> dict[str, object]:
         return extract_interaction_features(

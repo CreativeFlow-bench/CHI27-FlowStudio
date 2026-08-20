@@ -1,5 +1,5 @@
 /** AI Behavior narrative and divergence controls. */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import type {
   AssetRecord,
@@ -42,6 +42,9 @@ export function AIBehaviorPanel({
   projectNotice,
   onDismissNotice,
   divergenceKeywords,
+  divergenceRounds = [],
+  divergenceRoundIndex = 0,
+  onDivergenceRoundIndexChange,
   selectedPromptTokens,
   session,
   asset,
@@ -63,12 +66,16 @@ export function AIBehaviorPanel({
   onDismissInheritedKeyword,
   collapsed = false,
   onCollapsedChange,
+  irHint = null,
 }: {
   presentation: AiBehaviorPresentation;
   projectNotice: string | null;
   onDismissNotice: () => void;
   intentBubble: IntentBubbleUiState;
   divergenceKeywords: PromptToken[];
+  divergenceRounds?: Array<{ id: string; intentSeq: number; keywords: PromptToken[]; loading: boolean }>;
+  divergenceRoundIndex?: number;
+  onDivergenceRoundIndexChange?: (index: number) => void;
   selectedPromptTokens: PromptToken[];
   interpretation: Interpretation | null;
   session: SessionRecord | null;
@@ -91,10 +98,14 @@ export function AIBehaviorPanel({
   onDismissInheritedKeyword?: (keyword: string) => void;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  irHint?: string | null;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [revealedKeywordCount, setRevealedKeywordCount] = useState(0);
   const [typedNarrative, setTypedNarrative] = useState(presentation.narrative);
+  const activeRound = divergenceRounds[divergenceRoundIndex] ?? null;
+  const roundKeywords = activeRound ? activeRound.keywords : divergenceKeywords;
+  const roundLoading = Boolean(activeRound?.loading) || (!activeRound && semanticDivergenceLoading);
   useEffect(() => {
     if (semanticDivergenceLoading) setMobileOpen(true);
   }, [semanticDivergenceLoading]);
@@ -111,7 +122,7 @@ export function AIBehaviorPanel({
     return () => window.clearInterval(timer);
   }, [presentation.narrative]);
   useEffect(() => {
-    const total = divergenceKeywords.length;
+    const total = roundKeywords.length;
     if (total <= 0) {
       setRevealedKeywordCount(0);
       return;
@@ -121,10 +132,10 @@ export function AIBehaviorPanel({
       setRevealedKeywordCount((current) => (current >= total ? current : current + 1));
     }, 48);
     return () => window.clearInterval(timer);
-  }, [divergenceKeywords.length]);
+  }, [roundKeywords.length, divergenceRoundIndex]);
   const visibleKeywords = useMemo(
-    () => divergenceKeywords.slice(0, revealedKeywordCount),
-    [divergenceKeywords, revealedKeywordCount],
+    () => roundKeywords.slice(0, revealedKeywordCount),
+    [roundKeywords, revealedKeywordCount],
   );
   const knowledgePartial = Object.values(semanticDivergence?.knowledge_route.source_statuses ?? {})
     .some((status) => status === "partial");
@@ -139,6 +150,12 @@ export function AIBehaviorPanel({
   const generateDisabled = !session || !asset || generationBusy || solutionSpaceGenerating || noCurrentCandidate || Boolean(selectionPersistenceError);
   const scopeReady = presentation.creativeState !== "locked";
   const phaseText = divergencePhaseMessage ?? "Connecting to model…";
+  const swipeRef = useRef<{ x: number } | null>(null);
+  const goRound = (delta: number) => {
+    if (divergenceRounds.length < 2) return;
+    const next = Math.max(0, Math.min(divergenceRounds.length - 1, divergenceRoundIndex + delta));
+    if (next !== divergenceRoundIndex) onDivergenceRoundIndexChange?.(next);
+  };
   return (
     <aside className={`ai-behavior-float float-panel${mobileOpen ? " is-mobile-open" : ""}${collapsed ? " is-collapsed" : ""}`} aria-label="AI Behavior">
       <header className="float-panel-label observe-head">
@@ -193,10 +210,43 @@ export function AIBehaviorPanel({
           <header className="more-creative-header">
             <span>
               <strong className="more-creative-title">More Creative?</strong>
-              <p className="more-creative-scope">Waiting for your design. I'll give you more inspiration.</p>
+              <p className="more-creative-scope">
+                {irHint
+                  ? `${irHint}. No text yet — using how you're looking and editing.`
+                  : "Waiting for your design. I'll give you more inspiration."}
+              </p>
             </span>
+            {divergenceRounds.length > 1 ? (
+              <div className="intent-round-dots" role="tablist" aria-label="Intent rounds">
+                {divergenceRounds.map((round, index) => (
+                  <button
+                    type="button"
+                    key={round.id}
+                    role="tab"
+                    aria-selected={index === divergenceRoundIndex}
+                    className={`intent-round-dot${index === divergenceRoundIndex ? " is-active" : ""}${round.loading ? " is-loading" : ""}`}
+                    onClick={() => onDivergenceRoundIndexChange?.(index)}
+                  />
+                ))}
+              </div>
+            ) : null}
           </header>
-          <section className={`mc-pane mc-keywords-pane${scopeReady ? "" : " is-locked"}`} aria-label="Divergence keywords" aria-disabled={!scopeReady}>
+          <section
+            className={`mc-pane mc-keywords-pane${scopeReady ? "" : " is-locked"}`}
+            aria-label="Divergence keywords"
+            aria-disabled={!scopeReady}
+            onPointerDown={(event) => {
+              swipeRef.current = { x: event.clientX };
+            }}
+            onPointerUp={(event) => {
+              const start = swipeRef.current;
+              swipeRef.current = null;
+              if (!start) return;
+              const delta = event.clientX - start.x;
+              if (delta > 48) goRound(-1);
+              else if (delta < -48) goRound(1);
+            }}
+          >
         <div className="mc-param-row" aria-label="Divergence parameters">
           <label className="mc-param">
             <span className="mc-param-label">DIVERGENCE</span>
@@ -256,7 +306,7 @@ export function AIBehaviorPanel({
             <span className="sr-only">{formatPerGroupCount(divergencePerGroupCount)}</span>
           </label>
         </div>
-        {semanticDivergenceLoading ? (
+        {roundLoading || semanticDivergenceLoading ? (
           <div className="semantic-keyword-skeleton" role="status" aria-live="polite" aria-busy="true">
             <p className="semantic-keyword-status is-phase-tick" key={phaseText}>
               {phaseText}

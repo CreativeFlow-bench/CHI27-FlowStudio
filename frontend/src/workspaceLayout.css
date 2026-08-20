@@ -276,8 +276,8 @@
   right: var(--workspace-edge);
   z-index: 24;
   width: var(--shell-width, var(--ai-behavior-width));
-  min-height: 480px;
-  height: max(480px, var(--shell-height, 0px));
+  min-height: 280px;
+  height: auto;
   max-height: calc(100dvh - var(--ai-behavior-top) - var(--workspace-safe-bottom));
   display: flex;
   flex-direction: column;

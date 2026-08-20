@@ -1762,34 +1762,50 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=f"Asset not found: {request.asset_id}")
         if asset.session_id != request.session_id:
             raise HTTPException(status_code=400, detail="Asset does not belong to the session")
+        accepted_candidates: list[object] = []
+        unresolved_candidate_ids: list[str] = []
+        version_nodes = four_stage_store.list_version_nodes(request.session_id)
         for candidate_id in request.accepted_candidate_ids:
             candidate = studio_store.get_candidate(candidate_id)
             if candidate is None:
-                raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
-            if candidate.session_id != request.session_id:
+                node = next(
+                    (item for item in version_nodes if item.candidate_id == candidate_id),
+                    None,
+                )
+                if node is None:
+                    unresolved_candidate_ids.append(candidate_id)
+                    continue
+                candidate = Candidate(
+                    candidate_id=candidate_id,
+                    job_id=node.hy3d_job_id or "version_graph",
+                    session_id=request.session_id,
+                    source_asset_id=request.asset_id,
+                    label=node.label,
+                    decision=CandidateDecision.accepted,
+                    thumbnail_url=node.preview_url,
+                    mesh_url=node.mesh_url,
+                    obj_url=node.obj_url,
+                    metadata={"source": "version_graph", "node_id": node.node_id},
+                )
+            elif candidate.session_id != request.session_id:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Candidate does not belong to the session: {candidate_id}",
                 )
-            if candidate.decision != CandidateDecision.accepted:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Candidate is not accepted: {candidate_id}",
-                )
+            elif candidate.decision != CandidateDecision.accepted:
+                candidate.decision = CandidateDecision.accepted
+                studio_store.save_candidate(candidate)
+            accepted_candidates.append(candidate)
         case = studio_store.create_case(request)
         case_dir = files_root / "cases" / case.case_id
         case_dir.mkdir(parents=True, exist_ok=True)
         report_path = case_dir / "report.html"
         manifest_path = case_dir / "case.json"
-        accepted_candidates = [
-            studio_store.get_candidate(candidate_id)
-            for candidate_id in case.accepted_candidate_ids
-            if studio_store.get_candidate(candidate_id) is not None
-        ]
         case.metadata = {
             **case.metadata,
             "case_url": f"/files/cases/{case.case_id}/case.json",
             "case_index_url": "/files/cases/index.json",
+            "unresolved_candidate_ids": unresolved_candidate_ids,
         }
         studio_store.cases[case.case_id] = case
         manifest = build_case_manifest(case, session.stage, session.metadata, asset, accepted_candidates)

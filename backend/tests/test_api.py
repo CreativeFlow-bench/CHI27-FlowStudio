@@ -91,10 +91,13 @@ def test_action_atom_updates_perception_with_design_state_ir() -> None:
     assert perception["confidence"] > 0
     ir = perception["features"]["design_state_ir"]
     assert ir["ready"] is True
+    assert ir["retrieval_mode"] == "ir_then_content"
     assert "rapid_tool_switch" in ir["query_signals"]
     assert "long_compare" in ir["query_signals"]
     assert ir["matches"]
     assert ir["axis_scores"]
+    assert ir.get("predicted_state") in {None, "Exploration", "Formation", "Refinement", "Evaluation"}
+    assert ir.get("predicted_hierarchy") in {None, "Silhouette", "Part", "Material"}
     live = client.get(f"/api/v1/sessions/{session['session_id']}/live-signals").json()
     assert live["live_signals"]["tool_switch_count"] == 4
     snapshot = client.get(f"/api/v1/sessions/{session['session_id']}/snapshot").json()
@@ -113,6 +116,8 @@ def test_live_signals_endpoint_persists_session_snapshot() -> None:
     body = response.json()
     assert body["live_signals"]["dwell_ms"] == 1300
     assert body["source"] == "live_signals_endpoint"
+    assert body["silent_ir"]["ready"] is True
+    assert body["silent_ir"]["recommended_axes"]
 
     response = client.put(
         f"/api/v1/sessions/{session['session_id']}/live-signals",
@@ -135,6 +140,7 @@ def test_local_white_models_are_discoverable_and_loadable() -> None:
     assert {"bakery", "christmas", "toy_animals"}.issubset(
         {item["metadata"].get("category") for item in white_models}
     )
+    assert any(item["benchmark_id"] == "white:toy_animals:bulldog" for item in white_models)
 
     session = client.post("/api/v1/sessions", json={"title": "White model load"}).json()
     first = next(item for item in white_models if item["object_type"] == "snowman")
@@ -3043,6 +3049,44 @@ def test_case_save_updates_stage_and_writes_report() -> None:
     index = client.get("/files/cases/index.json")
     assert index.status_code == 200
     assert any(item["case_id"] == case["case_id"] for item in index.json()["cases"])
+
+
+def test_case_save_keeps_canvas_only_candidate_ids() -> None:
+    session_id = client.post("/api/v1/sessions", json={"title": "Canvas case"}).json()[
+        "session_id"
+    ]
+    asset = client.post(
+        "/api/v1/assets",
+        json={"session_id": session_id, "object_type": "candy", "label": "candy"},
+    ).json()
+    pending = Candidate(
+        candidate_id="cand_pending_canvas",
+        job_id="job_pending_canvas",
+        session_id=session_id,
+        source_asset_id=asset["asset_id"],
+        label="pending candy",
+        decision=CandidateDecision.pending,
+    )
+    studio_store.save_candidate(pending)
+
+    response = client.post(
+        "/api/v1/cases",
+        json={
+            "session_id": session_id,
+            "title": "candy",
+            "asset_id": asset["asset_id"],
+            "accepted_candidate_ids": ["fourstage_candy_0", pending.candidate_id],
+        },
+    )
+
+    assert response.status_code == 200
+    case = response.json()
+    assert case["accepted_candidate_ids"] == ["fourstage_candy_0", pending.candidate_id]
+    assert case["metadata"]["unresolved_candidate_ids"] == ["fourstage_candy_0"]
+    assert studio_store.get_candidate(pending.candidate_id).decision == CandidateDecision.accepted
+    manifest = client.get(case["metadata"]["case_url"]).json()
+    assert manifest["asset"]["asset_id"] == asset["asset_id"]
+    assert any(item["candidate_id"] == pending.candidate_id for item in manifest["accepted_candidates"])
 
 
 def test_case_index_preserves_existing_static_entries_after_restart(tmp_path) -> None:

@@ -42,10 +42,17 @@ export function freeCanvasBand(shell?: HTMLElement | null) {
   if (shell && typeof window !== "undefined") {
     const shellRect = shell.getBoundingClientRect();
     const perception = document.querySelector<HTMLElement>(".perception-float");
+    const drawer = document.querySelector<HTMLElement>(".studio-rail.is-open");
+    const dock = document.querySelector<HTMLElement>(".canvas-tool-dock");
     const ai = document.querySelector<HTMLElement>(".ai-behavior-float");
     const composer = document.querySelector<HTMLElement>(".canvas-composer-shell, .intent-composer-shell, .composer-float");
-    const solution = document.querySelector<HTMLElement>(".solution-space-rail");
-    const leftBound = Math.max(shellRect.left, perception?.getBoundingClientRect().right ?? shellRect.left);
+    const solution = document.querySelector<HTMLElement>(".solution-space-rail, .solution-space-launcher");
+    const leftBound = Math.max(
+      shellRect.left,
+      perception?.getBoundingClientRect().right ?? shellRect.left,
+      drawer?.getBoundingClientRect().right ?? shellRect.left,
+      dock?.getBoundingClientRect().right ?? shellRect.left,
+    );
     const rightBound = Math.min(shellRect.right, ai?.getBoundingClientRect().left ?? shellRect.right);
     const topBound = Math.max(shellRect.top, solution?.getBoundingClientRect().bottom ?? shellRect.top);
     const bottomBound = Math.min(shellRect.bottom, composer?.getBoundingClientRect().top ?? shellRect.bottom);
@@ -68,24 +75,31 @@ export function freeCanvasBand(shell?: HTMLElement | null) {
   };
 }
 
+export function activeEditorExtentFromBand(shell?: HTMLElement | null) {
+  const band = freeCanvasBand(shell);
+  const gap = 12;
+  return {
+    width: Math.max(280, Math.round(band.width - gap * 2)),
+    height: Math.max(280, Math.round(band.height - gap * 2)),
+  };
+}
+
 export function centeredActiveCanvasPan(shell?: HTMLElement | null) {
   const band = freeCanvasBand(shell);
+  const extent = activeEditorExtentFromBand(shell);
   const active = shell?.querySelector<HTMLElement>(".version-node.active");
   const nodeX = active ? Number.parseFloat(active.style.left || "") || 640 : 640;
   const nodeY = active ? Number.parseFloat(active.style.top || "") || 0 : 0;
-  // CSS overrides layout 520 with --active-editor-* — always prefer measured box.
-  const nodeWidth = active?.offsetWidth || Math.max(320, band.shellWidth - 48);
-  const nodeHeight = active?.offsetHeight || Math.max(360, band.shellHeight - 64);
 
   return computeCenteredActiveCanvasPan({
     shellWidth: band.shellWidth,
     shellHeight: band.shellHeight,
     targetCenterX: band.centerX,
-    targetCenterY: band.shellHeight / 2,
+    targetCenterY: band.centerY,
     nodeX,
     nodeY,
-    nodeWidth,
-    nodeHeight,
+    nodeWidth: extent.width,
+    nodeHeight: extent.height,
   });
 }
 
